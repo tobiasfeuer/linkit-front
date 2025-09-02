@@ -21,9 +21,8 @@ export default function Recursos() {
   }, [])
   const [fixedHeight, setFixedHeight] = useState(0)
   const windowWidth = useWindowWidth()
-
   useEffect(() => {
-    const updateFixedHeight = () => {
+    const updateFixedHeight = (): void => {
       const fixedNavbar = document.getElementById("Navbar")
       const fixedPreNavbar = document.getElementById("preNavbar")
 

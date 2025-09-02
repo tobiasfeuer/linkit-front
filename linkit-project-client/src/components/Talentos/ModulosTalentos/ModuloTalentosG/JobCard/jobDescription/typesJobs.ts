@@ -21,6 +21,19 @@ export type JobDescriptionProps = {
     archived: boolean
     company: string
     status: string
+    en?: {
+        title: string
+        description: string
+        location: string
+        modality: string
+        stack: string[]
+        aboutUs: string
+        aboutClient: string
+        responsabilities: string[]
+        requirements: string[]
+        niceToHave: string[]
+        benefits: string[]
+    }
 }
 
 export type State = {

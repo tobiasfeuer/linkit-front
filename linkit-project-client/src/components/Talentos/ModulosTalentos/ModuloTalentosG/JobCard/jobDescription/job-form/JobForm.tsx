@@ -172,9 +172,9 @@ function JobForm() {
         isLoading(false);
         Swal.fire({
           icon: "success",
-          title: "¡Postulación enviada!",
-          text: "Tu postulación ha sido enviada exitosamente",
-          confirmButtonText: "Seguir viendo vacantes",
+          title: t("¡Postulación enviada!"),
+          text: t("Tu postulación ha sido enviada exitosamente"),
+          confirmButtonText: t("Seguir viendo vacantes"),
           confirmButtonColor: "#01A28B",
         }).then(async (result) => {
           if (result.isConfirmed) {

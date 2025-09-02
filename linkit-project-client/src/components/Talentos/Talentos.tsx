@@ -45,7 +45,6 @@ function Talentos() {
   useEffect(() => {
     const fetchJobListings = async () => {
       try {
-
         // Usar el mismo servicio que usa JobCardList
         const fetchedJobOffers = await getJobOffers();
         // Filtrar solo las ofertas activas
