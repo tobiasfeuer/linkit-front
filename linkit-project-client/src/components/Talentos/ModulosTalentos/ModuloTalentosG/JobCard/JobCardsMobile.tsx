@@ -43,7 +43,7 @@ const JobCardsMobile: FunctionComponent = () => {
     current * jobsPerPage,
     (current + 1) * jobsPerPage
   );
-
+  
   return (
     <div className="flex flex-col items-center my-[5%]">
       <div className="flex justify-between w-full px-[5%] lg:w-auto lg:px-0">

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { useNavigate, useLocation } from "react-router-dom"
 import { Users, Briefcase, Calculator, ArrowRight, ExternalLink } from "lucide-react"
+import { useTranslation } from "react-i18next"
 
 interface CallToActionProps {
   className?: string
@@ -33,6 +34,7 @@ export default function CallToAction({
   const navigate = useNavigate()
   const location = useLocation()
   const [hoveredButton, setHoveredButton] = useState<string | null>(null)
+  const { t } = useTranslation()
 
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -173,7 +175,7 @@ export default function CallToAction({
             <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg mr-3">
               <Users className="w-5 h-5 text-linkIt-300" />
             </div>
-            <span>Contrata Talento</span>
+            <span>{t("Contrata Talento")}</span>
           </div>
           <motion.div
             animate={{
@@ -200,7 +202,7 @@ export default function CallToAction({
             <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded-lg mr-3">
               <Briefcase className="w-5 h-5 text-linkIt-300" />
             </div>
-            <span>Busco Trabajo</span>
+            <span>{t("Busco Trabajo")}</span>
           </div>
           <motion.div
             animate={{
@@ -227,7 +229,7 @@ export default function CallToAction({
             <div className="bg-purple-100 dark:bg-purple-900/30 p-2 rounded-lg mr-3">
               <Calculator className="w-5 h-5 text-linkIt-300" />
             </div>
-            <span>Calculadora de Salario</span>
+              <span>{t("Calculadora de Salario")}</span>
           </div>
           <motion.div
             animate={{
@@ -246,7 +248,7 @@ export default function CallToAction({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1, transition: { delay: 0.5 } }}
         >
-          Descubre todas las herramientas que LinkIT tiene para ti
+          {t("Descubre todas las herramientas que LinkIT tiene para ti")}
           <a
             href={externalLinks.resources || "/recursos"}
             className="text-linkIt-300 ml-1 inline-flex items-center hover:underline"
@@ -255,7 +257,7 @@ export default function CallToAction({
               handleNavigation(externalLinks.resources || "/recursos")
             }}
           >
-            Ver más recursos <ExternalLink className="w-3 h-3 ml-1" />
+            {t("Ver más recursos")} <ExternalLink className="w-3 h-3 ml-1" />
           </a>
         </motion.p>
       )}

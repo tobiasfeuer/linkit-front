@@ -1,17 +1,446 @@
 import i18n, { InitOptions } from 'i18next';
 import { initReactI18next } from 'react-i18next';
-// import LanguageDetector from 'i18next-browser-languagedetector';
+import LanguageDetector from 'i18next-browser-languagedetector';
 
 
 //i18next  Configuration
 export const i18nOptions: InitOptions = {
-  fallbackLng: 'es',
+  fallbackLng: 'en',
   debug: false,
   interpolation: {
     escapeValue: false,
   },
+  detection: {
+    order: ['navigator', 'htmlTag', 'path', 'subdomain'],
+    caches: ['localStorage', 'sessionStorage'],
+    lookupLocalStorage: 'i18nextLng',
+    lookupSessionStorage: 'i18nextLng',
+    convertDetectedLanguage: (lng: string) => {
+      if (lng.startsWith('es')) return 'es';
+      return 'en';
+    }
+  },
 
   resources: {
+    es: {
+      translation: {
+        //!Home module A
+        "Conectando al talento más destacado con los mejores proyectos IT": "Conectando al talento más destacado con los mejores proyectos IT",
+        "Contrata y gestiona al mejor talento de manera global": "Contrata y gestiona al mejor talento de manera global",
+        "Vacantes disponibles": "Vacantes disponibles",
+        "Leer reseñas": "Leer reseñas",
+        "Impulsa tu carrera en IT con los": "Impulsa tu carrera en IT con los",
+        "mejores tips y recursos!": "mejores tips y recursos!",
+        "Blogs, ebooks y webinars para crecer como profesional en el mundo tech.": "Blogs, ebooks y webinars para crecer como profesional en el mundo tech.",
+        "Suscríbete al newsletter": "Suscríbete al newsletter",
+        //!Home module A mobile
+        "Conectando los": "Conectando los",
+        "mejores talentos": "mejores talentos",
+        "y proyectos": "y proyectos",
+        //Home module B
+        "Reclutamiento y selección": "Reclutamiento y selección",
+        "Ver más": "Ver más",
+        //Company module A
+        "Contrata y escala": "Contrata y escala",
+        "con el mejor talento IT": "con el mejor talento IT",
+        "en tan solo 5 días!": "en tan solo 5 días!",
+        "Contrata Talento": "Contrata Talento",
+        "Leer reviews": "Leer reviews",
+        "Contacta para contratar": "Contacta para contratar",
+        //NavBar
+        "Inicio": "Inicio",
+        "Soy Empresa": "Soy Empresa",
+        "Soy Talento": "Soy Talento",
+        "Recursos": "Recursos",
+        "Quiénes Somos": "Quiénes Somos",
+        "Cerrar sesión": "Cerrar sesión",
+        "Sesión cerrada": "Sesión cerrada",
+        "Hemos cerrado tu sesión con éxito": "Hemos cerrado tu sesión con éxito",
+        "Confirmar": "Confirmar",
+        "Servicios": "Servicios",
+        "Proceso": "Proceso",
+        "Cotiza": "Cotiza",
+        "Contrata y gestiona talentos de forma global con LinkIT": "Contrata y gestiona talentos de forma global con LinkIT",
+        "Comienza ahora!": "Comienza ahora!",
+        //Más traducciones importantes
+        "Identificamos a profesionales con el stack, habilidades y experiencia adecuada para tus proyectos y así lograr construir un equipo de alto desempeño.": "Identificamos a profesionales con el stack, habilidades y experiencia adecuada para tus proyectos y así lograr construir un equipo de alto desempeño.",
+        "Realizamos la gestión contractual y de pagos del talento. Refuerza tu equipo y aumenta la capacidad productiva sin riesgos.": "Realizamos la gestión contractual y de pagos del talento. Refuerza tu equipo y aumenta la capacidad productiva sin riesgos.",
+        "Gestión y beneficios": "Gestión y beneficios",
+        "Facilitamos planes de beneficios, asesoramiento en la retención y elaboración de informes y mucho más.": "Facilitamos planes de beneficios, asesoramiento en la retención y elaboración de informes y mucho más.",
+        "En 5 días hábiles presentaremos talentos previamente entrevistados y calificados.": "En 5 días hábiles presentaremos talentos previamente entrevistados y calificados.",
+        "Comunicación asertiva": "Comunicación asertiva",
+        "Nos comprometemos a mantener una comunicación ágil y efectiva durante todo el proceso de selección.": "Nos comprometemos a mantener una comunicación ágil y efectiva durante todo el proceso de selección.",
+        "Consultoría 360°": "Consultoría 360°",
+        "Te asesoramos desde el perfil ideal, los presupuestos idóneos y procesos de contratación hasta planes de beneficios, retención y mucho más.": "Te asesoramos desde el perfil ideal, los presupuestos idóneos y procesos de contratación hasta planes de beneficios, retención y mucho más.",
+        "Talento y empresas en más de 50 países": "Talento y empresas en más de 50 países",
+        "Y mucho más": "Y mucho más",
+        "talento del mundo.": "talento del mundo.",
+        "4/5 en Truspilot": "4/5 en Truspilot",
+        "Contrata y escala con el mejor": "Contrata y escala con el mejor",
+        "talento IT en tan solo 5 días!": "talento IT en tan solo 5 días!",
+        "Escala, gestiona y fideliza al": "Escala, gestiona y fideliza al",
+        "mejor talento del mundo.": "mejor talento del mundo.",
+        "Completa el formulario y nuestro equipo se pondrá en contacto contigo para ayudarte a encontrar el talento que necesitas.": "Completa el formulario y nuestro equipo se pondrá en contacto contigo para ayudarte a encontrar el talento que necesitas.",
+        "Nuestros servicios": "Nuestros servicios",
+        "Reclutamiento": "Reclutamiento",
+        "Identificamos a profesionales con la experiencia adecuada para tus proyectos. Evaluamos habilidades técnicas, experiencia previa, cultura e idioma, para así lograr construir un equipo eficiente y exitoso.": "Identificamos a profesionales con la experiencia adecuada para tus proyectos. Evaluamos habilidades técnicas, experiencia previa, cultura e idioma, para así lograr construir un equipo eficiente y exitoso.",
+        "Contratación": "Contratación",
+        "Agranda tu equipo y reduce tu costo de contratación con talento externo, aumentando la capacidad productiva, sin compromisos a largo plazo. Dedícate a lo que es realmente importante; elimina los tiempos administrativos y operativos de la gestión contractual y de pagos.": "Agranda tu equipo y reduce tu costo de contratación con talento externo, aumentando la capacidad productiva, sin compromisos a largo plazo. Dedícate a lo que es realmente importante; elimina los tiempos administrativos y operativos de la gestión contractual y de pagos.",
+        "Implementamos planes de beneficios y estrategias de fidelización para lograr equipos de alto desempeño, realizando informes y asesoramiento personalizado ayudando a tu empresa a fidelizar talento global de manera escalable.": "Implementamos planes de beneficios y estrategias de fidelización para lograr equipos de alto desempeño, realizando informes y asesoramiento personalizado ayudando a tu empresa a fidelizar talento global de manera escalable.",
+        "Más de 500 empresas confían en LinkIT": "Más de 500 empresas confían en LinkIT",
+        "Lo que dicen nuestros clientes": "Lo que dicen nuestros clientes",
+        "Conoce los casos de éxito": "Conoce los casos de éxito",
+        //ModuloC - ¿Qué nos hace diferentes?
+        "¿Qué nos hace diferentes?": "¿Qué nos hace diferentes?",
+        "Sin riesgos": "Sin riesgos",
+        "Fee a medida": "Fee a medida",
+        "Garantía": "Garantía",
+        "Proceso ágil": "Proceso ágil",
+        "Seguimiento continuo": "Seguimiento continuo",
+        "Ofrecemos un servicio de calidad a éxito. No hay anticipos; el pago es al efectivizar la contratación.": "Ofrecemos un servicio de calidad a éxito. No hay anticipos; el pago es al efectivizar la contratación.",
+        "Personalizamos nuestro fee a tus necesidades y ahorra hasta un 50% en la contratación.": "Personalizamos nuestro fee a tus necesidades y ahorra hasta un 50% en la contratación.",
+        "Garantía de por vida contratando a través de LinkIT.": "Garantía de por vida contratando a través de LinkIT.",
+        "Asignamos un equipo de trabajo específico proporcionando un servicio integral y personalizado durante todo el proceso.": "Asignamos un equipo de trabajo específico proporcionando un servicio integral y personalizado durante todo el proceso.",
+        //Technologies
+        "Talento especializado en más de 100 tecnologías": "Talento especializado en más de 100 tecnologías",
+        //Footer
+        "Empresa": "Empresa",
+        "Cómo funciona": "Cómo funciona",
+        "Casos de éxito": "Casos de éxito",
+        "Regístrate": "Regístrate",
+        "Inicia Sesión": "Inicia Sesión",
+        "Vacantes": "Vacantes",
+        "Eventos": "Eventos",
+        "Misión": "Misión",
+        "Visión": "Visión",
+        "Valores e historia": "Valores e historia",
+        "Talento interno": "Talento interno",
+        "Todos los derechos reservados": "Todos los derechos reservados",
+        "Política de Privacidad": "Política de Privacidad",
+        "Términos y condiciones": "Términos y condiciones",
+
+        //Empresa MOdulo a
+        "Escala, gestiona y fideliza al mejor": "Escala, gestiona y fideliza al mejor",
+
+        //Modulo B
+        "Contáctanos para escalar tu equipo": "Contáctanos para escalar tu equipo",
+        "Nombre": "Nombre",
+        "Email": "Email",
+        "Web":"Web",
+        "Apellido":"Apellido",
+        "¿Qué servicio te interesa?":"¿Qué servicio te interesa?",
+        "Mensaje":"Mensaje",
+        "Gestión":"Gestión",
+        "y beneficios":"y beneficios",
+                "y selección":"y selección",
+        
+        //ModuloG - ¿Por qué elegir LinkIT?
+        "¿Por qué elegir LinkIT?": "¿Por qué elegir LinkIT?",
+        "Más de ": "Más de ",
+        "Hasta 5 días": "Hasta 5 días",
+        "Más de 50 países": "Más de 50 países",
+        "candidatos listos para": "candidatos listos para",
+        "trabajar": "trabajar",
+        "tipos de lenguajes en los ": "tipos de lenguajes en los ",
+        "que nos especializamos": "que nos especializamos",
+        "para contactar a tu": "para contactar a tu",
+        "próximo talento": "próximo talento",
+        "para seleccionar ": "para seleccionar ",
+        "talentos": "talentos",
+
+
+        //call to actions
+        "Busco Trabajo":"Busco Trabajo",
+        "Calculadora de Salario": "Calculadora de Salario",
+
+        //MOdulo h
+        "Nuestra solución": "Nuestra solución",
+        "¡Cotiza con nosotros!": "¡Cotiza con nosotros!",
+        "Rol asignado": "Rol asignado",
+        "Pre-alineamiento": "Pre-alineamiento",
+        "Alineamiento": "Alineamiento",
+        "Sourcing y reclutamiento": "Sourcing y reclutamiento",
+        "Presentación de candidatos": "Presentación de candidatos",
+        "Analytics y seguimiento": "Analytics y seguimiento",
+        "Definimos el pipe line y las acciones a corto-medio plazo en base a tus necesidades y objetivos.": "Definimos el pipe line y las acciones a corto-medio plazo en base a tus necesidades y objetivos.",
+        "Te asesoramos para encontrar juntos el perfil ideal acorde a tu búsqueda y presupuesto gracias a nuestra tecnología y expertise.": "Te asesoramos para encontrar juntos el perfil ideal acorde a tu búsqueda y presupuesto gracias a nuestra tecnología y expertise.",
+        "Definimos las estrategias y los puntos más importantes a considerar para el sourcing y reclutamiento.": "Definimos las estrategias y los puntos más importantes a considerar para el sourcing y reclutamiento.",
+        "Seleccionamos al mejor talento a través de entrevistas y análisis ejecutados por nuestro equipo de expertos en reclutamiento IT.": "Seleccionamos al mejor talento a través de entrevistas y análisis ejecutados por nuestro equipo de expertos en reclutamiento IT.",
+        "En 5 días presentamos candidatos ya entrevistados y calificados junto a una descripción de su perfil y entrevista calendarizada.": "En 5 días presentamos candidatos ya entrevistados y calificados junto a una descripción de su perfil y entrevista calendarizada.",
+                "Realizamos un seguimiento analítico del proceso, entrevistas, calidad del candidato y gestión de la dinámica de trabajo con una comunicación asertiva.": "Realizamos un seguimiento analítico del proceso, entrevistas, calidad del candidato y gestión de la dinámica de trabajo con una comunicación asertiva.",
+        
+        //Calculadora
+        "Calculadora": "Calculadora",
+        "Por favor rellena todos los campos para poder cotizar.": "Por favor rellena todos los campos para poder cotizar.",
+        "Posición": "Posición",
+        "Inglés": "Inglés",
+        "Básico": "Básico",
+        "Intermedio": "Intermedio",
+        "Avanzado": "Avanzado",
+        "Tecnologías": "Tecnologías",
+        "Otros": "Otros",
+        "Calcular": "Calcular",
+        "Nivel de Inglés": "Nivel de Inglés",
+        "Mínimo": "Mínimo",
+        "Máximo": "Máximo",
+        "Error": "Error",
+        "Cerrar": "Cerrar",
+        "Los presupuestos dependerán de todos los requerimientos exactos de la búsqueda, beneficios, planes de desarrollo definidos entre otros, contáctanos para concretarlo.": "Los presupuestos dependerán de todos los requerimientos exactos de la búsqueda, beneficios, planes de desarrollo definidos entre otros, contáctanos para concretarlo.",
+          
+        //Agendar llamada
+        "Agendar llamada": "Agendar llamada",
+        "Agenda una llamada con nuestro equipo!": "Agenda una llamada con nuestro equipo!",
+        "¡Gracias por contactarnos!": "¡Gracias por contactarnos!",
+        "Nos estaremos comunicando a la brevedad": "Nos estaremos comunicando a la brevedad",
+        
+        //Talentos
+        //MOdulo A
+        "Aplica a las mejores oportunidades":"Aplica a las mejores oportunidades",
+        "de manera remota.": "de manera remota.",
+        "Aplica a oportunidades":"Aplica a oportunidades",
+        "laborales de manera remota.": "laborales de manera remota.",
+        "Conéctate con los mejores":"Conéctate con los mejores",
+        "proyectos IT":"proyectos IT",
+        "Conéctate con los mejores proyectos IT":"Conéctate con los mejores proyectos IT",
+
+        //Modulo B
+        "Si ninguna de estas vacantes es para tí, no te preocupes, ¡vendrán muchas más!":"Si ninguna de estas vacantes es para tí, no te preocupes, ¡vendrán muchas más!",
+        "Súmate a nuestra base de datos":"Súmate a nuestra base de datos",
+        "Explora nuestras vacantes disponibles en el rubro IT. Encuentra tu próximo desafío profesional con LinkIT.":"Explora nuestras vacantes disponibles en el rubro IT. Encuentra tu próximo desafío profesional con LinkIT.",
+
+        //Modulo C
+        "Lo que dicen nuestros talentos":"Lo que dicen nuestros talentos",
+       
+        //Modulo D
+        "Crecimiento y desarrollo":"Crecimiento y desarrollo",
+        "Trabaja en los mejores proyectos de tecnología con las empresas más destacadas del mundo. Te acompañamos en tu desarrollo profesional asesorándote sobre las tecnologías de vanguardia, competitividad en el mercado y mejores oportunidades globales.":"Trabaja en los mejores proyectos de tecnología con las empresas más destacadas del mundo. Te acompañamos en tu desarrollo profesional asesorándote sobre las tecnologías de vanguardia, competitividad en el mercado y mejores oportunidades globales.",
+        "Trabajo remoto":"Trabajo remoto",
+        "Despídete de las largas horas de traslado y trabaja desde la comodidad de tu hogar. Democratizamos oportunidades a nivel global para que encuentres el equilibrio perfecto entre el trabajo y la vida personal.":"Despídete de las largas horas de traslado y trabaja desde la comodidad de tu hogar. Democratizamos oportunidades a nivel global para que encuentres el equilibrio perfecto entre el trabajo y la vida personal.",
+        "Facilidades de pago":"Facilidades de pago",
+        "Elige dónde y cómo recibir el dinero. Te asesoramos en las mejores formas para recibir el dinero, teniendo en cuenta las contrataciones y legislaciones laborales a nivel global.":"Elige dónde y cómo recibir el dinero. Te asesoramos en las mejores formas para recibir el dinero, teniendo en cuenta las contrataciones y legislaciones laborales a nivel global.",
+
+        //Modulo E
+        'Cómo aplicar':'Cómo aplicar',
+        "Consulta nuestras vacantes":"Consulta nuestras vacantes",
+                "Aplica completando el formulario":"Aplica completando el formulario",
+        
+        //ModuloTalentosE - Cómo aplicar
+        "Proceso de entrevistas": "Proceso de entrevistas",
+        "Consigue el trabajo de tus sueños": "Consigue el trabajo de tus sueños",
+        "Tenemos posiciones abiertas en múltiples áreas de crecimiento.": "Tenemos posiciones abiertas en múltiples áreas de crecimiento.",
+        "Selecciona tu posición ideal rellenando la solicitud en pocos clicks.": "Selecciona tu posición ideal rellenando la solicitud en pocos clicks.",
+        "Conoce en detalle la oportunidad y prepárate para los próximos pasos.": "Conoce en detalle la oportunidad y prepárate para los próximos pasos.",
+        "Comienza a trabajar de forma remota y lleva tu carrera al siguiente nivel.": "Comienza a trabajar de forma remota y lleva tu carrera al siguiente nivel.",
+
+        //Modulo D
+        "¡Suscríbete para recibir novedades!": "¡Suscríbete para recibir novedades!",
+        "Suscribirme": "Suscribirme",
+         
+
+        //Recursos
+        //Modulo A
+        "Impulsa tu carrera":"Impulsa tu carrera",
+        "en IT con los mejores":"en IT con los mejores",
+        "tips y recursos!":"tips y recursos!",
+        "4/5 on Truspilot":"4/5 on Truspilot",
+
+        //Modulo B Blogs
+        "¿Quieres saber que está pasando en el mundo IT?": "¿Quieres saber que está pasando en el mundo IT?",
+
+        //Modulo D Webinars
+        'Hablamos de trabajo remoto, oportunidades IT, tus primeros pasos en el empleo, cómo contratar talento internacional y mucho más!':'Hablamos de trabajo remoto, oportunidades IT, tus primeros pasos en el empleo, cómo contratar talento internacional y mucho más!',
+      
+
+       //CV
+       "Arma tu CV": "Arma tu CV",
+        "con nuestro": "con nuestro",
+       "template": "template",
+       "Descargar Plantilla": "Descargar Plantilla",
+
+       //FAQ
+       "Preguntas frecuentes": "Preguntas frecuentes",
+       "¿Qué es LinkIT?": "¿Qué es LinkIT?",
+       "¿Cómo funciona el proceso de contratación?": "¿Cómo funciona el proceso de contratación?",
+
+       //FAQ WEB
+       "+ ¿Qué es LinkIT?":"+ ¿Qué es LinkIT?",
+       'LinkIT es tu recruitment partner que, sin importar las distancias, conecta a las empresas con el mejor talento tech a lo largo del mundo.':'LinkIT es tu recruitment partner que, sin importar las distancias, conecta a las empresas con el mejor talento tech a lo largo del mundo.',
+       "+ ¿Por qué LinkIT?":"+ ¿Por qué LinkIT?",
+       "LinkIT no es una agencia de recursos humanos, es tu partner que te ayudará a escalar en tu negocio. Nuestros pilares son agilidad, calidad y excelencia.":"LinkIT no es una agencia de recursos humanos, es tu partner que te ayudará a escalar en tu negocio. Nuestros pilares son agilidad, calidad y excelencia.",
+       "+ ¿De qué parte del mundo encuentran talento?":"+ ¿De qué parte del mundo encuentran talento?",
+       "LinkIT no tiene barrera, busca talento en todo el globo sin importar la ubicación ni la nacionalidad, el foco está en el talento, la experiencia y el match con los objetivos marcados.":"LinkIT no tiene barrera, busca talento en todo el globo sin importar la ubicación ni la nacionalidad, el foco está en el talento, la experiencia y el match con los objetivos marcados.",
+       "+ ¿Piden pagos antes de concretar el servicio?":"+ ¿Piden pagos antes de concretar el servicio?",
+       'Una de las cosas que hace único a LinkIT es que se centra 100% en la confianza y la transparencia con sus partners, es por esto por lo que no hay ningún pago hasta que el talento comience a trabajar.':'Una de las cosas que hace único a LinkIT es que se centra 100% en la confianza y la transparencia con sus partners, es por esto por lo que no hay ningún pago hasta que el talento comience a trabajar.',
+       "+ ¿Cómo encontrar talento en un mercado tan competitivo como el de la tecnología?":"+ ¿Cómo encontrar talento en un mercado tan competitivo como el de la tecnología?",
+       'Gracias a nuestro gran equipo experto y multidisciplinario, junto con el dominio en herramientas de búsqueda y bolsas de datos internas,logramos cruzar las barreras del talento y de ubicación yendo a indagar sobre a candidatos en búsqueda activa así como también a aquellos que no lo estén.':'Gracias a nuestro gran equipo experto y multidisciplinario, junto con el dominio en herramientas de búsqueda y bolsas de datos internas,logramos cruzar las barreras del talento y de ubicación yendo a indagar sobre a candidatos en búsqueda activa así como también a aquellos que no lo estén.',
+       "+ ¿Qué tipo de roles son los más trabajados por LinkIT?":"+ ¿Qué tipo de roles son los más trabajados por LinkIT?",
+       'LinkIT llega en un 360º de perfiles técnicos, encontrando los mejores diseñadores de producto, front-end, back-end, full-stack y mucho más.':'LinkIT llega en un 360º de perfiles técnicos, encontrando los mejores diseñadores de producto, front-end, back-end, full-stack y mucho más.',
+       "+ ¿En cuánto tiempo presentan los primeros candidatos cualificados?":"+ ¿En cuánto tiempo presentan los primeros candidatos cualificados?",
+       'Tardamos solo 5 días en presentar los primeros candidatos, previamente seleccionados y entrevistados.':'Tardamos solo 5 días en presentar los primeros candidatos, previamente seleccionados y entrevistados.',
+       "+ ¿Sólo se dedican a reclutamiento Tech?":"+ ¿Sólo se dedican a reclutamiento Tech?",
+       "No, si bien nos especializamos en este área, tenemos una red de partners que están dispuestos a brindar el servicio para otras áreas otorgando los mismos beneficios que nosotros.":"No, si bien nos especializamos en este área, tenemos una red de partners que están dispuestos a brindar el servicio para otras áreas otorgando los mismos beneficios que nosotros.",
+       "+ ¿Qué modalidades de contratación se trabajan?":"+ ¿Qué modalidades de contratación se trabajan?",
+       "Gracias a los partners que tenemos con distintas empresas del mundo, podemos alinear los requisitos legales del país donde radique la empresa, así como donde esté el talento. Los tipos de relaciones laborales más frecuentes pueden ser:":"Gracias a los partners que tenemos con distintas empresas del mundo, podemos alinear los requisitos legales del país donde radique la empresa, así como donde esté el talento. Los tipos de relaciones laborales más frecuentes pueden ser:",
+       "Como trabajador autónomo modalidad freelance":"Como trabajador autónomo modalidad freelance",
+       "+ En caso de no avanzar con el proceso, ¿me tendrán en cuenta futuras oportunidades?":"+ En caso de no avanzar con el proceso, ¿me tendrán en cuenta futuras oportunidades?",
+       "Por supuesto! Aceptando los términos y condiciones entrarás en nuestra gran base de datos para poder asignarte el proyecto a tu medida, alineado con tus talentos y necesidades.":"Por supuesto! Aceptando los términos y condiciones entrarás en nuestra gran base de datos para poder asignarte el proyecto a tu medida, alineado con tus talentos y necesidades.",
+       'Mediante un contrato temporal':'Mediante un contrato temporal',
+       "En relación de dependencia":"En relación de dependencia",
+
+       //About Us
+       //Modulo A
+       'En LinkIT buscamos conectar al talento más destacado con los mejores proyectos de tecnología de manera global.':'En LinkIT buscamos conectar al talento más destacado con los mejores proyectos de tecnología de manera global.',
+       'Tenemos el compromiso de generar un mundo más inclusivo, democratizando oportunidades, y facilitando la adquisición y gestión de los equipos.':'Tenemos el compromiso de generar un mundo más inclusivo, democratizando oportunidades, y facilitando la adquisición y gestión de los equipos.',
+       "Nuestra Misión":"Nuestra Misión",
+       "Nuestra Visión":"Nuestra Visión",
+       "Nuestros Valores":"Nuestros Valores",
+       "Nuestra Historia":"Nuestra Historia",
+       "Nuestro Equipo":"Nuestro Equipo",
+       "Nuestros Clientes":"Nuestros Clientes",
+
+       //Modulo B
+       "En LinkIT aspiramos a ser líderes en la":"En LinkIT aspiramos a ser líderes en la",
+       "transformación digital":"transformación digital",
+       "convirtiéndonos en el puente entre el talento y empresas de manera global, creando, reteniendo y gestionando equipos de":"convirtiéndonos en el puente entre el talento y empresas de manera global, creando, reteniendo y gestionando equipos de",
+       "alto rendimiento.":"alto rendimiento.",
+
+       //Modulo C
+       "LinkIT tiene una":"LinkIT tiene una",
+       "dedicación":"dedicación",
+       "con el talento y la excelencia tecnológica. Nos esforzamos constantemente por ofrecer soluciones que":"con el talento y la excelencia tecnológica. Nos esforzamos constantemente por ofrecer soluciones que",
+       "marquen la diferencia.":"marquen la diferencia.",
+       "Nuestra búsqueda incesante de la innovación es impulsada por":"Nuestra búsqueda incesante de la innovación es impulsada por",
+       "nuestra pasión por el talento":"nuestra pasión por el talento",
+       "que reconocemos como el corazón de nuestra organización. Creemos en nutrir y potenciar a los mejores equipos de trabajo creando un ambiente cálido y ameno para así poder ayudar a desarrollar los mejores proyectos gracias a la":"que reconocemos como el corazón de nuestra organización. Creemos en nutrir y potenciar a los mejores equipos de trabajo creando un ambiente cálido y ameno para así poder ayudar a desarrollar los mejores proyectos gracias a la",
+       "precisión, calidad de datos y procesos efectuados.":"precisión, calidad de datos y procesos efectuados.",
+       "La confianza y la transparencia":"La confianza y la transparencia",
+       "son los pilares de nuestra relación con nuestros partners. Trabajamos incansablemente para construir y mantener sinergias a través de una":"son los pilares de nuestra relación con nuestros partners. Trabajamos incansablemente para construir y mantener sinergias a través de una",
+       "comunicación asertiva.":"comunicación asertiva.",
+       "Nuestro compromiso con las partes es inquebrantable; su éxito es nuestro éxito. Estamos aquí para superar sus expectativas y brindarles soluciones personalizadas que satisfagan sus necesidades específicas.":"Nuestro compromiso con las partes es inquebrantable; su éxito es nuestro éxito. Estamos aquí para superar sus expectativas y brindarles soluciones personalizadas que satisfagan sus necesidades específicas.",
+       "Fomentar la colaboración global":"Fomentar la colaboración global",
+       "es parte de nuestro ADN. Reconocemos la riqueza de perspectivas y talento que se encuentra en todo el mundo, y trabajamos en conjunto en un ambiente":"es parte de nuestro ADN. Reconocemos la riqueza de perspectivas y talento que se encuentra en todo el mundo, y trabajamos en conjunto en un ambiente",
+       "diverso e inclusivo.":"diverso e inclusivo.",
+       "Además, creemos en el":"Además, creemos en el",
+       "trabajo remoto,":"trabajo remoto,",
+       "lo que nos permite":"lo que nos permite",
+       "democratizar oportunidades,":"democratizar oportunidades,",
+       "y facilitando la conexión entre talentos y empresas de primer nivel de manera global.":"y facilitando la conexión entre talentos y empresas de primer nivel de manera global.",
+       "En nuestra búsqueda incansable por brindar una experiencia excepcional, aspiramos a dejar una huella imborrable en cada momento. Estamos comprometidos a":"En nuestra búsqueda incansable por brindar una experiencia excepcional, aspiramos a dejar una huella imborrable en cada momento. Estamos comprometidos a",
+       "superar las expectativas de nuestros partners y talentos":"superar las expectativas de nuestros partners y talentos",
+       "en cada paso del camino, ofreciendo constantemente un rendimiento que supera el 100%.":"en cada paso del camino, ofreciendo constantemente un rendimiento que supera el 100%.",
+
+       //Modulo D
+       "Todo nace luego de la pandemia, más precisamente allí por mediados del 2021, luego de reiteradas conversaciones de unos amigos hablando de encontrar":"Todo nace luego de la pandemia, más precisamente allí por mediados del 2021, luego de reiteradas conversaciones de unos amigos hablando de encontrar",
+       "el lugar ideal":"el lugar ideal",
+       "para trabajar, si el mismo existiera, cómo hacer para sentirse":"para trabajar, si el mismo existiera, cómo hacer para sentirse",
+       "pleno y realmente feliz":"pleno y realmente feliz",
+       "en el trabajo, no cómodo o contento... desde ese entonces nace LinkIT.":"en el trabajo, no cómodo o contento... desde ese entonces nace LinkIT.",
+       'Así comenzaron a co-crear el espacio donde uno aspiraría a trabajar, no sólo desde lo amplio de sus conocimientos y valores, sino que también desde su desconocimiento, desde la intriga,':'Así comenzaron a co-crear el espacio donde uno aspiraría a trabajar, no sólo desde lo amplio de sus conocimientos y valores, sino que también desde su desconocimiento, desde la intriga,',
+       'las ganas de innovar,':'las ganas de innovar,',
+       'la perseverancia y, gracias a sus expertises y de tantas charlas y consultas con profesionales, adquirieron con claridad cómo no debían hacerse las cosas, siempre uno piensa que debe saber cómo se hacen pero hay otro punto de vista que te lo da la experiencia, el saber cómo no se hacen o cómo no salen las cosas también es un gran camino al éxito; así nacemos, así ':'la perseverancia y, gracias a sus expertises y de tantas charlas y consultas con profesionales, adquirieron con claridad cómo no debían hacerse las cosas, siempre uno piensa que debe saber cómo se hacen pero hay otro punto de vista que te lo da la experiencia, el saber cómo no se hacen o cómo no salen las cosas también es un gran camino al éxito; así nacemos, así ',
+       'los errores no son negativos, todos se miran como oportunidades de mejorar y crecer.':'los errores no son negativos, todos se miran como oportunidades de mejorar y crecer.', 
+       'Esto los llevo a':'Esto los llevo a',
+       'diferenciarse,':'diferenciarse,',
+       'buscando que LinkIT sea un lugar donde se disfrute del trabajo, exista la transparencia y la posibilidad de desarrollarse, que aspire a siempre crecer y se apoye en su equipo para hacerlo, logrando grandes sinergias para poder crear un lugar donde':'buscando que LinkIT sea un lugar donde se disfrute del trabajo, exista la transparencia y la posibilidad de desarrollarse, que aspire a siempre crecer y se apoye en su equipo para hacerlo, logrando grandes sinergias para poder crear un lugar donde',
+       'empresas de todo el mundo puedan confiar y apoyarse para escalar.':'empresas de todo el mundo puedan confiar y apoyarse para escalar.',
+       '¿Y por qué tanto foco en el lugar dónde trabajar y estar contentos?':'¿Y por qué tanto foco en el lugar dónde trabajar y estar contentos?',
+       'Claro, muchas veces en la vorágine no nos damos cuenta pero, en promedio, desde los 18 a los 70 años trabajamos el 30% de nuestro tiempo!! En búsqueda de':'Claro, muchas veces en la vorágine no nos damos cuenta pero, en promedio, desde los 18 a los 70 años trabajamos el 30% de nuestro tiempo!! En búsqueda de',
+       'aspirar a crecer,':'aspirar a crecer,',
+       'desarrollarse y transmitir, estos amigos comenzaron a emprender.':'desarrollarse y transmitir, estos amigos comenzaron a emprender.',
+       'Tras notar que el mundo estaba en plena':'Tras notar que el mundo estaba en plena',
+       'transformación':'transformación',
+       'y que cada empresa, sin importar su industria, estaba empezando a darse cuenta de la necesidad de incorporar productos tecnológicos y talento':'y que cada empresa, sin importar su industria, estaba empezando a darse cuenta de la necesidad de incorporar productos tecnológicos y talento',
+       'para su funcionamiento efectivo,':'para su funcionamiento efectivo,',
+       'estos founders deciden encontrar la forma de hacer la diferencia mediante la':'estos founders deciden encontrar la forma de hacer la diferencia mediante la',
+       'asignación y gestión de los mejores talentos a nivel global,':'asignación y gestión de los mejores talentos a nivel global,',
+       'buscando democratizar las oportunidades de todo el mundo, tanto de empresas para escalar y mejorar sus proyectos, como de talentos que busquen su mundo ideal.':'buscando democratizar las oportunidades de todo el mundo, tanto de empresas para escalar y mejorar sus proyectos, como de talentos que busquen su mundo ideal.',
+       'Habiendo identificado inicialmente que la demanda de talento tecnológico estaría en auge, notaron que había un problema creciente, los procesos para la adquisición y gestión de talentos.':'Habiendo identificado inicialmente que la demanda de talento tecnológico estaría en auge, notaron que había un problema creciente, los procesos para la adquisición y gestión de talentos.',
+       'La gente no sabe exactamente cómo y dónde buscar':'La gente no sabe exactamente cómo y dónde buscar',
+       'talento real,':'talento real,',
+       'las plataformas de búsqueda de empleo habituales estaban saturadas con información, y a menudo, las oportunidades prometedoras no se terminan materializando para los talentos que buscan un lugar en el mundo tecnológico entre otras cosas.':'las plataformas de búsqueda de empleo habituales estaban saturadas con información, y a menudo, las oportunidades prometedoras no se terminan materializando para los talentos que buscan un lugar en el mundo tecnológico entre otras cosas.',
+       'Probando distintos procesos de empresas notaron que':'Probando distintos procesos de empresas notaron que',
+       'los tiempos eran demasiado largos,':'los tiempos eran demasiado largos,',
+       'la comunicación no era asertiva, el asesoramiento no era el pertinente, el talento presentado no era idóneo y, sobre todo, se quitaba mucho tiempo a los líderes para que participaran de dichos procesos cuando en realidad':'la comunicación no era asertiva, el asesoramiento no era el pertinente, el talento presentado no era idóneo y, sobre todo, se quitaba mucho tiempo a los líderes para que participaran de dichos procesos cuando en realidad',
+       'debían enfocarse en los temas más importantes y poder descansar en un tercero.':'debían enfocarse en los temas más importantes y poder descansar en un tercero.',
+       'Además de ello, pocas eran que brindaban un servicio extra de asesoramiento para la contratación con planes de retención y beneficios entre otras grandes cosas que lograban que los talentos encuentren su mundo.':'Además de ello, pocas eran que brindaban un servicio extra de asesoramiento para la contratación con planes de retención y beneficios entre otras grandes cosas que lograban que los talentos encuentren su mundo.',
+       'En este contexto de cambio y desafío':'En este contexto de cambio y desafío',
+       'nace LinkIT.':'nace LinkIT.',
+       'Un grupo de emprendedores apasionados por la tecnología se reunió con una visión clara:':'Un grupo de emprendedores apasionados por la tecnología se reunió con una visión clara:',
+       'resolver el problema':'resolver el problema',
+       'de la desconexión entre las empresas que necesitaban talento de calidad mientras encuentra las oportunidades ideales para democratizarlas al talento de todo el mundo, buscando':'de la desconexión entre las empresas que necesitaban talento de calidad mientras encuentra las oportunidades ideales para democratizarlas al talento de todo el mundo, buscando',
+       'cambiarles la calidad de vida y su cotidianeidad.':'cambiarles la calidad de vida y su cotidianeidad.',
+        "Además de ello, pocas eran las que brindaban un servicio extra de asesoramiento para la contratación con planes de retención y beneficios entre otras grandes cosas que lograban que los talentos encuentren su mundo.":"Además de ello, pocas eran las que brindaban un servicio extra de asesoramiento para la contratación con planes de retención y beneficios entre otras grandes cosas que lograban que los talentos encuentren su mundo.",
+        "estos founders deciden encontrar la forma de hacer la diferencia mediante la <strong>asignación y gestión de los mejores talentos a nivel global,</strong> buscando democratizar las oportunidades de todo el mundo, tanto de empresas para escalar y mejorar sus proyectos, como de talentos que busquen su mundo ideal.":"estos founders deciden encontrar la forma de hacer la diferencia mediante la asignación y gestión de los mejores talentos a nivel global, buscando democratizar las oportunidades de todo el mundo, tanto de empresas para escalar y mejorar sus proyectos, como de talentos que busquen su mundo ideal.",
+        "Así nace, en búsqueda de una":"Así nace, en búsqueda de una",
+        "solución,":"solución,",
+        "conectar estas dos partes y lograr su misión, servir como puente entre el talento tecnológico y las empresas en busca de esas personas":"conectar estas dos partes y lograr su misión, servir como puente entre el talento tecnológico y las empresas en busca de esas personas",
+        "la experiencia durante el proceso de contratación":"la experiencia durante el proceso de contratación",
+        "logrando equipos de alto desempeño.":"logrando equipos de alto desempeño.",
+        "Con su":"Con su",
+        "compromiso y pasión por el talento,":"compromiso y pasión por el talento,",
+        "la excelencia tecnológica, la transparencia y la confianza, el compromiso con el cliente, la colaboración global y la promoción del trabajo remoto,":"la excelencia tecnológica, la transparencia y la confianza, el compromiso con el cliente, la colaboración global y la promoción del trabajo remoto,",
+        "LinkIT busca convertirse en un líder en la industria.":"LinkIT busca convertirse en un líder en la industria.",
+        "Ayudando a empresas de todos los tamaños a encontrar el talento adecuado y permitiendo que los profesionales avanzaran en sus carreras.":"Ayudando a empresas de todos los tamaños a encontrar el talento adecuado y permitiendo que los profesionales avanzaran en sus carreras.",
+        "Leer Más":"Leer Más",
+        "Leer menos": "Leer menos",
+
+        //Modulo F
+        "LinkIT nace para encontrar una solución clara, conectar al talento mas destacado con los mejores proyectos IT. Actuamos como enlace para simplificar la experiencia en el proceso de contratación, con el objetivo de formar equipos de alto rendimiento.":"LinkIT nace para encontrar una solución clara, conectar al talento mas destacado con los mejores proyectos IT. Actuamos como enlace para simplificar la experiencia en el proceso de contratación, con el objetivo de formar equipos de alto rendimiento.",
+
+        //Modulo G
+        'Conoce a alguno de los integrantes de nuestro equipo':'Conoce a alguno de los integrantes de nuestro equipo',
+        "Valores":"Valores",
+        "Historia":"Historia",
+
+        //General
+        "Mis datos":"Mis datos",
+        "Mis postulaciones":"Mis Postulaciones",
+        "Perfil de LinkedIn":"Perfil de LinkedIn",
+        "Nivel de inglés":"Nivel de inglés",
+        "País":"País",
+        "Subir tu CV":"Subir tu CV",
+        "Guardar":"Guardar",
+        "Descartar":"Descartar",
+        "Carga tu CV":"Carga tu CV",
+        "Stack tecnológico":"Stack tecnológico",
+        "Cambiar contraseña":"Cambiar contraseña",
+        "Imagen de perfil":"Imagen de perfil",
+        "Hola":"Hola",
+        "Bajo":"Bajo",
+        "Medio":"Medio",
+        "Alto":"Alto",
+        "Bilingue":"Bilingue",
+
+
+        //Jobs Cards
+        "Descripción":"Descripción",
+        "Acerca de nosotros":"Acerca de nosotros",
+        "Acerca de nuestro cliente":"Acerca de nuestro cliente",
+        "Responsabilidades":"Responsabilidades",
+        "Requerimientos":"Requerimientos",
+        "Deseable":"Deseable",
+        "Beneficios":"Beneficios",
+        "Aplicar a esta vacante":"Aplicar a esta vacante",
+        "Para aplicar por favor completa":"Para aplicar por favor completa",
+        "el siguiente formulario":"el siguiente formulario",
+        "Información Personal":"Información Personal",
+        "Información Profesional":"Información Profesional",
+        "Siguiente":"Siguiente",
+        "Anterior":"Anterior",
+        "Expectativa Salarial mensual en USD":"Expectativa salarial",
+        "Selecciona Tus Tecnologías":"Selecciona tus Tecnologías",
+        "Selecciona Stack Técnico":"Selecciona Stack Técnico",
+        "¿Estás haciendo el proceso con algún reclutador/a?":"¿Estás haciendo el proceso con algún reclutador/a?",
+        "Periodo de aviso":"Periodo de aviso",
+        "¿Por qué estás buscando una nueva oportunidad laboral?":"¿Por qué estás buscando una nueva oportunidad laboral?",
+        "Enviar":"Enviar",
+        "Enviando tu postulación":"Enviando tu postulación",
+        "Enviando los cambios":"Enviando los cambios",
+        "Enviando...":"Enviando...",
+        "Preguntas Frecuentes":"Preguntas Frecuentes",
+
+
+      } },
     en: {
       translation: {
         //!Home module A
@@ -19,11 +448,14 @@ export const i18nOptions: InitOptions = {
         "Contrata y gestiona al mejor talento de manera global": "Hire and manage the best talent globally",
         "Vacantes disponibles": "Available vacancies",
         "Leer reseñas": "Read reviews",
-        "Impulsa tu carrera":"Boost your career",
-        "en IT con los mejores":"in IT with the best",
-        "tips y recursos!":"tips and resources!",
+        "Impulsa tu carrera en IT con los":"Boost your career in IT with the",
+        "cmejores tips y recursos!":"best tips and resources!",
         "Blogs, ebooks y webinars para crecer como profesional en el mundo tech." : "Blogs, ebooks, and webinars to grow as a professional in the tech world.",
         "Suscríbete al newsletter" : "Subscribe to the newsletter.",
+        //!Home module A mobile
+        "Conectando los": "Connecting the",
+        "mejores talentos": "best talents",
+        "y proyectos": "and projects",
         //Home module B
         "Reclutamiento y selección": "Recruitment and selection",
         "Identificamos a profesionales con el stack, habilidades y experiencia adecuada para tus proyectos y así lograr construir un equipo de alto desempeño.": "We identify professionals with the appropriate stack, skills and experience for your projects and thus build a high-performance team.",
@@ -36,7 +468,7 @@ export const i18nOptions: InitOptions = {
         "En 5 días hábiles presentaremos talentos previamente entrevistados y calificados.": "In 5 business days we will present previously interviewed and qualified talent.",
         "Comunicación asertiva": "Assertive communication",
         "Nos comprometemos a mantener una comunicación ágil y efectiva durante todo el proceso de selección.": "We are committed to maintaining agile and effective communication throughout the selection process.",
-        "Consultoría": "Consultancy",
+        "Consultoría 360°": "360° Consultancy",
         "Te asesoramos desde el perfil ideal, los presupuestos idóneos y procesos de contratación hasta planes de beneficios, retención y mucho más.": "We advise you from the ideal profile, the ideal budgets and hiring processes to benefit plans, retention and much more.",
         //Home module F
         "Talento y empresas en más de 50 países": "Talent and companies in more than 50 countries",
@@ -57,6 +489,9 @@ export const i18nOptions: InitOptions = {
         "talento IT en tan solo 5 días!": "IT talent in just 5 days!",
         "Escala, gestiona y fideliza al": "Scale, manage and retain the",
         "mejor talento del mundo.": "best talent in the world.",
+
+        //!Company Formulary
+        "Completa el formulario y nuestro equipo se pondrá en contacto contigo para ayudarte a encontrar el talento que necesitas.": "Complete the form and our team will get in touch with you to help you find the talent you need.",
         //Company module B
         "Nuestros servicios": "Our services",
         "Reclutamiento": "Recruitment",
@@ -66,7 +501,7 @@ export const i18nOptions: InitOptions = {
         "Agranda tu equipo y reduce tu costo de contratación con talento externo, aumentando la capacidad productiva, sin compromisos a largo plazo. Dedícate a lo que es realmente importante; elimina los tiempos administrativos y operativos de la gestión contractual y de pagos.": "Expand your team and reduce your hiring costs with external talent, increasing productive capacity, without long-term commitments. Dedicate yourself to what is really important; eliminates administrative and operational times for contractual and payment management.",
         "Gestión": "Management",
         "y beneficios": "and benefits",
-        "Implementamos planes de beneficios y estrategias de retención para lograr equipos de alto desempeño, realizando informes y asesoramiento personalizado ayudando a tu empresa a retener talento global de manera escalable.": "We implement benefit plans and retention strategies to achieve high-performance teams, providing personalized reports and advice, helping your company retain global talent in a scalable way.",
+        "Implementamos planes de beneficios y estrategias de fidelización para lograr equipos de alto desempeño, realizando informes y asesoramiento personalizado ayudando a tu empresa a fidelizar talento global de manera escalable.": "We implement benefit plans and retention strategies to achieve high-performance teams, providing personalized reports and advice, helping your company retain global talent in a scalable way.",
         //Company module C
         "Más de 500 empresas confían en LinkIT": "More than 500 companies trust LinkIT",
         //Company module D
@@ -181,7 +616,7 @@ export const i18nOptions: InitOptions = {
         "INGRESO PARA TALENTOS": "TALENT LOGIN",
         "Espera un momento": "Wait a moment",
         "Estamos autenticando tu cuenta": "We are authenticating your account",
-        "Bienvenido de vuelta ": "Welcome back ",
+        "Bienvenido/a de vuelta ": "Welcome back ",
         "Se ha creado una nueva cuenta para ti": "A new account has been created for you.",
         "Validando credenciales": "Checking credentials",
         "Usuario autenticado pero registro no encontrado, por favor inicia sesión desde la sección correspondiente. Si el error persiste contactános":
@@ -301,6 +736,9 @@ export const i18nOptions: InitOptions = {
         "casos de éxito": "success stories",
         "entrevista": "interview",
         "guía": "guide",
+        "Impulsa tu carrera": "Boost your career",
+        "en IT con los mejores":"in IT with the best",
+        "tips y recursos!":"tips and resources!",
         //!Suscribirse
         "¡Suscríbete para recibir novedades!": "Subscribe to receive news!",
         "Suscribirme": "Subscribe me",
@@ -325,7 +763,11 @@ export const i18nOptions: InitOptions = {
 
 
         //!Talentos modulo A
+        "Conéctate con los mejores": "Connect with the best",
+        "proyectos IT": "IT projects",
         "Conéctate con los mejores proyectos IT": "Connect with the best IT projects",
+        "Aplica a oportunidades": "Apply for remote",
+        "laborales de manera remota.": "job opportunities",
         "Aplica a las mejores oportunidades": "Apply to the best opportunities",
         "de manera remota.": "remotely",
         //!Talentos modulo C
@@ -410,8 +852,11 @@ export const i18nOptions: InitOptions = {
         "Recurso eliminado": "Resource deleted.",
         "Nuevo Admin": "New Admin",
         "Datos Nuevo Admin" : "New Admin Data",
-         "Datos Nueva Empresa": "New Company Data",
-         "Empresa creada con éxito": "Company created successfully",
+        "Datos Nueva Empresa": "New Company Data",
+        "Empresa creada con éxito": "Company created successfully",
+        "¡Postulación enviada!":"Application sent!",
+        "Tu postulación ha sido enviada exitosamente":"Your application has been submitted successfully.",
+        "Seguir viendo vacantes":"Keep watching vacancies",
 
         //!Quienes Somos modulo A
         "En LinkIT buscamos conectar al talento más destacado con los mejores proyectos de tecnología de manera global.": "At LinkIT we seek to connect the most outstanding talent with the best technology projects globally.",
@@ -579,7 +1024,7 @@ export const i18nOptions: InitOptions = {
         "Descartar": "Discard",
         "Imagen actualizada": "Updated image",
         "Hubo un error al actualizar la imagen": "There was an error updating the image",
-        "Mis Postulaciones": "My Applications",
+        "Mis postulaciones": "My Applications",
         "Perfil de LinkedIn": "LinkedIn Profile",
         "Stack tecnológico": "Technology Stack",
         "Imagen de perfil": "Profile picture",
@@ -618,6 +1063,11 @@ export const i18nOptions: InitOptions = {
         "Error al cargar los recursos": "Error loading resources",
         "Error al enviar la solicitud: ": "Error sending request:",
         "Título requerido": "Title required",
+
+        //!NavBar translations
+        "Sesión cerrada": "Session closed",
+       
+
         //!Panel Admin Vacantes
         "¿Deseas ocultar la vacante?": "Do you want to hide the vacancy?",
         "¿Deseas eliminar la vacante?": "Do you want to delete the vacancy?",
@@ -785,8 +1235,11 @@ export const i18nOptions: InitOptions = {
         //!Verify alerts
         "¡Estás listo/a para empezar!": "You're ready to get started!",
         //!JD form
-        "¿Estás haciendo el proceso con algún reclutador/a?":"Are you doing the process with a recruiter?"
+        "¿Estás haciendo el proceso con algún reclutador/a?":"Are you doing the process with a recruiter?",
 
+        //CALL TO ACTION BUTTONS
+        "Busco Trabajo":"Find Job",
+        "Calculadora de Salario": "Salary Calculator"
 
 
 
@@ -798,6 +1251,7 @@ export const i18nOptions: InitOptions = {
 
 i18n
   .use(initReactI18next)
+  .use(LanguageDetector)
   .init(i18nOptions);
 
 export default i18n;

@@ -22,6 +22,11 @@ export type JobCardProps = {
   company?: string
   salary?: string
   currency?: string
+  en?: {
+    title: string
+    stack: string[]
+    location: string
+  }
 }
 
 export const JobCard: FunctionComponent<JobCardProps> = ({
@@ -36,6 +41,7 @@ export const JobCard: FunctionComponent<JobCardProps> = ({
   description,
   company = "LinkIT",
   createdDate,
+  en,
 }) => {
   const navigate = useNavigate()
   const { i18n, t } = useTranslation()
@@ -146,7 +152,7 @@ export const JobCard: FunctionComponent<JobCardProps> = ({
         <div className="relative w-full h-full flex flex-col" id={`big-container-${index}`}>
           <div className="h-[100px]">
             <motion.div variants={titleVariants}>
-              <HasH3TwoLines text={title} />
+              <HasH3TwoLines text={isSpanish ? title : en?.title || title} />
             </motion.div>
             <div className="flex items-center mt-2 space-x-2">
               <svg
@@ -161,7 +167,7 @@ export const JobCard: FunctionComponent<JobCardProps> = ({
                   clipRule="evenodd"
                 ></path>
               </svg>
-              <span className="text-white text-sm font-medium">{location}</span>
+              <span className="text-white text-sm font-medium">{isSpanish ? location : en?.location || location}</span>
               <span className="text-gray-400">•</span>
               <p className="text-white text-sm font-medium">
                   {type.charAt(0).toUpperCase() + type.slice(1)}
@@ -180,7 +186,7 @@ export const JobCard: FunctionComponent<JobCardProps> = ({
               <div className="flex flex-col h-full">
                 <div className="flex flex-wrap gap-2 mb-3">
                   <RenderizarElementos
-                    stack={stack}
+                    stack={isSpanish ? stack : en?.stack || stack}
                     index={index}
                     bigContainer={bigContainer}
                     current={current}

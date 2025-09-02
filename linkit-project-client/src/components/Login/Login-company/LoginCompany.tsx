@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 import validations from "../loginValidations.ts";
 import { useDispatch } from "react-redux";
 import axios, { AxiosError } from "axios";
-import { GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
+import { GoogleAuthProvider, signInWithPopup, signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "../../../helpers/authentication/firebase.ts";
 import saveUserThirdAuth from "../../../helpers/authentication/thirdPartyUserSave.ts";
 import { Link } from "react-router-dom";
@@ -93,60 +93,63 @@ function LoginCompany() {
   try {
     const userCredential = await signInWithEmailAndPassword(auth, user.email, user.password);
     const token = await userCredential.user.getIdToken();
- if (!userCredential.user.emailVerified) {
-       isLoading(false);
-       Swal.fire({
-         title: t("Email no verificado"),
-         html: `
-       <div style="display: flex; flex-direction: column; align-items: center;">
-         <p>${t(
-           "Por favor verifica tu correo electrónico antes de continuar."
-         )}</p>
-         <button id="resend-verification-btn" style="margin: 10px 0; background: #01A28B; color: white; border: none; border-radius: 5px; padding: 8px 16px; cursor: pointer;">
-           ${t("Reenviar email de verificación")}
-         </button>
-         <span style="font-size: 0.9em; color: #173951; margin-top: 8px;">
-           ${t(
-             "Si tu cuenta fue creada antes de junio 2025, por favor volve verificar tu correo debido a nuevas actualizaciones. Muchas gracias"
-           )}
-         </span>
-       </div>
-     `,
-         icon: "warning",
-         background: "#ECEEF0",
-         showConfirmButton: false,
-         didOpen: () => {
-           const btn = document.getElementById("resend-verification-btn");
-           if (btn) {
-             btn.onclick = async () => {
-               try {
-                 await sendEmailVerification(auth.currentUser!);
-                 Swal.fire({
-                   title: t("Correo reenviado"),
-                   text: t(
-                     "Se ha reenviado el correo de verificación. Revisa tu bandeja de entrada o spam."
-                   ),
-                   icon: "info",
-                   background: "#ECEEF0",
-                   confirmButtonColor: "#01A28B",
-                   confirmButtonText: t("Continuar"),
-                 });
-               } catch (error: any) {
-                 Swal.fire({
-                   title: t("Error"),
-                   text: error.message,
-                   icon: "error",
-                   background: "#ECEEF0",
-                   confirmButtonColor: "#01A28B",
-                   confirmButtonText: t("Continuar"),
-                 });
-               }
-             };
-           }
-         },
-       });
-       return;
-     }
+    
+    // TEMPORAL: Comentado para deshabilitar verificación de email
+    // if (!userCredential.user.emailVerified) {
+    //   isLoading(false);
+    //   Swal.fire({
+    //     title: t("Email no verificado"),
+    //     html: `
+    //   <div style="display: flex; flex-direction: column; align-items: center;">
+    //     <p>${t(
+    //       "Por favor verifica tu correo electrónico antes de continuar."
+    //     )}</p>
+    //     <button id="resend-verification-btn" style="margin: 10px 0; background: #01A28B; color: white; border: none; border-radius: 5px; padding: 8px 16px; cursor: pointer;">
+    //       ${t("Reenviar email de verificación")}
+    //     </button>
+    //     <span style="font-size: 0.9em; color: #173951; margin-top: 8px;">
+    //       ${t(
+    //         "Si tu cuenta fue creada antes de junio 2025, por favor volve verificar tu correo debido a nuevas actualizaciones. Muchas gracias"
+    //       )}
+    //     </span>
+    //   </div>
+    // `,
+    //     icon: "warning",
+    //     background: "#ECEEF0",
+    //     showConfirmButton: false,
+    //     didOpen: () => {
+    //       const btn = document.getElementById("resend-verification-btn");
+    //       if (btn) {
+    //         btn.onclick = async () => {
+    //           try {
+    //             await sendEmailVerification(auth.currentUser!);
+    //             Swal.fire({
+    //               title: t("Correo reenviado"),
+    //               text: t(
+    //                 "Se ha reenviado el correo de verificación. Revisa tu bandeja de entrada o spam."
+    //               ),
+    //               icon: "info",
+    //               background: "#ECEEF0",
+    //               confirmButtonColor: "#01A28B",
+    //               confirmButtonText: t("Continuar"),
+    //             });
+    //           } catch (error: any) {
+    //             Swal.fire({
+    //               title: t("Error"),
+    //               text: error.message,
+    //               icon: "error",
+    //               background: "#ECEEF0",
+    //               confirmButtonColor: "#01A28B",
+    //               confirmButtonText: t("Continuar"),
+    //             });
+    //           }
+    //         };
+    //       }
+    //     },
+    //   });
+    //   return;
+    // }
+    
     const response = await axios.post<ICompany>(
       "https://linkit-server.onrender.com/auth/login",
       { role: "company" },
@@ -228,12 +231,13 @@ function LoginCompany() {
             }
           );
           if (getCompanyResponse.data.length) {
-            if (!getCompanyResponse.data[0].active)
-              throw Error(
-                t(
-                  "Email no verificado, por favor revisa tu bandeja de entrada o spam"
-                )
-              );
+            // TEMPORAL: Comentado para deshabilitar verificación de email
+            // if (!getCompanyResponse.data[0].active)
+            //   throw Error(
+            //     t(
+            //       "Email no verificado, por favor revisa tu bandeja de entrada o spam"
+            //     )
+            //   );
             const authUser = getCompanyResponse.data[0];
             dispatch(loginSuccess(authUser));
             Swal.fire({

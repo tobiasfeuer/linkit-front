@@ -23,7 +23,7 @@ function BlogsCards() {
         const response = await axios.get<PostEntity[]>("https://linkit-server.onrender.com/posts/find?type=blog", {
           headers: {
             "Authorization": `Bearer ${SUPERADMN_ID}`,
-            'Accept-Language': sessionStorage.getItem('lang')
+            'Accept-Language': "es"
           }
         });
         response.data.sort((a, b) => new Date(b.createdDate).getTime() - new Date(a.createdDate).getTime());

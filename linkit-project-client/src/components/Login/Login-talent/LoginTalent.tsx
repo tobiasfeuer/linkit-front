@@ -13,7 +13,7 @@ import {
   signInWithPopup,
   GithubAuthProvider,
   signInWithEmailAndPassword,
-  sendEmailVerification,
+  
 } from "firebase/auth";
 import { auth } from "../../../helpers/authentication/firebase.ts";
 import saveUserThirdAuth from "../../../helpers/authentication/thirdPartyUserSave.ts";
@@ -131,60 +131,63 @@ function LoginTalent() {
       user.password
     );
     const token = await userCredential.user.getIdToken();
-    if (!userCredential.user.emailVerified) {
-      isLoading(false);
-      Swal.fire({
-        title: t("Email no verificado"),
-        html: `
-      <div style="display: flex; flex-direction: column; align-items: center;">
-        <p>${t(
-          "Por favor verifica tu correo electrónico antes de continuar."
-        )}</p>
-        <button id="resend-verification-btn" style="margin: 10px 0; background: #01A28B; color: white; border: none; border-radius: 5px; padding: 8px 16px; cursor: pointer;">
-          ${t("Reenviar email de verificación")}
-        </button>
-        <span style="font-size: 0.9em; color: #173951; margin-top: 8px;">
-          ${t(
-            "Si tu cuenta fue creada antes de junio 2025, por favor volvé verificar tu correo debido a nuevas actualizaciones. Muchas gracias."
-          )}
-        </span>
-      </div>
-    `,
-        icon: "warning",
-        background: "#ECEEF0",
-        showConfirmButton: false,
-        didOpen: () => {
-          const btn = document.getElementById("resend-verification-btn");
-          if (btn) {
-            btn.onclick = async () => {
-              try {
-                await sendEmailVerification(auth.currentUser!);
-                Swal.fire({
-                  title: t("Correo reenviado"),
-                  text: t(
-                    "Se ha reenviado el correo de verificación. Revisa tu bandeja de entrada o spam."
-                  ),
-                  icon: "info",
-                  background: "#ECEEF0",
-                  confirmButtonColor: "#01A28B",
-                  confirmButtonText: t("Continuar"),
-                });
-              } catch (error: any) {
-                Swal.fire({
-                  title: t("Error"),
-                  text: error.message,
-                  icon: "error",
-                  background: "#ECEEF0",
-                  confirmButtonColor: "#01A28B",
-                  confirmButtonText: t("Continuar"),
-                });
-              }
-            };
-          }
-        },
-      });
-      return;
-    }
+    
+    // TEMPORAL: Comentado para deshabilitar verificación de email
+    // if (!userCredential.user.emailVerified) {
+    //   isLoading(false);
+    //   Swal.fire({
+    //     title: t("Email no verificado"),
+    //     html: `
+    //   <div style="display: flex; flex-direction: column; align-items: center;">
+    //     <p>${t(
+    //       "Por favor verifica tu correo electrónico antes de continuar."
+    //     )}</p>
+    //     <button id="resend-verification-btn" style="margin: 10px 0; background: #01A28B; color: white; border: none; border-radius: 5px; padding: 8px 16px; cursor: pointer;">
+    //       ${t("Reenviar email de verificación")}
+    //     </button>
+    //     <span style="font-size: 0.9em; color: #173951; margin-top: 8px;">
+    //       ${t(
+    //         "Si tu cuenta fue creada antes de junio 2025, por favor volvé verificar tu correo debido a nuevas actualizaciones. Muchas gracias."
+    //       )}
+    //     </span>
+    //   </div>
+    // `,
+    //     icon: "warning",
+    //     background: "#ECEEF0",
+    //     showConfirmButton: false,
+    //     didOpen: () => {
+    //       const btn = document.getElementById("resend-verification-btn");
+    //       if (btn) {
+    //         btn.onclick = async () => {
+    //           try {
+    //             await sendEmailVerification(auth.currentUser!);
+    //             Swal.fire({
+    //               title: t("Correo reenviado"),
+    //               text: t(
+    //                 "Se ha reenviado el correo de verificación. Revisa tu bandeja de entrada o spam."
+    //               ),
+    //               icon: "info",
+    //               background: "#ECEEF0",
+    //               confirmButtonColor: "#01A28B",
+    //               confirmButtonText: t("Continuar"),
+    //             });
+    //           } catch (error: any) {
+    //             Swal.fire({
+    //               title: t("Error"),
+    //               text: error.message,
+    //               icon: "error",
+    //               background: "#ECEEF0",
+    //               confirmButtonColor: "#01A28B",
+    //               confirmButtonText: t("Continuar"),
+    //             });
+    //           }
+    //         };
+    //       }
+    //     },
+    //   });
+    //   return;
+    // }
+    
     const response = await axios.post<IUser>(
       "https://linkit-server.onrender.com/auth/login",
       { role: "user" },
@@ -299,12 +302,13 @@ function LoginTalent() {
             }
           );
           if (usersData.data.length) {
-            if (!usersData.data[0].active)
-              throw new Error(
-                t(
-                  "Email no verificado, por favor revisa tu bandeja de entrada o spam"
-                )
-              );
+            // TEMPORAL: Comentado para deshabilitar verificación de email
+            // if (!usersData.data[0].active)
+            //   throw new Error(
+            //     t(
+            //       "Email no verificado, por favor revisa tu bandeja de entrada o spam"
+            //     )
+            //   );
             const authUser = usersData.data[0];
             dispatch(loginSuccess(authUser));
             Swal.fire({
@@ -328,12 +332,13 @@ function LoginTalent() {
               }
             );
             if (adminData.data.length) {
-              if (!adminData.data[0].active)
-                throw new Error(
-                  t(
-                    "Email no verificado, por favor revisa tu bandeja de entrada o spam"
-                  )
-                );
+              // TEMPORAL: Comentado para deshabilitar verificación de email
+              // if (!adminData.data[0].active)
+              //   throw new Error(
+              //     t(
+              //       "Email no verificado, por favor revisa tu bandeja de entrada o spam"
+              //     )
+              //   );
               const authAdmin = adminData.data[0];
               dispatch(loginSuccess(authAdmin));
               Swal.fire({

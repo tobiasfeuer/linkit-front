@@ -34,7 +34,7 @@ export default function UserDashboard({ role }: dashBoardProps) {
   return (
     <div className="flex flex-col pt-5 md:w-full">
       <h1 className="pl-[50px] md:pl-[100px] pb-10 font-semibold text-6xl">
-        Hola{" "}
+        {t("Hola")}{" "}
         {role === "user"
           ? (loggedUser as IUser).firstName
           : (loggedUser as ICompany).companyName}
