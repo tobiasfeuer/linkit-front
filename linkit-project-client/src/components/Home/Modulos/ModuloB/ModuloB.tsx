@@ -6,9 +6,6 @@ import OurServicesCarousel from "../../../../Utils/OurServicesCarousel/OurServic
 export default function ModuloB() {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { i18n } = useTranslation();
-
-console.log(i18n.language)
 
 
   const goSoyEmpresa = () => {
