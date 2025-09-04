@@ -3,6 +3,7 @@ import { JobCardProps } from '../Talentos/ModulosTalentos/ModuloTalentosG/JobCar
 import { URL } from './reviews.service';
 //import { SUPERADMN_ID } from '../../env';
 const SUPERADMN_ID = import.meta.env.VITE_SUPERADMN_ID
+console.log(SUPERADMN_ID)
 
 export const getJobOffers = async (): Promise<JobCardProps[]> => {
 	const response = await axios.get<JobCardProps[]>(`${URL}/jds/find`, {
