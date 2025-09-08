@@ -166,6 +166,7 @@ const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
       {
         ...user,
         firebaseId: firebaseUserCredential.user.uid,
+        active: true,
       },
       {
         headers: {

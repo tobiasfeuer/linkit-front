@@ -13,7 +13,8 @@ export default async function saveUserThirdAuth(user: any, role: string, provide
     lastName: user.displayName.split(' ')[1] ?? '',
     email: user.email,
     image: user.photoURL,
-    provider: provider
+    provider: provider,
+    active: true
   };
   let result;
   try {
