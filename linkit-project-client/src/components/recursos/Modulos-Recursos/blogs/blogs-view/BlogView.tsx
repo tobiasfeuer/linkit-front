@@ -16,7 +16,7 @@ export default function BlogView() {
 
       try {
         const response = await axios.get(
-          `https://linkit-server.onrender.com/posts/find?id=${id}`
+          `${import.meta.env.VITE_ENDPOINT_URL}/posts/find?id=${id}`
         );
         setBlogData(response.data);
       } catch (error) {

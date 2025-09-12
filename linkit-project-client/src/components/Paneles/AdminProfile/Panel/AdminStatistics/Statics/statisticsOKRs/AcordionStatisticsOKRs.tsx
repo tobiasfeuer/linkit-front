@@ -19,7 +19,7 @@ function AccordionOKRs(){
             const loadData = async (): Promise<any> => {
                 try {
                     const response = await axios(
-                        "https://linkit-server.onrender.com/OKRs/find",
+                        `${import.meta.env.VITE_ENDPOINT_URL}/OKRs/find`,
                         {
                             headers: {
                                 Authorization: `Bearer ${token}`,
@@ -45,7 +45,7 @@ function AccordionOKRs(){
             const deleteData = async (): Promise<any> => {
                 try {
                     const response = await axios.delete(
-                        `https://linkit-server.onrender.com/OKRs/delete/${_id}`,
+                        `${import.meta.env.VITE_ENDPOINT_URL}/OKRs/delete/${_id}`,
                         {
                             headers: {
                                 Authorization: `Bearer ${token}`,

@@ -138,7 +138,7 @@ const devLog = (..._args: any[]) => {};
         return null
       }
 
-      const response = await axios.post("https://linkit-server.onrender.com/posts/create", resource, {
+      const response = await axios.post(`${import.meta.env.VITE_ENDPOINT_URL}/posts/create`, resource, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Accept-Language": sessionStorage.getItem("lang") || "es",

@@ -34,7 +34,7 @@ export default function Reviews() {
     const loadData = async () => {
       try {
         const response = await axios(
-          "https://linkit-server.onrender.com/reviews/find",
+          `${import.meta.env.VITE_ENDPOINT_URL}/reviews/find`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -115,7 +115,7 @@ export default function Reviews() {
   const handleSave = async (arrayProps: string[]) => {
     try {
       arrayProps.forEach(async (id: string) => {
-        const endPoint = `https://linkit-server.onrender.com/reviews/update/${id}`;
+        const endPoint = `${import.meta.env.VITE_ENDPOINT_URL}/reviews/update/${id}`;
         await axios.put(endPoint, editedData, {
           headers: {
             Authorization: `Bearer ${token}`,

@@ -26,7 +26,7 @@ function MyApps({ loader }: componentProps) {
       const postulArray: any[] = [];
       for (const postul of user.postulations) {
         const response = await axios.get(
-          `https://linkit-server.onrender.com/resources/companyjds?code=${postul}`,
+          `${import.meta.env.VITE_ENDPOINT_URL}/resources/companyjds?code=${postul}`,
           {
             headers: {
               Authorization: `Bearer ${SUPERADMN_ID}`,

@@ -26,7 +26,7 @@ export default function Admins() {
     const loadData = async (): Promise<void> => {
       try {
         const response = await axios(
-          "https://linkit-server.onrender.com/admins/find",
+          `${import.meta.env.VITE_ENDPOINT_URL}/admins/find`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -112,7 +112,7 @@ export default function Admins() {
   const handleSave = async (arrayProps: string[]) => {
     try {
       arrayProps.forEach(async (id: string) => {
-        const endPoint = `https://linkit-server.onrender.com/admins/update/${id}`;
+        const endPoint = `${import.meta.env.VITE_ENDPOINT_URL}/admins/update/${id}`;
         await axios.put(endPoint, editedData, {
           headers: {
             Authorization: `Bearer ${token}`,

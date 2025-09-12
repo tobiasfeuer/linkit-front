@@ -26,7 +26,7 @@ export default function Resources() {
   const loadData = async (): Promise<void> => {
     try {
       const response = await axios(
-        "https://linkit-server.onrender.com/posts/find",
+          `${import.meta.env.VITE_ENDPOINT_URL}/posts/find`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -122,7 +122,7 @@ export default function Resources() {
     try {
       const propsArray = Array.isArray(arrayProps) ? arrayProps : [arrayProps];
       propsArray.forEach(async (id: string) => {
-        const endPoint = `https://linkit-server.onrender.com/posts/update/${id}`;
+        const endPoint = `${import.meta.env.VITE_ENDPOINT_URL}/posts/update/${id}`;
         await axios.put(endPoint, editedData, {
           headers: {
             Authorization: `Bearer ${token}`,

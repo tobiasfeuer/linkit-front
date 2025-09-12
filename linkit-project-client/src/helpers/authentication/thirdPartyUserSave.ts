@@ -20,7 +20,7 @@ export default async function saveUserThirdAuth(user: any, role: string, provide
   try {
     if (role === "user") {
       result = await axios.post(
-        "https://linkit-server.onrender.com/users/create",
+      `${import.meta.env.VITE_ENDPOINT_URL}/users/create`,
         userToSave,
         {
           headers: {
@@ -31,7 +31,7 @@ export default async function saveUserThirdAuth(user: any, role: string, provide
       );
     } else if (role === "company") {
       result = await axios.post(
-        "https://linkit-server.onrender.com/companies/create",
+        `${import.meta.env.VITE_ENDPOINT_URL}/companies/create`,
         userToSave,
         {
           headers: {

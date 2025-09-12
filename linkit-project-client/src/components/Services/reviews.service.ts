@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { TestimonialCardProps } from '../Talentos/ModulosTalentos/ModuloTalentosC/TestimonialCard/TestimonialCard';
 
-export const URL = `https://linkit-server.onrender.com`
+export const URL = `${import.meta.env.VITE_ENDPOINT_URL}`
 
 export const getReviews = async (): Promise<TestimonialCardProps[]> => {
 	const response = await axios.get<TestimonialCardProps[]>(`${URL}/reviews/find`, {

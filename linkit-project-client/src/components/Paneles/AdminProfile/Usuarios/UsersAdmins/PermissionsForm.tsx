@@ -51,7 +51,7 @@ export default function PermissionsForm({
   useEffect(() => {
     const fetchAdmin = async () => {
       const { data } = await axios.get(
-        `https://linkit-server.onrender.com/admins/find?id=${admin}`,
+        `${import.meta.env.VITE_ENDPOINT_URL}/admins/find?id=${admin}`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -123,7 +123,7 @@ export default function PermissionsForm({
   async function handleSave() {
     try {
        await axios.put(
-        `https://linkit-server.onrender.com/admins/permissions/${admin}`,
+        `${import.meta.env.VITE_ENDPOINT_URL}/admins/permissions/${admin}`,
         permissions,
         {
           headers: {

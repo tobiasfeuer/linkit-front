@@ -221,7 +221,7 @@ export default function EditFormResource({
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      const endPoint = `https://linkit-server.onrender.com/posts/update/${information?._id}`;
+      const endPoint = `${import.meta.env.VITE_ENDPOINT_URL}/posts/update/${information?._id}`;
       const importantInformation = {
         title: information.title,
         description: information.description,

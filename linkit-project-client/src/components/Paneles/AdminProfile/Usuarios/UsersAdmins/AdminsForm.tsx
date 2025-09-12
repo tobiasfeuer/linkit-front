@@ -92,7 +92,7 @@ export default function AdminsForm({ onClose, setSaveStatus }: FormAdminProps) {
   
       // 2) Llamada al API
       const response = await axios.post(
-        "https://linkit-server.onrender.com/auth/register",
+        `${import.meta.env.VITE_ENDPOINT_URL}/auth/register`,
         information,
         {
           headers: {

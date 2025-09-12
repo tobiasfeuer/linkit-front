@@ -24,7 +24,7 @@ export default function Users() {
     const loadData = async (): Promise<void> => {
       try {
         const response = await axios(
-          "https://linkit-server.onrender.com/users/find",
+          `${import.meta.env.VITE_ENDPOINT_URL}/users/find`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -113,7 +113,7 @@ export default function Users() {
   const handleSave = async (arrayProps: string[]) => {
     try {
       arrayProps.forEach(async (id: string) => {
-        const endPoint = `https://linkit-server.onrender.com/users/update/${id}`;
+        const endPoint = `${import.meta.env.VITE_ENDPOINT_URL}/users/update/${id}`;
         await axios.put(endPoint, editedData, {
           headers: {
             Authorization: `Bearer ${token}`,

@@ -17,7 +17,7 @@ export default function StatisticsFollowUps() {
       try {
         isLoading(true);
         const allFollowUps = await axios.get(
-          "https://linkit-server.onrender.com/resources/companyjds"
+          `${import.meta.env.VITE_ENDPOINT_URL}/resources/companyjds`
         );
         setFollowUps(allFollowUps.data);
       } catch (error) {

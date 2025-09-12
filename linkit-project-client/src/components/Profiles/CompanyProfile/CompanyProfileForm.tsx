@@ -26,7 +26,7 @@ const CompanyForm: FunctionComponent<IComponentProps> = ({ company }) => {
   useEffect(() => {
     const fetchData = async () => {
       const { data } = await axios.get(
-        "https://linkit-server.onrender.com/resources/countries"
+        `${import.meta.env.VITE_ENDPOINT_URL}/resources/countries`
       );
       const countries = data.map((country: any) => country.name);
       setCountries(countries);

@@ -189,7 +189,7 @@ function LoginTalent() {
     // }
     
     const response = await axios.post<IUser>(
-      "https://linkit-server.onrender.com/auth/login",
+      `${import.meta.env.VITE_ENDPOINT_URL}/auth/login`,
       { role: "user" },
       {
         headers: {
@@ -293,7 +293,7 @@ function LoginTalent() {
         } else {
           //* In case user exists, enters here
           const usersData = await axios.get(
-            `https://linkit-server.onrender.com/users/find?email=${response.user.email}`,
+            `${import.meta.env.VITE_ENDPOINT_URL}/users/find?email=${response.user.email}`,
             {
               headers: {
                 Authorization: `Bearer ${SUPERADMN_ID}`,
@@ -323,7 +323,7 @@ function LoginTalent() {
             });
           } else {
             const adminData = await axios.get(
-              `https://linkit-server.onrender.com/admins/find?email=${response.user.email}`,
+              `${import.meta.env.VITE_ENDPOINT_URL}/admins/find?email=${response.user.email}`,
               {
                 headers: {
                   Authorization: `Bearer ${SUPERADMN_ID}`,

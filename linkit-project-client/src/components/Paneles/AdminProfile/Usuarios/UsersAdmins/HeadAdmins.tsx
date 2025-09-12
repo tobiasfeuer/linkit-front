@@ -105,7 +105,7 @@ export default function HeadAdmins({
           await Promise.all(
             arraySelectedRows.map(async (id: string) => {
               const response = await axios.delete(
-                `https://linkit-server.onrender.com/admins/delete/${id}`,
+                `${import.meta.env.VITE_ENDPOINT_URL}/admins/delete/${id}`,
                 {
                   headers: {
                     Authorization: `Bearer ${token}`,
@@ -178,7 +178,7 @@ export default function HeadAdmins({
           await Promise.all(
             arraySelectedRows.map(async (id: string) => {
               const deleteAdmin = await axios.delete(
-                `https://linkit-server.onrender.com/admins/${id}/permanent`,
+                `${import.meta.env.VITE_ENDPOINT_URL}/admins/${id}/permanent`,
                 {
                   headers: {
                     Authorization: `Bearer ${token}`,

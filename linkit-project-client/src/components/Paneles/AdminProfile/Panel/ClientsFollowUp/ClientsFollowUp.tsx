@@ -81,7 +81,7 @@ export default function ClientsFollowUp() {
     const loadData = async (): Promise<void> => {
       try {
         const response = await axios(
-          "https://linkit-server.onrender.com/resources/companyjds",
+          `${import.meta.env.VITE_ENDPOINT_URL}/resources/companyjds`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

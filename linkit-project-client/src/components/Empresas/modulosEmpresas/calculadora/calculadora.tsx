@@ -496,7 +496,7 @@ function Calculadora() {
       });
 
       const response = await axios.post(
-        `https://linkit-server.onrender.com/resources/googleSheet/filter?position=${vacancyFirst.positionV}&englishLevel=${vacancyFirst.englishLevel}&seniority=${vacancyFirst.seniorityV}`,
+        `${import.meta.env.VITE_ENDPOINT_URL}/resources/googleSheet/filter?position=${vacancyFirst.positionV}&englishLevel=${vacancyFirst.englishLevel}&seniority=${vacancyFirst.seniorityV}`,
         {
           technologies: techsValue,
           frameworks: frameworksValue,
@@ -516,7 +516,7 @@ function Calculadora() {
   useEffect(() => {
     axios
       .get(
-        "https://linkit-server.onrender.com/resources/googleSheet/DinamicTitles"
+        `${import.meta.env.VITE_ENDPOINT_URL}/resources/googleSheet/DinamicTitles`
       )
       .then((response) => {
         const filtersData = response.data;

@@ -18,7 +18,6 @@ import {
 } from "firebase/auth";
 import saveUserThirdAuth from "../../helpers/authentication/thirdPartyUserSave";
 import { FirebaseError } from "firebase/app";
-//import { SUPERADMN_ID } from "../../env";
 import Swal from "sweetalert2";
 import { useTranslation } from "react-i18next";
 import "sweetalert2/dist/sweetalert2.min.css";
@@ -162,7 +161,7 @@ const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
 
     // 3. Guardar usuario en la base de datos
    const response = await axios.post(
-      "https://linkit-server.onrender.com/auth/register",
+      `${import.meta.env.VITE_ENDPOINT_URL}/auth/register`,
       {
         ...user,
         firebaseId: firebaseUserCredential.user.uid,
@@ -180,7 +179,7 @@ const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
       // 4. Login automático usando el token de Firebase
       const token = await firebaseUserCredential.user.getIdToken();
       const loginResponse = await axios.post(
-        "https://linkit-server.onrender.com/auth/login",
+        `${import.meta.env.VITE_ENDPOINT_URL}/auth/login`,
         { role: user.role },
         {
           headers: {
@@ -286,7 +285,7 @@ const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         if (!response._tokenResponse.isNewUser) {
           //* In case trying to register with google but user already exists
           const result = await axios.get(
-            `https://linkit-server.onrender.com/users/find?email=${response.user.email}`,
+            `${import.meta.env.VITE_ENDPOINT_URL}/users/find?email=${response.user.email}`,
             {
               headers: {
                 Authorization: `Bearer ${SUPERADMN_ID}`,
@@ -298,7 +297,7 @@ const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
             throw Error(`El usuario ya existe, para acceder inicia sesion`);
           else {
             const result = await axios.get(
-              `https://linkit-server.onrender.com/companies/find?email=${response.user.email}`,
+              `${import.meta.env.VITE_ENDPOINT_URL}/companies/find?email=${response.user.email}`,
               {
                 headers: {
                   Authorization: `Bearer ${SUPERADMN_ID}`,
@@ -320,7 +319,7 @@ const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         // Login automático con token de Firebase
         const token = await response.user.getIdToken();
         const loginResponse = await axios.post(
-          "https://linkit-server.onrender.com/auth/login",
+          `${import.meta.env.VITE_ENDPOINT_URL}/auth/login`,
           { role: String(user.role) },
           {
             headers: {

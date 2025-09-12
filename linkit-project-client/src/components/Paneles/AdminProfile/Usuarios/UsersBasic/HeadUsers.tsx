@@ -53,7 +53,7 @@ export default function HeadUsers({ hideCol, viewCol, editTalent, handleSave, se
                 try {
                     arraySelectedRows.forEach(async (id: string) => {
                         const response = await axios.delete(
-                            `https://linkit-server.onrender.com/users/delete/${id}`,
+                            `${import.meta.env.VITE_ENDPOINT_URL}/users/delete/${id}`,
                             {
                                 headers: {
                                     Authorization: `Bearer ${token}`,

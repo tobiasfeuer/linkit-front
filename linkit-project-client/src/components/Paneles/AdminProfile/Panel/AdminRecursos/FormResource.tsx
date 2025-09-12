@@ -143,7 +143,7 @@ export default function FormResource({
     setErrors(validationError);
 
     try {
-      const endPoint = "https://linkit-server.onrender.com/posts/create";
+      const endPoint = `${import.meta.env.VITE_ENDPOINT_URL}/posts/create`;
       const response = await axios.post(endPoint, information, {
         headers: {
           Authorization: `Bearer ${token}`,

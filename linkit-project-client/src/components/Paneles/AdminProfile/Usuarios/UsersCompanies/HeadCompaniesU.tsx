@@ -55,7 +55,7 @@ export default function HeadCompaniesU({ hideCol, viewCol, selectedRows, editing
                 try {
                     arraySelectedRows.forEach(async (id: string) => {
                         const response = await axios.delete(
-                            `https://linkit-server.onrender.com/companies/delete/${id}`,
+                            `${import.meta.env.VITE_ENDPOINT_URL}/companies/delete/${id}`,
                             {
                                 headers: {
                                     Authorization: `Bearer ${token}`,

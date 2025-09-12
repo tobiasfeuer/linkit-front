@@ -78,7 +78,7 @@ export default function HeadResources({ hideCol, viewCol, selectedRows, setSelec
                 try {
                     arraySelectedRows.forEach(async (id: string) => {
                         const response = await axios.delete(
-                            `https://linkit-server.onrender.com/posts/delete/${id}`,
+                            `${import.meta.env.VITE_ENDPOINT_URL}/posts/delete/${id}`,
                             {
                                 headers: {
                                     Authorization: `Bearer ${token}`,
@@ -108,7 +108,7 @@ export default function HeadResources({ hideCol, viewCol, selectedRows, setSelec
                 try {
                     arraySelectedRows.forEach(async (id: string) => {
                         const response = await axios.delete(
-                            `https://linkit-server.onrender.com/posts/delete/${id}?total=true`,
+                            `${import.meta.env.VITE_ENDPOINT_URL}/posts/delete/${id}?total=true`,
                             {
                                 headers: {
                                     Authorization: `Bearer ${token}`,

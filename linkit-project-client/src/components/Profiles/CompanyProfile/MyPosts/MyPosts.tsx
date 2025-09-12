@@ -65,7 +65,7 @@ function MyPosts({ loader }: componentprops) {
     const fetchPosts = async () => {
       const invalidStatus = ["Won and Replaced", "Never Worked", "Won", "Lost"];
       const response = await axios.get(
-        `https://linkit-server.onrender.com/resources/companyjds?company=${companyName}`,
+        `${import.meta.env.VITE_ENDPOINT_URL}/resources/companyjds?company=${companyName}`,
         {
           headers: {
             Authorization: `Bearer ${SUPERADMN_ID}`,

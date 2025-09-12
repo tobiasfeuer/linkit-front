@@ -86,7 +86,7 @@ const JobFilters = () => {
   const [country, setCountry] = useState<OptionType>({ value: "", label: "" });
 
   const handleFilters = async () => {
-    const url = `https://linkit-server.onrender.com/jds/find?${
+    const url = `${import.meta.env.VITE_ENDPOINT_URL}/jds/find?${
       stackValue.length >= 1
         ? `stack=${stackValue.map((tech) => `${tech}`)}`
         : ""

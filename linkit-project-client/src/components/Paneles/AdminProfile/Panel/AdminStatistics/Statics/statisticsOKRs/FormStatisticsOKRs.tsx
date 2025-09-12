@@ -234,7 +234,7 @@ const noShowForm = () => {
       // setErrors(validationError);
       
       try {
-          const endPoint = "https://linkit-server.onrender.com/OKRs/create";
+          const endPoint = `${import.meta.env.VITE_ENDPOINT_URL}/OKRs/create`;
           const response = await axios.post(endPoint, completeOKR, {
             headers: { Authorization: `Bearer ${token}`,
             'Accept-Language': sessionStorage.getItem('lang')}

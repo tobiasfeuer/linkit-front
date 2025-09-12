@@ -26,7 +26,7 @@ export default function CompaniesU() {
     const loadData = async (): Promise<void> => {
       try {
         const response = await axios(
-          "https://linkit-server.onrender.com/companies/find",
+          `${import.meta.env.VITE_ENDPOINT_URL}/companies/find`,
           {
             headers: {
               Authorization: `Bearer ${token}`,
@@ -114,7 +114,7 @@ export default function CompaniesU() {
   const handleSave = async (arrayProps: string[]) => {
     try {
       arrayProps.forEach(async (id: string) => {
-        const endPoint = `https://linkit-server.onrender.com/companies/update/${id}`;
+        const endPoint = `${import.meta.env.VITE_ENDPOINT_URL}/companies/update/${id}`;
         await axios.put(endPoint, editedData, {
           headers: {
             Authorization: `Bearer ${token}`,

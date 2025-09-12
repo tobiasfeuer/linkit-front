@@ -9,7 +9,7 @@ interface responseType {
   code: number
 }
 
-export const URL = `https://linkit-server.onrender.com`;
+export const URL = `${import.meta.env.VITE_ENDPOINT_URL}`;
 
 export const editUser = async (user: IUser): Promise<responseType> => {
   const userObj = {
