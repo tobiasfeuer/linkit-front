@@ -7,11 +7,13 @@ import { setJobOffers } from "../../../../../redux/features/JobCardsSlice";
 import { motion } from "framer-motion";
 import whiteArrow from "/Vectores/white-arrow.png";
 import { useTranslation } from "react-i18next";
+import { JobCardSkeletonMobile } from "./JobCardSkeleton";
 
 const JobCardsMobile: FunctionComponent = () => {
   const { t } = useTranslation();
   const dispatch = useDispatch();
   const [current, setCurrent] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
   const jobOffers = useSelector(
     (state: any) => state.jobCard.jobOffers as JobCardProps[]
@@ -25,19 +27,31 @@ const JobCardsMobile: FunctionComponent = () => {
 
   useEffect(() => {
     const fetchedJobOffers = async () => {
-      // Fetch my job offers from backend api
-      const fetchedJobOffers = await getJobOffers();
-      // Set the job offers in the state
+      try {
+        setIsLoading(true);
+        // Fetch my job offers from backend api
+        const fetchedJobOffers = await getJobOffers();
+        // Set the job offers in the state
 
-      const activeJobOffers = fetchedJobOffers
-        .reverse()
-        .filter((jobOffer) => jobOffer.archived === false);
+        const activeJobOffers = fetchedJobOffers
+          .reverse()
+          .filter((jobOffer) => jobOffer.archived === false);
 
-      dispatch(setJobOffers(activeJobOffers));
+        dispatch(setJobOffers(activeJobOffers));
+      } catch (error) {
+        console.error("Error al cargar las vacantes:", error);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     fetchedJobOffers();
   }, []);
+
+  // Resetear a la primera página cuando cambian las vacantes (por ejemplo, al aplicar filtros)
+  useEffect(() => {
+    setCurrent(0);
+  }, [jobOffers.length]);
 
   const jobOffersToShow = jobOffers.slice(
     current * jobsPerPage,
@@ -47,7 +61,7 @@ const JobCardsMobile: FunctionComponent = () => {
   return (
     <div className="flex flex-col items-center my-[5%]">
       <div className="flex justify-between w-full px-[5%] lg:w-auto lg:px-0">
-        <button onClick={handlePrev} className="hidden lg:block">
+        <button onClick={handlePrev} className="hidden lg:block" disabled={isLoading}>
           <img
             src={whiteArrow}
             alt="previous"
@@ -55,7 +69,11 @@ const JobCardsMobile: FunctionComponent = () => {
           />
         </button>
         <div className="w-full lg:w-auto">
-          {jobOffers.length === 0 ? (
+          {isLoading ? (
+            <div className="grid gap-[3%] mb-10">
+              <JobCardSkeletonMobile count={jobsPerPage} />
+            </div>
+          ) : jobOffers.length === 0 ? (
             <div className="flex flex-row justify-center items-center my-[10%] mx-2 text-white">
               <motion.p
                 className="font-montserrat subtitles-size text-center"
@@ -76,7 +94,7 @@ const JobCardsMobile: FunctionComponent = () => {
             </div>
           )}
         </div>
-        <button onClick={handleNext} className="hidden lg:block">
+        <button onClick={handleNext} className="hidden lg:block" disabled={isLoading}>
           <img
             src={whiteArrow}
             alt="next"
@@ -86,15 +104,17 @@ const JobCardsMobile: FunctionComponent = () => {
       </div>
       {/* mobile version */}
       <div className="flex items-center mt-4 lg:hidden">
-        <button onClick={handlePrev}>
+        <button onClick={handlePrev} disabled={isLoading}>
           <img
             src={whiteArrow}
             alt="previous"
             className="rotate-90 w-[20px] cursor-pointer mr-4"
           />
         </button>
-        <p className="my-2 text-white font-semibold text-xl">{current + 1} de {maxPages}</p>
-        <button onClick={handleNext}>
+        <p className="my-2 text-white font-semibold text-xl">
+          {isLoading ? "..." : `${current + 1} de ${maxPages}`}
+        </p>
+        <button onClick={handleNext} disabled={isLoading}>
           <img
             src={whiteArrow}
             alt="next"

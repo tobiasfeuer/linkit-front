@@ -1,0 +1,476 @@
+.orb-1,
+.orb-2,
+.orb-3 {
+  animation: floatOrb 18s ease-in-out infinite;
+}
+
+.orb-2 {
+  animation-delay: 4s;
+}
+
+.orb-3 {
+  animation-delay: 8s;
+}
+
+@keyframes floatOrb {
+  0% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  50% {
+    transform: translate3d(20px, -30px, 0) scale(1.05);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+.recruiter-form-container {
+  position: relative;
+  min-height: 100vh;
+  overflow: hidden;
+  background: linear-gradient(135deg, #173951 0%, #0f2442 40%, #01A28B 100%);
+  padding: 2rem 1rem;
+  padding-top: calc(4vh + 100px + 2rem); /* Navbar height + padding */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.recruiter-form-header {
+  width: 100%;
+  max-width: 1200px;
+  background: rgba(255, 255, 255, 0.85);
+  border-radius: 12px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 20px 60px rgba(12, 35, 64, 0.35);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  text-align: center;
+}
+
+.recruiter-photo {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin: 0 auto 1rem;
+  border: 3px solid #01A28B;
+}
+
+.recruiter-info {
+  text-align: center;
+}
+
+.recruiter-visuals {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.recruiter-pattern {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  opacity: 0.4;
+}
+
+.pattern-row {
+  display: flex;
+  justify-content: flex-start;
+  gap: clamp(2rem, 6vw, 4rem);
+}
+
+.pattern-row.align-left {
+  justify-content: flex-start;
+}
+
+.pattern-row.align-right {
+  justify-content: flex-end;
+}
+
+.pattern-text {
+  font-size: clamp(1.8rem, 6vw, 3.2rem);
+  font-weight: 700;
+  letter-spacing: 0.5em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.08);
+  text-shadow: 0 0 35px rgba(255, 255, 255, 0.2);
+  white-space: nowrap;
+}
+
+.recruiter-orb {
+  position: absolute;
+  border-radius: 9999px;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  opacity: 0.55;
+}
+
+.orb-1 {
+  width: 380px;
+  height: 380px;
+  top: 8%;
+  left: -10%;
+  background: radial-gradient(circle at 30% 30%, rgba(1, 162, 139, 0.55), rgba(1, 162, 139, 0));
+  filter: blur(0px);
+}
+
+.orb-2 {
+  width: 420px;
+  height: 420px;
+  right: -12%;
+  top: 45%;
+  background: radial-gradient(circle at 50% 50%, rgba(203, 218, 232, 0.6), rgba(203, 218, 232, 0));
+}
+
+.orb-3 {
+  width: 340px;
+  height: 340px;
+  bottom: -10%;
+  left: 35%;
+  background: radial-gradient(circle at 50% 50%, rgba(23, 57, 81, 0.55), rgba(23, 57, 81, 0));
+}
+
+.form-title {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #173951;
+  margin-bottom: 1rem;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.form-subtitle {
+  font-size: 1.2rem;
+  color: #01A28B;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.form-description {
+  font-size: 1rem;
+  color: #666;
+  margin-bottom: 1rem;
+  line-height: 1.6;
+}
+
+.recruiter-name {
+  font-size: 0.9rem;
+  color: #888;
+  font-style: italic;
+}
+
+.recruiter-role-code {
+  font-size: 0.95rem;
+  color: #01A28B;
+  font-weight: 600;
+  margin-top: 0.3rem;
+}
+
+.recruiter-form {
+  width: 100%;
+  max-width: 1200px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  padding: 2rem;
+  box-shadow: 0 25px 70px rgba(15, 45, 75, 0.4);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.form-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+
+.form-field {
+  margin-bottom: 0;
+}
+
+/* Campos que deben ocupar el ancho completo */
+.form-field-full-width {
+  grid-column: 1 / -1;
+}
+
+.form-label {
+  display: block;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #173951;
+  margin-bottom: 0.5rem;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.form-instructions {
+  font-size: 0.85rem;
+  color: #666;
+  margin-bottom: 0.5rem;
+  font-style: italic;
+}
+
+.form-input,
+.form-textarea,
+.form-select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #CBDAE8;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: 'Montserrat', sans-serif;
+  transition: border-color 0.3s;
+}
+
+.input-readonly {
+  background-color: #f0f4f9 !important;
+  cursor: not-allowed;
+  color: #173951;
+  border-color: #CBDAE8;
+}
+
+.form-input:focus,
+.form-textarea:focus,
+.form-select:focus {
+  outline: none;
+  border-color: #01A28B;
+}
+
+.form-input.error,
+.form-textarea.error,
+.form-select.error {
+  border-color: #F87171;
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+.form-error {
+  color: #F87171;
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+}
+
+.form-multiselect {
+  width: 100%;
+}
+
+.upload-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.75rem;
+  background: #01A28B;
+  color: white;
+  border: 2px solid #01A28B;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  font-family: 'Montserrat', sans-serif;
+  width: 100%;
+  box-shadow: 0 2px 4px rgba(1, 162, 139, 0.2);
+}
+
+.upload-button:hover {
+  background: #018a75;
+  border-color: #018a75;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(1, 162, 139, 0.3);
+}
+
+.upload-button:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 4px rgba(1, 162, 139, 0.2);
+}
+
+.form-file-name {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: #01A28B;
+  font-weight: 500;
+}
+
+.form-actions {
+  margin-top: 3rem;
+  padding-top: 2rem;
+  border-top: 2px solid #e5e7eb;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.submit-button {
+  --submit-button-bg: linear-gradient(135deg, #173951 0%, #01A28B 100%);
+  --submit-button-bg-hover: linear-gradient(135deg, #102c43 0%, #02968B 100%);
+  --submit-button-shadow: 0 20px 44px rgba(17, 64, 90, 0.5);
+  padding: 1.2rem 4rem;
+  background: var(--submit-button-bg, linear-gradient(135deg, #173951 0%, #01A28B 100%));
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-size: 1.2rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-family: 'Montserrat', sans-serif;
+  box-shadow: var(--submit-button-shadow, 0 20px 44px rgba(17, 64, 90, 0.5));
+  min-width: 200px;
+}
+
+.submit-button:hover:not(:disabled) {
+  background: var(--submit-button-bg-hover, linear-gradient(135deg, #102c43 0%, #02968B 100%));
+  transform: translateY(-2px);
+  box-shadow: 0 26px 52px rgba(12, 51, 73, 0.55);
+}
+
+.submit-button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 12px 26px rgba(11, 97, 111, 0.45);
+}
+
+.submit-button:disabled {
+  background: linear-gradient(135deg, #65849b 0%, #9bbfc7 100%);
+  color: rgba(255, 255, 255, 0.85);
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+}
+
+.recruiter-skeleton {
+  width: 100%;
+  max-width: 1200px;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding: 2rem;
+}
+
+.skeleton-card {
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: 0 20px 50px rgba(13, 40, 64, 0.4);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+}
+
+.skeleton-line {
+  height: 18px;
+  border-radius: 9999px;
+  margin-bottom: 1rem;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.35) 0%,
+    rgba(203, 218, 232, 0.65) 50%,
+    rgba(255, 255, 255, 0.35) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.6s ease-in-out infinite;
+}
+
+.skeleton-line:last-child {
+  margin-bottom: 0;
+}
+
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1.5rem;
+}
+
+.skeleton-block {
+  height: 82px;
+  border-radius: 14px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.28) 0%,
+    rgba(174, 204, 221, 0.7) 50%,
+    rgba(255, 255, 255, 0.28) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeletonShimmer 1.5s ease-in-out infinite;
+}
+
+.skeleton-block.large {
+  grid-column: span 2;
+  height: 130px;
+}
+
+@keyframes skeletonShimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .recruiter-form-container {
+    padding: 1rem;
+    padding-top: calc(4vh + 80px + 1rem); /* Navbar height + padding en mobile */
+  }
+
+  .recruiter-form-header,
+  .recruiter-form {
+    padding: 1.5rem;
+    max-width: 100%;
+  }
+
+  .form-title {
+    font-size: 1.5rem;
+  }
+
+  .form-fields-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .form-field-full-width {
+    grid-column: 1;
+  }
+
+  .form-actions {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+  }
+
+  .submit-button {
+    padding: 1rem 3rem;
+    font-size: 1.1rem;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .pattern-row {
+    gap: clamp(1.25rem, 6vw, 3rem);
+  }
+
+  .pattern-text {
+    letter-spacing: 0.35em;
+    font-size: clamp(1.8rem, 10vw, 2.4rem);
+  }
+
+  .recruiter-skeleton {
+    padding: 1.5rem;
+  }
+
+  .skeleton-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .skeleton-block.large {
+    grid-column: span 1;
+  }
+
+  .orb-1,
+  .orb-2,
+  .orb-3 {
+    opacity: 0.35;
+  }
+}
