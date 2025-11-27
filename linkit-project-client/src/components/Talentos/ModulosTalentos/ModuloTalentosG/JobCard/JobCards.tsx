@@ -7,10 +7,12 @@ import { setJobOffers } from "../../../../../redux/features/JobCardsSlice";
 import { motion } from "framer-motion";
 import whiteArrow from "/Vectores/white-arrow.png";
 import { useTranslation } from "react-i18next";
+import JobCardSkeleton from "./JobCardSkeleton";
 
 const JobCards: FunctionComponent = () => {
   const dispatch = useDispatch();
   const [current, setCurrent] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
   const { t } = useTranslation();
 
   const jobOffers = useSelector(
@@ -24,18 +26,29 @@ const JobCards: FunctionComponent = () => {
     setCurrent(current === maxPages - 1 ? 0 : current + 1);
 
   const fetchedJobOffers = async () => {
-    // Fetch my job offers from backend api
-    const fetchedJobOffers = await getJobOffers();
-    const activeJobOffers = fetchedJobOffers
-      .reverse()
-      .filter((jobOffer) => jobOffer.archived === false);
-    dispatch(setJobOffers(activeJobOffers));
+    try {
+      setIsLoading(true);
+      // Fetch my job offers from backend api
+      const fetchedJobOffers = await getJobOffers();
+      const activeJobOffers = fetchedJobOffers
+        .reverse()
+        .filter((jobOffer) => jobOffer.archived === false);
+      dispatch(setJobOffers(activeJobOffers));
+    } catch (error) {
+      console.error("Error al cargar las vacantes:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   useEffect(() => {
     fetchedJobOffers();
   }, []);
 
+  // Resetear a la primera página cuando cambian las vacantes (por ejemplo, al aplicar filtros)
+  useEffect(() => {
+    setCurrent(0);
+  }, [jobOffers.length]);
 
   const jobOffersToShow = jobOffers.slice(
     current * jobsPerPage,
@@ -45,7 +58,7 @@ const JobCards: FunctionComponent = () => {
 
   return (
     <div className="flex w-full items-center justify-center mb-[10%] h-max">
-      <button onClick={handlePrev} className="">
+      <button onClick={handlePrev} className="" disabled={isLoading}>
         <img
           src={whiteArrow}
           alt="previus"
@@ -53,7 +66,13 @@ const JobCards: FunctionComponent = () => {
         />
       </button>
       <div className="mx-[5%] w-full h-full justify-items-center">
-        {jobOffers.length === 0 ? (
+        {isLoading ? (
+          <div
+            className="grid grid-cols-3 gap-x-[2%] gap-y-[10%] h-full w-full"
+          >
+            <JobCardSkeleton count={jobsPerPage} />
+          </div>
+        ) : jobOffers.length === 0 ? (
           <div className="flex justify-center items-center content-center w-full h-full text-white my-[10%]">
             <motion.p
               className="font-montserrat text-[1rem] ssm:text-[1.5rem] xl:text-[1.5rem] whitespace-nowrap"
@@ -78,7 +97,7 @@ const JobCards: FunctionComponent = () => {
           </div>
         )}
       </div>
-      <button onClick={handleNext} className="">
+      <button onClick={handleNext} className="" disabled={isLoading}>
         <img
           src={whiteArrow}
           alt="next"
