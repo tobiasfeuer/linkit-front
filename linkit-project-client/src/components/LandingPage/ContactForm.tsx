@@ -446,7 +446,7 @@ const ContactForm = () => {
         // Intentar con el endpoint de producción como fallback
         try {
           const prodResponse = await axios.post(
-            "https://linkit-server.onrender.com/resources/contactus/form",
+            `${import.meta.env.VITE_ENDPOINT_URL}/resources/contactus/form`,
             dataToSend,
             {
               headers: {

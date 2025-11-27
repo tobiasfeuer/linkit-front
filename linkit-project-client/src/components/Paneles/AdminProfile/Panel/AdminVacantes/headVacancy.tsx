@@ -102,7 +102,7 @@ export default function HeadVacancy({
         try {
           arraySelectedRows.forEach(async (id: string) => {
             const response = await axios.delete(
-              `https://linkit-server.onrender.com/jds/delete/${id}`,
+              `${import.meta.env.VITE_ENDPOINT_URL}/jds/delete/${id}`,
               {
                 headers: {
                   Authorization: `Bearer ${token}`,
@@ -135,7 +135,7 @@ export default function HeadVacancy({
         try {
           arraySelectedRows.forEach(async (id: string) => {
             const response = await axios.delete(
-              `https://linkit-server.onrender.com/jds/delete/${id}?total=true`,
+              `${import.meta.env.VITE_ENDPOINT_URL}/jds/delete/${id}?total=true`,
               {
                 headers: {
                   Authorization: `Bearer ${token}`,

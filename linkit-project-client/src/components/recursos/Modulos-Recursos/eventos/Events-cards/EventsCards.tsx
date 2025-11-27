@@ -47,7 +47,7 @@ function EventsCards() {
     const loadData = async (): Promise<void> => {
       try {
         const response = await axios(
-          "https://linkit-server.onrender.com/posts/find?type=social"
+          `${import.meta.env.VITE_ENDPOINT_URL}/posts/find?type=social`
         );
         dispatch(setEvents(response.data));
       } catch (error) {

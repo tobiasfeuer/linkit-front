@@ -144,7 +144,7 @@ export default function FormVacancie({
   useEffect(() => {
     const fetchAirtableData = async () => {
       const { data } = await axios.get<AirtableEntry[]>(
-        "https://linkit-server.onrender.com/resources/companyjds"
+        `${import.meta.env.VITE_ENDPOINT_URL}/resources/companyjds`
       );
       const allCompanies: string[] = [];
       const companies = data.map((entry: any) => entry.Client);
@@ -378,7 +378,7 @@ export default function FormVacancie({
     if (!token) navigate("/unauthorized");
     const fetchData = async () => {
       const { data } = await axios.get(
-        "https://linkit-server.onrender.com/resources/countries"
+        `${import.meta.env.VITE_ENDPOINT_URL}/resources/countries`
       );
       const countries = data.map((country: any) => country.name);
       setCountries(countries);
@@ -393,7 +393,7 @@ export default function FormVacancie({
     setErrors(validationError);
     try {
       validateVacancy(information as VacancyProps);
-      const endPoint = "https://linkit-server.onrender.com/jds/create";
+      const endPoint = `${import.meta.env.VITE_ENDPOINT_URL}/jds/create`;
       const response = await axios.post(endPoint, information, {
         headers: {
           Authorization: `Bearer ${token}`,
@@ -419,7 +419,7 @@ export default function FormVacancie({
         company: "",
       });
       const allJds = await axios.get(
-        "https://linkit-server.onrender.com/jds/find",
+        `${import.meta.env.VITE_ENDPOINT_URL}/jds/find`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -457,7 +457,7 @@ export default function FormVacancie({
   const handleSave = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      const endPoint = `https://linkit-server.onrender.com/jds/update/${editing?.vacancieID}`;
+        const endPoint = `${import.meta.env.VITE_ENDPOINT_URL}/jds/update/${editing?.vacancieID}`;
       await axios.put(endPoint, information, {
         headers: {
           Authorization: `Bearer ${token}`,

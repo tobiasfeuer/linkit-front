@@ -49,7 +49,7 @@ export default function EventsView() {
             return
           }
         }
-        const response = await axios.get(`https://linkit-server.onrender.com/posts/events/${slug}`)
+        const response = await axios.get(`${import.meta.env.VITE_ENDPOINT_URL}/posts/events/${slug}`)
         const data = response.data
 
         if (!data) throw new Error("Event not found")

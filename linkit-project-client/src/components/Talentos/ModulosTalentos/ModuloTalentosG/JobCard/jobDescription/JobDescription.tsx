@@ -45,7 +45,7 @@ function JobDescription() {
       if (!loading) isLoading(true);
       try {
         const response = await axios.get(
-          `https://linkit-server.onrender.com/jds/find?code=${id}`,
+          `${import.meta.env.VITE_ENDPOINT_URL}/jds/find?code=${id}`,
           {
             headers: {
               Authorization: `Bearer ${SUPERADMN_ID}`,

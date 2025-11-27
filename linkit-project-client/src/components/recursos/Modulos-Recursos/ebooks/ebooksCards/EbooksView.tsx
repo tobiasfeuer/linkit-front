@@ -51,7 +51,7 @@ export default function EbookView() {
             return
           }
         }
-        const response = await axios.get(`https://linkit-server.onrender.com/posts/ebook/${slug}`)
+        const response = await axios.get(`${import.meta.env.VITE_ENDPOINT_URL}/posts/ebook/${slug}`)
         if (!response) throw new Error("Ebook not found")
 
         setEbookData({

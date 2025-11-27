@@ -74,7 +74,7 @@ export default function FormReview({ onClose, setSaveStatus }: FormReviewProps) 
             setErrors(validationError)
 
             validateReview(information as ReviewProps) //* errors from console
-            const endPoint = "https://linkit-server.onrender.com/reviews/create";
+            const endPoint = `${import.meta.env.VITE_ENDPOINT_URL}/reviews/create`;
             const response = await axios.post(endPoint, information, {
                 headers: {
                     Authorization: `Bearer ${token}`,

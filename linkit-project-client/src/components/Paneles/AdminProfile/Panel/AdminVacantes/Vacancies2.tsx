@@ -65,7 +65,7 @@ export default function Vacancies2() {
     const loadData = async (): Promise<void> => {
       try {
         const response = await axios(
-          "https://linkit-server.onrender.com/jds/find",
+          `${import.meta.env.VITE_ENDPOINT_URL}/jds/find`,
           {
             headers: {
               Authorization: `Bearer ${token} `,
@@ -84,7 +84,7 @@ export default function Vacancies2() {
   }, [saveStatus]);
 
   const handleFilters = async () => {
-    const url = `https://linkit-server.onrender.com/jds/find?${
+    const url = `${import.meta.env.VITE_ENDPOINT_URL}/jds/find?${
       stackValue.length >= 1
         ? `stack=${stackValue.map((tech) => `${tech}`)}`
         : ""
@@ -109,7 +109,7 @@ export default function Vacancies2() {
     const loadCompanies = async (): Promise<void> => {
       try {
         const response = await axios(
-          "https://linkit-server.onrender.com/companies/find",
+          `${import.meta.env.VITE_ENDPOINT_URL}/companies/find`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

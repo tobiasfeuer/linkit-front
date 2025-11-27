@@ -128,7 +128,7 @@ export default function ContactUs() {
       if (confirmMessage.isConfirmed) {
         validateContact(contacts);
         const response = await axios.post(
-          "https://linkit-server.onrender.com/resources/contactus",
+          `${import.meta.env.VITE_ENDPOINT_URL}/resources/contactus`,
           contacts,
           {
             headers: {

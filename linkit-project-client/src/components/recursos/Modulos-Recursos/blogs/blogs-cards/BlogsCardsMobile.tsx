@@ -17,7 +17,7 @@ function BlogsCardsMobile() {
   useEffect(() => {
     (async () => {
       try {
-        const response = await axios.get<PostEntity[]>("https://linkit-server.onrender.com/posts/find?type=blog", {
+        const response = await axios.get<PostEntity[]>(`${import.meta.env.VITE_ENDPOINT_URL}/posts/find?type=blog`, {
           headers: {"Authorization": `Bearer ${SUPERADMN_ID}`,
           'Accept-Language': "es"}
         });

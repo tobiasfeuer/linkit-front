@@ -30,7 +30,7 @@ export default function AdminPanel() {
           return;
         }
         const response = await axios(
-          `https://linkit-server.onrender.com/admins/find?id=${token}`,
+          `${import.meta.env.VITE_ENDPOINT_URL}/admins/find?id=${token}`,
           {
             headers: {
               Authorization: `Bearer ${token}`,

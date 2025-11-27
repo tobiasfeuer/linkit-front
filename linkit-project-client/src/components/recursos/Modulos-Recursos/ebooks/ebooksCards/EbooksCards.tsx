@@ -25,7 +25,7 @@ function EbooksCards() {
         const loadData = async (): Promise<void> => {
             try {
                 const response = await axios(
-                    "https://linkit-server.onrender.com/posts/find?type=blog",
+                    `${import.meta.env.VITE_ENDPOINT_URL}/posts/find?type=blog`,
                 );
                 dispatch(setEbooks(response.data));
             } catch (error) {

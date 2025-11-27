@@ -68,7 +68,7 @@ export default function ExistingVacanciesOptions({
       if (willDelete) {
         try {
           const response = await axios.delete(
-            `https://linkit-server.onrender.com/jds/delete/${id}`,
+            `${import.meta.env.VITE_ENDPOINT_URL}/jds/delete/${id}`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -100,7 +100,7 @@ export default function ExistingVacanciesOptions({
       if (willDelete) {
         try {
           const response = await axios.delete(
-            `https://linkit-server.onrender.com/jds/delete/${id}?total=true`,
+            `${import.meta.env.VITE_ENDPOINT_URL}/jds/delete/${id}?total=true`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,

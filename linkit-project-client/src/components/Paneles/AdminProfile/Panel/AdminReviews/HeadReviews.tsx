@@ -74,7 +74,7 @@ export default function HeadReviews({ hideCol, viewCol, selectedRows, editing, e
                 try {
                     arraySelectedRows.forEach(async (id: string) => {
                         const response = await axios.delete(
-                            `https://linkit-server.onrender.com/reviews/delete/${id}`,
+                            `${import.meta.env.VITE_ENDPOINT_URL}/reviews/delete/${id}`,
                             {
                                 headers: {
                                     Authorization: `Bearer ${token}`,
@@ -106,7 +106,7 @@ export default function HeadReviews({ hideCol, viewCol, selectedRows, editing, e
                 try {
                     arraySelectedRows.forEach(async (id: string) => {
                         const response = await axios.delete(
-                            `https://linkit-server.onrender.com/reviews/delete/${id}?total=true`,
+                            `${import.meta.env.VITE_ENDPOINT_URL}/reviews/delete/${id}?total=true`,
                             {
                                 headers: {
                                     Authorization: `Bearer ${token}`,

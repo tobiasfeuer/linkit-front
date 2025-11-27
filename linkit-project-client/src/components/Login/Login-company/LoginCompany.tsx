@@ -151,7 +151,7 @@ function LoginCompany() {
     // }
     
     const response = await axios.post<ICompany>(
-      "https://linkit-server.onrender.com/auth/login",
+      `${import.meta.env.VITE_ENDPOINT_URL}/auth/login`,
       { role: "company" },
       {
         headers: {
@@ -222,7 +222,7 @@ function LoginCompany() {
         } else {
           //* In case user exists, enters here
           const getCompanyResponse = await axios.get<any>(
-            `https://linkit-server.onrender.com/companies/find?email=${firebaseAuthResponse.user.email}`,
+            `${import.meta.env.VITE_ENDPOINT_URL}/companies/find?email=${firebaseAuthResponse.user.email}`,
             {
               headers: {
                 Authorization: `Bearer ${SUPERADMN_ID}`,

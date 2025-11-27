@@ -51,7 +51,7 @@ export default function StatisticsWeb() {
   useEffect(() => {
     const fetchAllData = async () => {
       const allUsers = await axios.get(
-        "https://linkit-server.onrender.com/users/find",
+        `${import.meta.env.VITE_ENDPOINT_URL}/users/find`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -60,7 +60,7 @@ export default function StatisticsWeb() {
         }
       );
       const allCompanies = await axios.get(
-        "https://linkit-server.onrender.com/companies/find",
+        `${import.meta.env.VITE_ENDPOINT_URL}/companies/find`,
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -69,7 +69,7 @@ export default function StatisticsWeb() {
         }
       );
       const allJds = await axios.get(
-        "https://linkit-server.onrender.com/jds/find",
+        `${import.meta.env.VITE_ENDPOINT_URL}/jds/find`,
         {
           headers: {
             Authorization: `Bearer ${token}`,

@@ -38,7 +38,7 @@ function BlogInfo() {
     (async () => {
       try {
         const { data } = await axios.get(
-          `https://linkit-server.onrender.com/posts/find?id=${id}`,
+          `${import.meta.env.VITE_ENDPOINT_URL}/posts/find?id=${id}`,
           {
             headers: {
               Authorization: `Bearer ${SUPERADMN_ID}`,

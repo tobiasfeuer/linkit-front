@@ -69,7 +69,7 @@ function Recomended({
     useEffect(() => {
         const fetchBlogs = async () => {
             try {
-                const response = await axios.get("https://linkit-server.onrender.com/posts/find?type=blog")
+                const response = await axios.get(`${import.meta.env.VITE_ENDPOINT_URL}/posts/find?type=blog`)
                 setBlogs(response.data)
             } catch (error) {
                 console.error("Error al cargar los blogs recomendados:", error)
@@ -83,7 +83,7 @@ function Recomended({
         if (filterByCategory && id) {
             const fetchCurrentBlog = async () => {
                 try {
-                    const response = await axios.get(`https://linkit-server.onrender.com/posts/find?id=${id}`)
+                    const response = await axios.get(`${import.meta.env.VITE_ENDPOINT_URL}/posts/find?id=${id}`)
                     setCurrentBlog(response.data)
                 } catch (error) {
                     console.error("Error al cargar el blog actual:", error)

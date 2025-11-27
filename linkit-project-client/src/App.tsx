@@ -201,7 +201,7 @@ useEffect(() => {
     const fetchData = async () => {
       try {
         const responseResources = await axios.get(
-          "https://linkit-server.onrender.com/posts/find",
+          `${import.meta.env.VITE_ENDPOINT_URL}/posts/find`,
           {
             headers: {
               Authorization: `Bearer ${SUPERADMN_ID}`,
@@ -211,7 +211,7 @@ useEffect(() => {
         );
 
         const responseTechnologies = await axios.get(
-          "https://linkit-server.onrender.com/resources/stackList",
+          `${import.meta.env.VITE_ENDPOINT_URL}/resources/stackList`,
           {
             headers: {
               Authorization: `Bearer ${SUPERADMN_ID}`,
@@ -220,7 +220,7 @@ useEffect(() => {
           }
         );
         const countries = await axios.get(
-          "https://linkit-server.onrender.com/resources/countries",
+          `${import.meta.env.VITE_ENDPOINT_URL}/resources/countries`,
           {
             headers: {
               Authorization: `Bearer ${SUPERADMN_ID}`,
@@ -229,7 +229,7 @@ useEffect(() => {
           }
         );
         const techStack = await axios.get(
-          "https://linkit-server.onrender.com/resources/techStack",
+          `${import.meta.env.VITE_ENDPOINT_URL}/resources/techStack`,
           {
             headers: {
               Authorization: `Bearer ${SUPERADMN_ID}`,
@@ -238,7 +238,7 @@ useEffect(() => {
           }
         );
         const responseAdmins = await axios.get(
-          "https://linkit-server.onrender.com/admins/find",
+          `${import.meta.env.VITE_ENDPOINT_URL}/admins/find`,
           {
             headers: {
               Authorization: `Bearer ${SUPERADMN_ID}`,
