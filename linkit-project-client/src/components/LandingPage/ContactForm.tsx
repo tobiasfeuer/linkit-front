@@ -6,6 +6,9 @@ import { useTranslation } from "react-i18next";
 import Swal from "sweetalert2";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import PhoneInput from "react-phone-number-input";
+import { isValidPhoneNumber } from "libphonenumber-js";
+import "react-phone-number-input/style.css";
 
 const SUPERADMN_ID = import.meta.env.VITE_SUPERADMN_ID;
 
@@ -256,7 +259,7 @@ const ContactForm = () => {
     }
     if (!formData.telefono) {
       newErrors.telefono = t("errores.requerido");
-    } else if (!/^\+?[0-9\s\-()]+$/.test(formData.telefono)) {
+    } else if (!isValidPhoneNumber(formData.telefono)) {
       newErrors.telefono = t("errores.telefono");
     }
     if (!formData.aceptaTerminos) {
@@ -648,19 +651,32 @@ const ContactForm = () => {
         >
           {t("telefono")} <span className="text-red-500">*</span>
         </label>
-        <input
-          id="telefono"
-          type="tel"
-          name="telefono"
-          value={formData.telefono}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          placeholder={t("placeholder.telefono")}
-          className={getInputClassName("telefono")}
-          aria-invalid={touched.telefono && !!errors.telefono}
-          aria-describedby={errors.telefono ? "telefono-error" : undefined}
-          required
-        />
+        <div className={`phone-input-container-contact ${touched.telefono && errors.telefono ? "error" : ""}`}>
+          <PhoneInput
+            international
+            defaultCountry="US"
+            value={formData.telefono}
+            onChange={(value) => {
+              handleChange({
+                target: { name: "telefono", value: value || "" },
+              } as React.ChangeEvent<HTMLInputElement>);
+            }}
+            onBlur={handleBlur}
+            placeholder={t("placeholder.telefono")}
+            className="phone-input-wrapper-contact"
+            numberInputProps={{
+              className: "phone-input-contact",
+              id: "telefono",
+              name: "telefono",
+              "aria-invalid": touched.telefono && !!errors.telefono,
+              "aria-describedby": errors.telefono ? "telefono-error" : undefined,
+              required: true,
+            }}
+            countrySelectProps={{
+              className: "phone-country-select-contact",
+            }}
+          />
+        </div>
         {touched.telefono && errors.telefono && (
           <p
             id="telefono-error"

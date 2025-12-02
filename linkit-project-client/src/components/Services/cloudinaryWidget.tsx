@@ -144,7 +144,7 @@ function CloudinaryUploadWidget({
         src="https://media-editor.cloudinary.com/all.js"
         type="text/javascript"
       ></script>
-     {isMobile ? (
+     {isMobile || isAPostulation ? (
   <label className={className} style={{ width: "100%", cursor: "pointer" }}>
     <input
       type="file"
@@ -152,7 +152,7 @@ function CloudinaryUploadWidget({
       style={{ display: "none" }}
       onChange={handleMobileFile}
     />
-    <span className="...">{children}</span>
+    <span>{children}</span>
   </label>
 ) : (
   <div

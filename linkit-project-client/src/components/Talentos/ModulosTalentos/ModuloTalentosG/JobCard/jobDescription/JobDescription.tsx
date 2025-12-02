@@ -19,6 +19,7 @@ import HTMLReactParser from "html-react-parser";
 import { Helmet } from "react-helmet-async";
 import BreadcrumbsWithSchema from "../../../../../../Utils/Breadcrumbs/Breadcrumbs";
 import JobDescriptionSkeleton from "./JobDescriptionSkeleton";
+import { Send, ArrowRight, Briefcase, Sparkles } from "lucide-react";
 
 
 const SUPERADMN_ID = import.meta.env.VITE_SUPERADMN_ID;
@@ -39,6 +40,7 @@ function JobDescription() {
   const isDarkMode = useSelector((state: RootState) => state.darkMode);
   const isSpanish = language === "es";
   const [translatedJobData, setTranslatedJobData] = useState<any>({});
+  const [showFloatingButton, setShowFloatingButton] = useState(false);
 
   useEffect(() => {
     const fetchJob = async () => {
@@ -85,6 +87,18 @@ function JobDescription() {
       });
     }
   }, [jobData, isSpanish]);
+
+  // Detectar scroll para mostrar botón flotante
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      const threshold = 400; // Mostrar después de 400px de scroll
+      setShowFloatingButton(scrollY > threshold);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   
 
@@ -386,6 +400,62 @@ function JobDescription() {
                      </span>
                    )}
                 </div>
+
+                {/* Botón CTA Prominente - Desktop: después del header */}
+                <motion.div
+                  className="hidden lg:flex mt-6 mb-6"
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                >
+                  <motion.button
+                    onClick={handleApply}
+                    className="group relative overflow-hidden bg-gradient-to-r from-linkIt-300 to-[#01B29B] text-white font-bold rounded-lg px-8 py-4 flex items-center gap-3 shadow-lg hover:shadow-xl transition-all duration-300"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-r from-[#01B29B] to-linkIt-300 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                    <div className="relative flex items-center gap-3">
+                      <Briefcase className="w-5 h-5" />
+                      <span className="text-lg">
+                        {isSpanish ? "Aplicar Ahora" : "Apply Now"}
+                      </span>
+                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                    <motion.div
+                      className="absolute inset-0 bg-white opacity-0 group-hover:opacity-10"
+                      animate={{
+                        x: ["-100%", "100%"],
+                      }}
+                      transition={{
+                        duration: 1.5,
+                        repeat: Infinity,
+                        repeatDelay: 0.5,
+                      }}
+                    />
+                  </motion.button>
+                </motion.div>
+
+                {/* Botón CTA Prominente - Mobile: después del header */}
+                <motion.div
+                  className="lg:hidden mt-6 mb-6 w-full"
+                  initial={{ opacity: 0, y: -20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.5, delay: 0.2 }}
+                >
+                  <motion.button
+                    onClick={handleApply}
+                    className="w-full bg-gradient-to-r from-linkIt-300 to-[#01B29B] text-white font-bold rounded-lg px-6 py-4 flex items-center justify-center gap-3 shadow-lg"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <Briefcase className="w-5 h-5" />
+                    <span className="text-base">
+                      {isSpanish ? "Aplicar Ahora" : "Apply Now"}
+                    </span>
+                    <ArrowRight className="w-5 h-5" />
+                  </motion.button>
+                </motion.div>
               </header>
                              <section className="mb-[3%]" itemProp="description">
                  <h3 className="font-bold text-linkIt-300 subtitles-size mb-[1%]">
@@ -472,12 +542,20 @@ function JobDescription() {
                 alt="linkIt-logo"
                 className="w-full sticky top-[30%] mb-[20%] hidden lg:block"
               />
-              <button
-                className="inline-flex relative lg:sticky lg:top-[93%] justify-self-center border border-linkIt-300 text-white bg-linkIt-300 rounded-[7px] p-1 xs:p-1.5 sm:p-2 2xl:p-3 px-1 xs:px-2 text-size whitespace-nowrap hover:bg-linkIt-200 hover:border-linkIt-200 transition-all duration-300 ease-in-out font-bold dark:hover:border-white dark:hover:bg-white dark:hover:text-linkIt-300 cursor-pointer font-manrope"
-                onClick={() => handleApply()}
+              {/* Botón mejorado en sidebar - Desktop */}
+              <motion.button
+                className="hidden lg:flex relative lg:sticky lg:top-[93%] justify-self-center items-center gap-3 bg-gradient-to-r from-linkIt-300 to-[#01B29B] text-white rounded-lg px-6 py-4 font-bold text-base shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer font-manrope group"
+                onClick={handleApply}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.3 }}
               >
-                {t("Aplicar a esta vacante")}
-              </button>
+                <Send className="w-5 h-5 group-hover:rotate-12 transition-transform" />
+                <span>{isSpanish ? "Postularme" : "Apply for this position"}</span>
+                <Sparkles className="w-4 h-4 opacity-70" />
+              </motion.button>
             </section>
           </div>
 
@@ -500,6 +578,69 @@ function JobDescription() {
         </article>
         <Newsletter />
       </div>
+
+      {/* Botón Flotante Sticky - Aparece al hacer scroll - Mobile centrado */}
+      {showFloatingButton && (
+        <motion.div
+          className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-50 lg:hidden"
+          initial={{ opacity: 0, scale: 0.8, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.8, y: 20 }}
+          transition={{ duration: 0.3 }}
+        >
+          <motion.button
+            onClick={handleApply}
+            className="bg-gradient-to-r from-linkIt-300 to-[#01B29B] text-white font-bold rounded-full px-6 py-4 flex items-center gap-3 shadow-2xl"
+            whileHover={{ scale: 1.1, boxShadow: "0 10px 30px rgba(1, 162, 139, 0.4)" }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <Briefcase className="w-5 h-5" />
+            <span className="text-sm font-semibold">
+              {isSpanish ? "Aplicar" : "Apply"}
+            </span>
+            <motion.div
+              animate={{ rotate: [0, 10, -10, 0] }}
+              transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
+            >
+              <ArrowRight className="w-5 h-5" />
+            </motion.div>
+          </motion.button>
+        </motion.div>
+      )}
+
+      {/* Botón Flotante Desktop - Aparece al hacer scroll - Centrado en la parte inferior */}
+      {showFloatingButton && (
+        <motion.div
+          className="fixed bottom-8 left-1/2 transform -translate-x-1/2 z-50 hidden lg:block"
+          initial={{ opacity: 0, scale: 0.8, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.8, y: 20 }}
+          transition={{ duration: 0.3 }}
+        >
+          <motion.button
+            onClick={handleApply}
+            className="bg-gradient-to-r from-linkIt-300 to-[#01B29B] text-white font-bold rounded-lg px-8 py-5 flex items-center gap-3 shadow-2xl group"
+            whileHover={{ scale: 1.05, boxShadow: "0 15px 40px rgba(1, 162, 139, 0.5)" }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <motion.div
+              animate={{ rotate: [0, -10, 10, 0] }}
+              transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
+            >
+              <Briefcase className="w-6 h-6" />
+            </motion.div>
+            <div className="flex flex-col items-start">
+              <span className="text-lg font-bold leading-tight">
+                {isSpanish ? "Aplicar Ahora" : "Apply Now"}
+              </span>
+              <span className="text-xs opacity-90 font-normal">
+                {isSpanish ? "No pierdas esta oportunidad" : "Don't miss this opportunity"}
+              </span>
+            </div>
+            <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+          </motion.button>
+        </motion.div>
+      )}
     </div>
   );
 }
