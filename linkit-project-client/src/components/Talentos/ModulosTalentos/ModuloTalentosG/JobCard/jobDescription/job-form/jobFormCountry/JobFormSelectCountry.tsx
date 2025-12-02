@@ -97,10 +97,11 @@ export function SelectCountryFormEs({ setCountry, country, setUser }: any) {
   );
 
   const handleChange = (selectedOption: OptionType | null) => {
-    setCountry(selectedOption as OptionType);
+    const countryValue = selectedOption || null;
+    setCountry(countryValue);
     setUser((prevUser: any) => ({
       ...prevUser,
-      country: selectedOption?.value,
+      country: selectedOption?.value || "",
     }));
   };
 
@@ -108,11 +109,12 @@ export function SelectCountryFormEs({ setCountry, country, setUser }: any) {
     <Select
       options={countryOptionsEs?.sort((a, b) => a.label.localeCompare(b.label))}
       value={country}
-      defaultInputValue={country}
       styles={customStyles}
       placeholder={t("Ubicación")}
       onChange={handleChange}
       components={{ DropdownIndicator }}
+      isClearable={false}
+      isSearchable={true}
     />
   );
 }

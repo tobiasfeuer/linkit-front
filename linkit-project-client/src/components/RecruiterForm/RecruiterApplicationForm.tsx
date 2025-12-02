@@ -10,6 +10,8 @@ import Loading from "../Loading/Loading";
 import { getFormConfig, getRecruiterBySlug, submitRecruiterApplication } from "../Services/recruiterForm.service";
 import { FormFieldConfig, RecruiterData, FormData, FormErrors } from "./types";
 import { SelectCountryFormEs } from "../Talentos/ModulosTalentos/ModuloTalentosG/JobCard/jobDescription/job-form/jobFormCountry/JobFormSelectCountry";
+import PhoneInput from "react-phone-number-input";
+import "react-phone-number-input/style.css";
 import "./RecruiterApplicationForm.css";
 
 const SUPERADMN_ID = import.meta.env.VITE_SUPERADMN_ID;
@@ -86,9 +88,7 @@ function RecruiterApplicationForm() {
           // Si no tiene order, mantener el orden del backend
           return 0;
         });
-        // REVERTIR EL ORDEN - Los que están abajo van arriba
         const reversedConfig = sortedConfig.reverse();
-        console.log('Form config ordenado (revertido):', reversedConfig.map(f => ({ name: f.fieldName, order: f.order })));
         setFormConfig(reversedConfig);
 
         // Obtener tecnologías y stack técnico
@@ -322,6 +322,38 @@ function RecruiterApplicationForm() {
       salary = parsed;
     }
 
+    // Buscar el campo de teléfono en formConfig para obtener su airtableField
+    const phoneField = formConfig.find(
+      (field) =>
+        field.fieldName.toLowerCase().includes("phone") ||
+        field.fieldName.toLowerCase().includes("telefono") ||
+        field.fieldName.toLowerCase().includes("tel") ||
+        field.airtableField.toLowerCase().includes("phone") ||
+        field.airtableField.toLowerCase().includes("telefono") ||
+        field.airtableField.toLowerCase().includes("tel")
+    );
+    
+    const phoneFieldName = phoneField?.fieldName;
+    const phoneAirtableField = phoneField?.airtableField || phoneFieldName || "Phone";
+    
+    // Obtener el valor del teléfono directamente de formData
+    const phoneRawValue = phoneFieldName ? formData[phoneFieldName] : undefined;
+    
+    // Formatear el teléfono para Airtable tipo "Phone number"
+    // Airtable acepta números en formato internacional con el signo + (ej: +543492580666)
+    // También acepta formato estadounidense (415) 555-9876, pero el formato internacional es más universal
+    // PhoneInput ya devuelve el formato internacional correcto (ej: +255455455788)
+    let phoneValue: string | undefined;
+    if (phoneRawValue !== undefined && phoneRawValue !== null) {
+      const phoneStr = String(phoneRawValue).trim();
+      if (phoneStr !== "") {
+        // Airtable Phone number field acepta el formato internacional con +
+        // El formato +[código país][número] es el estándar y debería funcionar
+        // Ejemplo: +255455455788, +543492580666
+        phoneValue = phoneStr;
+      }
+    }
+
     const payload: Record<string, any> = {
       code: sanitizeString(formData.rolAlQueAplica ?? normalizedRoleCode),
       stack,
@@ -338,6 +370,61 @@ function RecruiterApplicationForm() {
       recruiterSlug: sanitizeString(formData.recruiterSlug ?? recruiterSlug),
       recruiter: sanitizeString(formData.recruiter),
     };
+
+    if (phoneField && phoneAirtableField && phoneValue && phoneValue.trim() !== "") {
+      payload[phoneAirtableField] = phoneValue;
+      
+      if (phoneFieldName && phoneFieldName !== phoneAirtableField) {
+        payload[phoneFieldName] = phoneValue;
+      }
+    }
+
+    // Agregar todos los demás campos de formConfig que no están mapeados explícitamente
+    // Esto asegura que campos personalizados también se envíen a Airtable
+    formConfig.forEach((field) => {
+      // Saltar campos que ya están mapeados o son internos
+      const isMappedField = 
+        field.fieldName === "rolAlQueAplica" ||
+        field.fieldName === "candidateStackPmTools" ||
+        field.fieldName === "whatWouldBeYourAreaOfExpertise" ||
+        field.fieldName === "salaryExpectationusd" ||
+        field.fieldName === "salaryExpectationUsd" ||
+        field.fieldName === "salaryExpectationUSD" ||
+        field.fieldName === "salaryExpectationUsD" ||
+        field.fieldName === "candidateEmail" ||
+        field.fieldName === "email" ||
+        field.fieldName === "whenToStartAvailability" ||
+        field.fieldName === "whyChange" ||
+        field.fieldName === "englishLevel" ||
+        field.fieldName === "country" ||
+        field.fieldName === "linkedIn" ||
+        field.fieldName === "linkedin" ||
+        field.fieldName === "nombre" ||
+        field.fieldName === "firstName" ||
+        field.fieldName === "apellido" ||
+        field.fieldName === "lastName" ||
+        field.fieldName === "recruiterSlug" ||
+        field.fieldName === "recruiter" ||
+        field.fieldName === "cV" ||
+        field.fieldName === "cv" ||
+        field.fieldName.toLowerCase() === "recruiterslug" ||
+        phoneFieldName === field.fieldName;
+
+      if (!isMappedField && field.fieldName in formData) {
+        const fieldValue = formData[field.fieldName];
+        const airtableFieldName = field.airtableField || field.fieldName;
+        
+        // Procesar según el tipo de campo
+        if (field.type === "multi-select") {
+          const arrayValue = ensureStringArray(fieldValue);
+          if (arrayValue.length > 0) {
+            payload[airtableFieldName] = arrayValue;
+          }
+        } else if (fieldValue !== undefined && fieldValue !== null && String(fieldValue).trim() !== "") {
+          payload[airtableFieldName] = sanitizeString(fieldValue) || String(fieldValue).trim();
+        }
+      }
+    });
 
     Object.keys(payload).forEach((key) => {
       if (payload[key] === undefined || payload[key] === null) {
@@ -432,6 +519,10 @@ function RecruiterApplicationForm() {
       });
     } catch (error: any) {
       console.error("Error submitting form:", error);
+      console.error("Error response:", error.response);
+      console.error("Error response data:", error.response?.data);
+      console.error("Error status:", error.response?.status);
+      
       const responseData = error.response?.data;
       const backendMessage =
         (responseData && typeof responseData === "object" && responseData.message
@@ -443,10 +534,15 @@ function RecruiterApplicationForm() {
         ? responseData.errors.join(" • ")
         : undefined;
 
+      // Mostrar más detalles en el error 406
+      const errorDetails = error.response?.status === 406 
+        ? ` (406 Not Acceptable - El servidor no acepta el formato de los datos. Verifica la consola para más detalles.)`
+        : "";
+
       Swal.fire({
         icon: "error",
         title: "Error",
-        text: joinedErrors ? `${backendMessage} (${joinedErrors})` : backendMessage,
+        text: `${joinedErrors ? `${backendMessage} (${joinedErrors})` : backendMessage}${errorDetails}`,
         confirmButtonColor: "#01A28B",
       });
     } finally {
@@ -729,6 +825,41 @@ function RecruiterApplicationForm() {
           {error && <p className="form-error">{error}</p>}
         </>,
         { fullWidth: true }
+      );
+    }
+
+    // Detectar campos de teléfono por nombre o tipo
+    const isPhoneField =
+      lowerFieldName.includes("phone") ||
+      lowerFieldName.includes("telefono") ||
+      lowerFieldName.includes("tel") ||
+      lowerAirtableField.includes("phone") ||
+      lowerAirtableField.includes("telefono") ||
+      lowerAirtableField.includes("tel");
+
+    if (isPhoneField) {
+      return renderWrapper(
+        field.fieldName,
+        <>
+          {renderLabel()}
+          <PhoneInput
+            international
+            defaultCountry="US"
+            value={value || ""}
+            onChange={(phoneValue) => {
+              handleInputChange(field.fieldName, phoneValue || "");
+            }}
+            placeholder={field.placeholder || "Ingresa tu número de teléfono"}
+            className={`phone-input-wrapper ${error ? "error" : ""}`}
+            numberInputProps={{
+              className: "form-input phone-input",
+            }}
+            countrySelectProps={{
+              className: "phone-country-select",
+            }}
+          />
+          {error && <p className="form-error">{error}</p>}
+        </>
       );
     }
 

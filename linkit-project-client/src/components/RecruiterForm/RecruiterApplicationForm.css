@@ -474,3 +474,85 @@
     opacity: 0.35;
   }
 }
+
+/* Estilos para el componente de teléfono */
+.phone-input-wrapper {
+  width: 100%;
+}
+
+.phone-input-wrapper .PhoneInput {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  border: 2px solid #CBDAE8;
+  border-radius: 8px;
+  background: white;
+  transition: border-color 0.3s;
+}
+
+.phone-input-wrapper .PhoneInput:focus-within {
+  border-color: #01A28B;
+  outline: none;
+}
+
+.phone-input-wrapper.error .PhoneInput {
+  border-color: #F87171;
+}
+
+.phone-input-wrapper .PhoneInputCountry {
+  padding: 0.75rem 0.5rem;
+  border-right: 2px solid #CBDAE8;
+  background: #f9fafb;
+  border-radius: 8px 0 0 8px;
+}
+
+.phone-input-wrapper .PhoneInputCountryIcon {
+  width: 20px;
+  height: 15px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+}
+
+.phone-input-wrapper .PhoneInputCountrySelect {
+  padding: 0.5rem;
+  border: none;
+  background: transparent;
+  font-size: 0.875rem;
+  color: #173951;
+  cursor: pointer;
+  font-family: 'Montserrat', sans-serif;
+}
+
+.phone-input-wrapper .PhoneInputCountrySelect:focus {
+  outline: none;
+}
+
+.phone-input-wrapper .phone-input {
+  flex: 1;
+  padding: 0.75rem;
+  border: none;
+  border-radius: 0 8px 8px 0;
+  font-size: 1rem;
+  font-family: 'Montserrat', sans-serif;
+  color: #173951;
+  background: white;
+}
+
+.phone-input-wrapper .phone-input:focus {
+  outline: none;
+}
+
+.phone-input-wrapper .phone-input::placeholder {
+  color: #9ca3af;
+}
+
+@media (max-width: 768px) {
+  .phone-input-wrapper .PhoneInputCountry {
+    padding: 0.625rem 0.375rem;
+  }
+  
+  .phone-input-wrapper .phone-input {
+    padding: 0.625rem;
+    font-size: 0.95rem;
+  }
+}

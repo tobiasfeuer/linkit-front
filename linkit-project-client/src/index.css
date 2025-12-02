@@ -68,3 +68,74 @@ html {
   @apply  text-[0.7rem] ssm:text-[1rem] md:text-[1.2rem] lg:text-[0.8rem] xl:text-[1rem] 
 }
 
+/* Estilos para el componente de teléfono en ContactForm */
+.phone-input-container-contact {
+  width: 100%;
+}
+
+.phone-input-container-contact .PhoneInput {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  border: 2px solid #d1d5db;
+  border-radius: 0.5rem;
+  background: white;
+  transition: border-color 0.3s;
+}
+
+.phone-input-container-contact .PhoneInput:focus-within {
+  border-color: #01A28B;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(1, 162, 139, 0.1);
+}
+
+.phone-input-container-contact.error .PhoneInput {
+  border-color: #ef4444;
+}
+
+.phone-input-container-contact .PhoneInputCountry {
+  padding: 0.5rem;
+  border-right: 2px solid #d1d5db;
+  background: #f9fafb;
+  border-radius: 0.5rem 0 0 0.5rem;
+}
+
+.phone-input-container-contact .PhoneInputCountryIcon {
+  width: 20px;
+  height: 15px;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+  border-radius: 2px;
+}
+
+.phone-input-container-contact .PhoneInputCountrySelect {
+  padding: 0.5rem;
+  border: none;
+  background: transparent;
+  font-size: 0.875rem;
+  color: #374151;
+  cursor: pointer;
+}
+
+.phone-input-container-contact .PhoneInputCountrySelect:focus {
+  outline: none;
+}
+
+.phone-input-container-contact .phone-input-contact {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: none;
+  border-radius: 0 0.5rem 0.5rem 0;
+  font-size: 1rem;
+  color: #374151;
+  background: white;
+  width: 100%;
+}
+
+.phone-input-container-contact .phone-input-contact:focus {
+  outline: none;
+}
+
+.phone-input-container-contact .phone-input-contact::placeholder {
+  color: #9ca3af;
+}
+
