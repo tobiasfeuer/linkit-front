@@ -191,11 +191,57 @@ function RecruiterApplicationForm() {
   };
 
   const validateField = (field: FormFieldConfig, value: any): string => {
-    if (field.required && (!value || (Array.isArray(value) && value.length === 0))) {
+    const lowerFieldName = field.fieldName.toLowerCase();
+    const lowerAirtableField = field.airtableField.toLowerCase();
+    const isCvField =
+      lowerFieldName === "cv" ||
+      lowerAirtableField === "cv" ||
+      lowerFieldName.includes("curriculum") ||
+      lowerAirtableField.includes("curriculum") ||
+      field.type === "file";
+
+    if (field.required && !isCvField && (!value || (Array.isArray(value) && value.length === 0))) {
       return `${field.label} es requerido`;
     }
 
     if (!value) return "";
+
+    // Validación para Nombre y Apellido (solo letras y caracteres permitidos)
+    const isNameField =
+      lowerFieldName.includes("nombre") ||
+      lowerFieldName.includes("firstname") ||
+      lowerFieldName.includes("name") && !lowerFieldName.includes("company") && !lowerFieldName.includes("user");
+    const isLastNameField =
+      lowerFieldName.includes("apellido") ||
+      lowerFieldName.includes("lastname") ||
+      lowerAirtableField.includes("apellido") ||
+      lowerAirtableField.includes("lastname");
+
+    if ((isNameField || isLastNameField) && typeof value === "string") {
+      const trimmedValue = value.trim();
+      if (trimmedValue.length < 2) {
+        return `${field.label} ${t("debe tener al menos")} 2 ${t("caracteres")}`;
+      }
+      if (trimmedValue.length > 50) {
+        return `${field.label} ${t("debe tener máximo")} 50 ${t("caracteres")}`;
+      }
+      const nameRegex = /^[a-zA-ZáéíóúÁÉÍÓÚñÑüÜ\s'-]{2,50}$/;
+      if (!nameRegex.test(trimmedValue)) {
+        return `${field.label} ${t("solo puede contener letras, espacios, guiones y apóstrofes (2-50 caracteres)")}`;
+      }
+    }
+
+    // Validación para LinkedIn (formato más flexible)
+    const isLinkedInField =
+      lowerFieldName.includes("linkedin") ||
+      lowerAirtableField.includes("linkedin");
+    
+    if (isLinkedInField && typeof value === "string") {
+      const linkedInRegex = /^(https?:\/\/)?(www\.)?linkedin\.com\/in\/[\w-]+\/?$/i;
+      if (!linkedInRegex.test(value.trim())) {
+        return `${field.label} ${t("debe tener el formato: www.linkedin.com/in/tu-perfil")}`;
+      }
+    }
 
     if (field.validation) {
       if (field.type === "text" || field.type === "textarea") {
@@ -218,11 +264,75 @@ function RecruiterApplicationForm() {
       }
     }
 
+    // Validación para Disponibilidad (availability)
+    const isAvailabilityField =
+      lowerFieldName.includes("availability") ||
+      lowerFieldName.includes("disponibilidad") ||
+      lowerAirtableField.includes("availability") ||
+      lowerAirtableField.includes("disponibilidad");
+    
+    if (isAvailabilityField && typeof value === "string") {
+      const trimmedValue = value.trim();
+      if (trimmedValue.length < 5) {
+        return `${field.label} ${t("debe tener al menos")} 5 ${t("caracteres")}`;
+      }
+      if (trimmedValue.length > 200) {
+        return `${field.label} ${t("debe tener máximo")} 200 ${t("caracteres")}`;
+      }
+      const contentRegex = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s.,!?-]{5,200}$/;
+      if (!contentRegex.test(trimmedValue)) {
+        return `${field.label} ${t("contiene caracteres no permitidos")}`;
+      }
+    }
+
+    // Validación para Razón para cambiar (whyChange/reason)
+    const isReasonField =
+      lowerFieldName.includes("reason") ||
+      lowerFieldName.includes("razon") ||
+      lowerFieldName.includes("whychange") ||
+      lowerAirtableField.includes("reason") ||
+      lowerAirtableField.includes("razon") ||
+      lowerAirtableField.includes("why change");
+    
+    if (isReasonField && typeof value === "string") {
+      const trimmedValue = value.trim();
+      if (trimmedValue.length < 10) {
+        return `${field.label} ${t("debe tener al menos")} 10 ${t("caracteres")}`;
+      }
+      if (trimmedValue.length > 500) {
+        return `${field.label} ${t("debe tener máximo")} 500 ${t("caracteres")}`;
+      }
+      const contentRegex = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s.,!?-]{10,500}$/;
+      if (!contentRegex.test(trimmedValue)) {
+        return `${field.label} ${t("contiene caracteres no permitidos")}`;
+      }
+    }
+
+    // Validación para Expectativa salarial (salary)
+    const isSalaryField =
+      lowerFieldName.includes("salary") ||
+      lowerFieldName.includes("salario") ||
+      lowerAirtableField.includes("salary") ||
+      lowerAirtableField.includes("salario");
+    
+    if (isSalaryField && field.type === "number" && value) {
+      const numValue = Number(value);
+      if (isNaN(numValue)) {
+        return `${field.label} ${t("debe ser un número válido")}`;
+      }
+      if (numValue < 0) {
+        return `${field.label} ${t("no puede ser negativo")}`;
+      }
+      if (numValue > 1000000) {
+        return `${field.label} ${t("no puede ser mayor a 1,000,000 USD")}`;
+      }
+    }
+
     if (field.type === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
       return "Email inválido";
     }
 
-    if (field.type === "url" && !/^https?:\/\/.+\..+/.test(value)) {
+    if (field.type === "url" && !isLinkedInField && !/^https?:\/\/.+\..+/.test(value)) {
       return "URL inválida";
     }
 
@@ -317,7 +427,13 @@ function RecruiterApplicationForm() {
     if (salaryRaw !== undefined && salaryRaw !== null && String(salaryRaw).trim() !== "") {
       const parsed = Number(salaryRaw);
       if (Number.isNaN(parsed)) {
-        return { payload: {}, error: "La expectativa salarial debe ser un número válido." };
+        return { payload: {}, error: t("La expectativa salarial debe ser un número válido.") };
+      }
+      if (parsed < 0) {
+        return { payload: {}, error: t("La expectativa salarial no puede ser negativa.") };
+      }
+      if (parsed > 1000000) {
+        return { payload: {}, error: t("La expectativa salarial no puede ser mayor a 1,000,000 USD.") };
       }
       salary = parsed;
     }
@@ -519,31 +635,32 @@ function RecruiterApplicationForm() {
       });
     } catch (error: any) {
       console.error("Error submitting form:", error);
-      console.error("Error response:", error.response);
-      console.error("Error response data:", error.response?.data);
-      console.error("Error status:", error.response?.status);
       
       const responseData = error.response?.data;
-      const backendMessage =
-        (responseData && typeof responseData === "object" && responseData.message
-          ? responseData.message
-          : typeof responseData === "string"
-          ? responseData
-          : error.message) || "Error al enviar la postulación";
-      const joinedErrors = Array.isArray(responseData?.errors)
-        ? responseData.errors.join(" • ")
-        : undefined;
-
-      // Mostrar más detalles en el error 406
-      const errorDetails = error.response?.status === 406 
-        ? ` (406 Not Acceptable - El servidor no acepta el formato de los datos. Verifica la consola para más detalles.)`
-        : "";
+      const lang = i18n.language || sessionStorage.getItem("lang") || "es";
+      
+      let errorTitle = t("Error al enviar la postulación");
+      let errorMessage = "";
+      
+      if (responseData) {
+        if (typeof responseData === "object") {
+          const translatedMessage = lang === "en" ? responseData.en : responseData.es;
+          errorMessage = translatedMessage || responseData.message || t("Ocurrió un error al enviar tu postulación. Por favor intenta más tarde.");
+        } else if (typeof responseData === "string") {
+          errorMessage = responseData;
+        }
+      } else if (error.message) {
+        errorMessage = error.message;
+      } else {
+        errorMessage = t("Ocurrió un error al enviar tu postulación. Por favor intenta más tarde.");
+      }
 
       Swal.fire({
         icon: "error",
-        title: "Error",
-        text: `${joinedErrors ? `${backendMessage} (${joinedErrors})` : backendMessage}${errorDetails}`,
+        title: errorTitle,
+        text: errorMessage,
         confirmButtonColor: "#01A28B",
+        confirmButtonText: t("Entendido"),
       });
     } finally {
       setLoading(false);
@@ -863,6 +980,11 @@ function RecruiterApplicationForm() {
       );
     }
 
+    // Detectar si es campo de LinkedIn
+    const isLinkedInField =
+      lowerFieldName.includes("linkedin") ||
+      lowerAirtableField.includes("linkedin");
+
     // default: tratar como texto simple
     return renderWrapper(
       field.fieldName,
@@ -877,6 +999,11 @@ function RecruiterApplicationForm() {
           placeholder={field.placeholder}
           className={`form-input ${error ? "error" : ""}`}
         />
+        {isLinkedInField && (
+          <p className="form-instructions" style={{ marginTop: "0.5rem", fontSize: "0.875rem", color: "#6B7280" }}>
+            {t("Ejemplo")}: <a href="https://www.linkedin.com/in/link-it" target="_blank" rel="noopener noreferrer" style={{ color: "#01A28B", textDecoration: "underline" }}>www.linkedin.com/in/link-it</a>
+          </p>
+        )}
         {error && <p className="form-error">{error}</p>}
       </>
     );
