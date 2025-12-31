@@ -635,6 +635,9 @@ function RecruiterApplicationForm() {
       });
     } catch (error: any) {
       console.error("Error submitting form:", error);
+      console.error("Error response:", error.response);
+      console.error("Error response data:", error.response?.data);
+      console.error("Error status:", error.response?.status);
       
       const responseData = error.response?.data;
       const lang = i18n.language || sessionStorage.getItem("lang") || "es";
@@ -654,6 +657,11 @@ function RecruiterApplicationForm() {
       } else {
         errorMessage = t("Ocurrió un error al enviar tu postulación. Por favor intenta más tarde.");
       }
+
+      // Mostrar más detalles en el error 406
+      const errorDetails = error.response?.status === 406 
+        ? ` (406 Not Acceptable - El servidor no acepta el formato de los datos. Verifica la consola para más detalles.)`
+        : "";
 
       Swal.fire({
         icon: "error",
