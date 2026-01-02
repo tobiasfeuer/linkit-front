@@ -657,12 +657,6 @@ function RecruiterApplicationForm() {
       } else {
         errorMessage = t("Ocurrió un error al enviar tu postulación. Por favor intenta más tarde.");
       }
-
-      // Mostrar más detalles en el error 406
-      const errorDetails = error.response?.status === 406 
-        ? ` (406 Not Acceptable - El servidor no acepta el formato de los datos. Verifica la consola para más detalles.)`
-        : "";
-
       Swal.fire({
         icon: "error",
         title: errorTitle,
