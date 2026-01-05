@@ -5,7 +5,7 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 
 //i18next  Configuration
 export const i18nOptions: InitOptions = {
-  fallbackLng: 'en',
+  fallbackLng: 'es',
   debug: false,
   interpolation: {
     escapeValue: false,
@@ -25,6 +25,7 @@ export const i18nOptions: InitOptions = {
     es: {
       translation: {
         //!Home module A
+        "Role to apply": "Rol al que aplica",
         "Conectando al talento más destacado con los mejores proyectos IT": "Conectando al talento más destacado con los mejores proyectos IT",
         "Contrata y gestiona al mejor talento de manera global": "Contrata y gestiona al mejor talento de manera global",
         "Vacantes disponibles": "Vacantes disponibles",
@@ -438,7 +439,12 @@ export const i18nOptions: InitOptions = {
         "Enviando los cambios":"Enviando los cambios",
         "Enviando...":"Enviando...",
         "Preguntas Frecuentes":"Preguntas Frecuentes",
-
+        
+        // Formulario de postulación - Header
+        "Formulario de Talentos": "Formulario de Talentos",
+        "Hola! Gracias por aplicar al rol!": "Hola! Gracias por aplicar al rol!",
+        "Por favor completa el siguiente formulario para finalizar el proceso de aplicación.": "Por favor completa el siguiente formulario para finalizar el proceso de aplicación.",
+        "Pronto revisaremos tu perfil!": "Pronto revisaremos tu perfil!",
 
       } },
     en: {
@@ -577,10 +583,60 @@ export const i18nOptions: InitOptions = {
 
         //Gracias por contactarnos - Thanks for contact us!
         "¡Gracias por completar el formulario!": "Thank you for completing the form!",
-"En breve nos contactaremos contigo." : "We will contact you shortly.",
-"¡No te olvides de revisar tu correo!" : "Don't forget to check your email!",
-"Volver a Soy Empresa" : "Return to For Company",
- 
+        "En breve nos contactaremos contigo.": "We will contact you shortly.",
+        "¡No te olvides de revisar tu correo!": "Don't forget to check your email!",
+        "Serás redirigido automáticamente en 5 segundos...": "You will be redirected automatically in 5 seconds...",
+        "Error al enviar la postulación": "Error submitting application",
+        "Ocurrió un error al enviar tu postulación. Por favor intenta más tarde.": "An error occurred while submitting your application. Please try again later.",
+        "Entendido": "Got it",
+        "Ejemplo": "Example",
+        "solo puede contener letras, espacios, guiones y apóstrofes (2-50 caracteres)": "can only contain letters, spaces, hyphens and apostrophes (2-50 characters)",
+        "debe tener al menos": "must have at least",
+        "caracteres": "characters",
+        "debe tener máximo": "must have a maximum of",
+        "debe ser al menos": "must be at least",
+        "debe ser máximo": "must be at most",
+        "debe tener el formato: www.linkedin.com/in/tu-perfil": "must have the format: www.linkedin.com/in/your-profile",
+        "debe ser un número válido": "must be a valid number",
+        "no puede ser negativo": "cannot be negative",
+        "no puede ser mayor a 1,000,000 USD": "cannot be greater than 1,000,000 USD",
+        "contiene caracteres no permitidos": "contains invalid characters",
+        "es requerido": "is required",
+        "URL inválida": "Invalid URL",
+        "La expectativa salarial debe ser un número válido.": "The salary expectation must be a valid number.",
+        "La expectativa salarial no puede ser negativa.": "The salary expectation cannot be negative.",
+        "La expectativa salarial no puede ser mayor a 1,000,000 USD.": "The salary expectation cannot be greater than 1,000,000 USD.",
+        "Tipo de archivo no válido": "Invalid file type",
+        "Por favor sube un archivo PDF, imagen (JPG, PNG) o documento Word (DOC, DOCX).": "Please upload a PDF file, image (JPG, PNG) or Word document (DOC, DOCX).",
+        "Archivo demasiado grande": "File too large",
+        "El archivo no puede ser mayor a 10 MB. Por favor comprime el archivo o sube uno más pequeño.": "The file cannot be larger than 10 MB. Please compress the file or upload a smaller one.",
+        
+        // Formulario de postulación - Header
+        "Formulario de Talentos": "Talent Application Form",
+        "Hola! Gracias por aplicar al rol!": "Hello! Thank you for applying to the role!",
+        "Por favor completa el siguiente formulario para finalizar el proceso de aplicación.": "Please complete the following form to finalize the application process.",
+        "Pronto revisaremos tu perfil!": "We will review your profile soon!",
+        
+        // Formulario de postulación - Campos
+        "Phone": "Teléfono",
+        "Recruiter": "Reclutador",
+        "Rol al que aplica": "Role to apply",
+        "What would be your area of expertise?": "¿Cuál sería tu área de especialización?",
+        "Candidate Email": "Email del candidato",
+        "When to start availability": "Disponibilidad para empezar",
+        "Why Change": "Por qué cambiar",
+        "Candidate Stack + PM tools": "Stack del candidato + herramientas PM",
+        "Salary expectation (USD)": "Expectativa salarial (USD)",
+        "English Level": "Nivel de inglés",
+        "Country": "País",
+        "Location": "Ubicación",
+        "CV": "CV",
+        "LinkedIn": "LinkedIn",
+        "Select...": "Seleccionar...",
+        "Subir CV (PDF o imagen)": "Upload CV (PDF or image)",
+        "Ingresa tu número de teléfono": "Enter your phone number",
+        "Archivo:": "File:",
+        
         //Agendar llamada
         "Agendar llamada": "Schedule call",
         "Agenda una llamada con nuestro equipo!":"Schedule a call with our team!",

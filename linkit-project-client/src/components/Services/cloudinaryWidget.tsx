@@ -100,6 +100,34 @@ function CloudinaryUploadWidget({
   const handleMobileFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Validación de tipo de archivo
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    const allowedExtensions = ['.pdf', '.jpg', '.jpeg', '.png', '.doc', '.docx'];
+    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
+    
+    if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
+      Swal.fire({
+        icon: "error",
+        title: t("Tipo de archivo no válido"),
+        text: t("Por favor sube un archivo PDF, imagen (JPG, PNG) o documento Word (DOC, DOCX)."),
+        confirmButtonColor: "#01A28B",
+      });
+      return;
+    }
+
+    // Validación de tamaño (10 MB máximo)
+    const maxSize = 10 * 1024 * 1024; // 10 MB en bytes
+    if (file.size > maxSize) {
+      Swal.fire({
+        icon: "error",
+        title: t("Archivo demasiado grande"),
+        text: t("El archivo no puede ser mayor a 10 MB. Por favor comprime el archivo o sube uno más pequeño."),
+        confirmButtonColor: "#01A28B",
+      });
+      return;
+    }
+
     try {
       const formData = new FormData();
       formData.append("file", file);
