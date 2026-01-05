@@ -190,6 +190,16 @@ function RecruiterApplicationForm() {
     }
   };
 
+  // Función helper para traducir labels (disponible para validateField y renderField)
+  const translateLabel = (label: string): string => {
+    if (!label) return "";
+    // Si existe traducción, usarla; si no, devolver el label original
+    if (i18n.exists(label)) {
+      return t(label);
+    }
+    return label;
+  };
+
   const validateField = (field: FormFieldConfig, value: any): string => {
     const lowerFieldName = field.fieldName.toLowerCase();
     const lowerAirtableField = field.airtableField.toLowerCase();
@@ -201,7 +211,7 @@ function RecruiterApplicationForm() {
       field.type === "file";
 
     if (field.required && !isCvField && (!value || (Array.isArray(value) && value.length === 0))) {
-      return `${field.label} es requerido`;
+      return `${translateLabel(field.label)} ${t("es requerido")}`;
     }
 
     if (!value) return "";
@@ -239,27 +249,27 @@ function RecruiterApplicationForm() {
     if (isLinkedInField && typeof value === "string") {
       const linkedInRegex = /^(https?:\/\/)?(www\.)?linkedin\.com\/in\/[\w-]+\/?$/i;
       if (!linkedInRegex.test(value.trim())) {
-        return `${field.label} ${t("debe tener el formato: www.linkedin.com/in/tu-perfil")}`;
+        return `${translateLabel(field.label)} ${t("debe tener el formato: www.linkedin.com/in/tu-perfil")}`;
       }
     }
 
     if (field.validation) {
       if (field.type === "text" || field.type === "textarea") {
         if (field.validation.min && value.length < field.validation.min) {
-          return `${field.label} debe tener al menos ${field.validation.min} caracteres`;
+          return `${translateLabel(field.label)} ${t("debe tener al menos")} ${field.validation.min} ${t("caracteres")}`;
         }
         if (field.validation.max && value.length > field.validation.max) {
-          return `${field.label} debe tener máximo ${field.validation.max} caracteres`;
+          return `${translateLabel(field.label)} ${t("debe tener máximo")} ${field.validation.max} ${t("caracteres")}`;
         }
       }
 
       if (field.type === "number") {
         const numValue = Number(value);
         if (field.validation.min && numValue < field.validation.min) {
-          return `${field.label} debe ser al menos ${field.validation.min}`;
+          return `${translateLabel(field.label)} ${t("debe ser al menos")} ${field.validation.min}`;
         }
         if (field.validation.max && numValue > field.validation.max) {
-          return `${field.label} debe ser máximo ${field.validation.max}`;
+          return `${translateLabel(field.label)} ${t("debe ser máximo")} ${field.validation.max}`;
         }
       }
     }
@@ -274,14 +284,14 @@ function RecruiterApplicationForm() {
     if (isAvailabilityField && typeof value === "string") {
       const trimmedValue = value.trim();
       if (trimmedValue.length < 5) {
-        return `${field.label} ${t("debe tener al menos")} 5 ${t("caracteres")}`;
+        return `${translateLabel(field.label)} ${t("debe tener al menos")} 5 ${t("caracteres")}`;
       }
       if (trimmedValue.length > 200) {
-        return `${field.label} ${t("debe tener máximo")} 200 ${t("caracteres")}`;
+        return `${translateLabel(field.label)} ${t("debe tener máximo")} 200 ${t("caracteres")}`;
       }
       const contentRegex = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s.,!?-]{5,200}$/;
       if (!contentRegex.test(trimmedValue)) {
-        return `${field.label} ${t("contiene caracteres no permitidos")}`;
+        return `${translateLabel(field.label)} ${t("contiene caracteres no permitidos")}`;
       }
     }
 
@@ -297,14 +307,14 @@ function RecruiterApplicationForm() {
     if (isReasonField && typeof value === "string") {
       const trimmedValue = value.trim();
       if (trimmedValue.length < 10) {
-        return `${field.label} ${t("debe tener al menos")} 10 ${t("caracteres")}`;
+        return `${translateLabel(field.label)} ${t("debe tener al menos")} 10 ${t("caracteres")}`;
       }
       if (trimmedValue.length > 500) {
-        return `${field.label} ${t("debe tener máximo")} 500 ${t("caracteres")}`;
+        return `${translateLabel(field.label)} ${t("debe tener máximo")} 500 ${t("caracteres")}`;
       }
       const contentRegex = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s.,!?-]{10,500}$/;
       if (!contentRegex.test(trimmedValue)) {
-        return `${field.label} ${t("contiene caracteres no permitidos")}`;
+        return `${translateLabel(field.label)} ${t("contiene caracteres no permitidos")}`;
       }
     }
 
@@ -318,22 +328,22 @@ function RecruiterApplicationForm() {
     if (isSalaryField && field.type === "number" && value) {
       const numValue = Number(value);
       if (isNaN(numValue)) {
-        return `${field.label} ${t("debe ser un número válido")}`;
+        return `${translateLabel(field.label)} ${t("debe ser un número válido")}`;
       }
       if (numValue < 0) {
-        return `${field.label} ${t("no puede ser negativo")}`;
+        return `${translateLabel(field.label)} ${t("no puede ser negativo")}`;
       }
       if (numValue > 1000000) {
-        return `${field.label} ${t("no puede ser mayor a 1,000,000 USD")}`;
+        return `${translateLabel(field.label)} ${t("no puede ser mayor a 1,000,000 USD")}`;
       }
     }
 
     if (field.type === "email" && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
-      return "Email inválido";
+      return t("Email inválido");
     }
 
     if (field.type === "url" && !isLinkedInField && !/^https?:\/\/.+\..+/.test(value)) {
-      return "URL inválida";
+      return t("URL inválida");
     }
 
     return "";
@@ -726,11 +736,11 @@ function RecruiterApplicationForm() {
     const renderLabel = () => (
       <>
         <label htmlFor={field.fieldName} className="form-label">
-          {field.label}
+          {translateLabel(field.label)}
           {field.required && <span className="text-red-400">*</span>}
         </label>
         {field.instructions && (
-          <p className="form-instructions">{field.instructions}</p>
+          <p className="form-instructions">{translateLabel(field.instructions)}</p>
         )}
       </>
     );
@@ -821,10 +831,10 @@ function RecruiterApplicationForm() {
               >
                 <path d="M12 16.5l4-4h-3V3h-2v9.5H8l4 4zM20 18v2H4v-2H2v2a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-2h-2z" />
               </svg>
-              <span>{fileName || field.placeholder || "Subir CV (PDF o imagen)"}</span>
+              <span>{fileName || (field.placeholder ? translateLabel(field.placeholder) : t("Subir CV (PDF o imagen)"))}</span>
             </div>
           </CloudinaryUploadWidget>
-          {fileName && <p className="form-file-name">Archivo: {fileName}</p>}
+          {fileName && <p className="form-file-name">{t("Archivo:")} {fileName}</p>}
           {error && <p className="form-error">{error}</p>}
         </>,
         { fullWidth: true }
@@ -841,7 +851,7 @@ function RecruiterApplicationForm() {
             name={field.fieldName}
             value={value || ""}
             onChange={(e) => handleInputChange(field.fieldName, e.target.value)}
-            placeholder={field.placeholder}
+            placeholder={field.placeholder ? translateLabel(field.placeholder) : ""}
             rows={6}
             className={`form-textarea ${error ? "error" : ""}`}
           />
@@ -862,7 +872,7 @@ function RecruiterApplicationForm() {
             name={field.fieldName}
             value={value || ""}
             onChange={(e) => handleInputChange(field.fieldName, e.target.value)}
-            placeholder={field.placeholder}
+            placeholder={field.placeholder ? translateLabel(field.placeholder) : ""}
             min={field.validation?.min}
             max={field.validation?.max}
             className={`form-input ${error ? "error" : ""}`}
@@ -885,7 +895,7 @@ function RecruiterApplicationForm() {
             onChange={(e) => handleInputChange(field.fieldName, e.target.value)}
             className={`form-select ${error ? "error" : ""}`}
           >
-            <option value="">{field.placeholder || "Seleccionar..."}</option>
+            <option value="">{field.placeholder ? translateLabel(field.placeholder) : t("Select...")}</option>
             {baseOptions.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
@@ -966,7 +976,7 @@ function RecruiterApplicationForm() {
             onChange={(phoneValue) => {
               handleInputChange(field.fieldName, phoneValue || "");
             }}
-            placeholder={field.placeholder || "Ingresa tu número de teléfono"}
+            placeholder={field.placeholder ? translateLabel(field.placeholder) : t("Ingresa tu número de teléfono")}
             className={`phone-input-wrapper ${error ? "error" : ""}`}
             numberInputProps={{
               className: "form-input phone-input",
@@ -996,7 +1006,7 @@ function RecruiterApplicationForm() {
           name={field.fieldName}
           value={value || ""}
           onChange={(e) => handleInputChange(field.fieldName, e.target.value)}
-          placeholder={field.placeholder}
+          placeholder={field.placeholder ? translateLabel(field.placeholder) : ""}
           className={`form-input ${error ? "error" : ""}`}
         />
         {isLinkedInField && (
