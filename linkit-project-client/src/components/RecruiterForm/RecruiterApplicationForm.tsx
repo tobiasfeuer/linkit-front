@@ -645,6 +645,9 @@ function RecruiterApplicationForm() {
       });
     } catch (error: any) {
       console.error("Error submitting form:", error);
+      console.error("Error response:", error.response);
+      console.error("Error response data:", error.response?.data);
+      console.error("Error status:", error.response?.status);
       
       const responseData = error.response?.data;
       const lang = i18n.language || sessionStorage.getItem("lang") || "es";
@@ -664,7 +667,6 @@ function RecruiterApplicationForm() {
       } else {
         errorMessage = t("Ocurrió un error al enviar tu postulación. Por favor intenta más tarde.");
       }
-
       Swal.fire({
         icon: "error",
         title: errorTitle,
