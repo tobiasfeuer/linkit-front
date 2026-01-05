@@ -15,6 +15,7 @@ export default function SuccesfullForm() {
   const navigate = useNavigate();
 
   useEffect(() => {
+
     if (window.dataLayer) {
       window.dataLayer.push({ event: 'formularioCompleto' });
     }

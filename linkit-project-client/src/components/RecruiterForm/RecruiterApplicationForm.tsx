@@ -22,6 +22,39 @@ function RecruiterApplicationForm() {
   const location = useLocation();
   const { t, i18n } = useTranslation();
   const lang = i18n.language || sessionStorage.getItem("lang") || "es";
+  
+  // Mapeo estático de traducciones para textos que vienen de Airtable
+  // Estos son los textos conocidos que el backend envía
+  const airtableTranslations: Record<string, { es: string; en: string }> = {
+    // Labels de campos
+    "Role to apply": { es: "Rol al que aplica", en: "Role to apply" },
+    "Rol al que aplica": { es: "Rol al que aplica", en: "Role to apply" },
+    "What would be your area of expertise?": { es: "¿Cuál sería tu área de especialización?", en: "What would be your area of expertise?" },
+    "Candidate Email": { es: "Email del candidato", en: "Candidate Email" },
+    "When to start availability": { es: "Disponibilidad para empezar", en: "When to start availability" },
+    "Why Change": { es: "Por qué cambiar", en: "Why Change" },
+    "Candidate Stack + PM tools": { es: "Stack del candidato + herramientas PM", en: "Candidate Stack + PM tools" },
+    "Salary expectation (USD)": { es: "Expectativa salarial (USD)", en: "Salary expectation (USD)" },
+    "English Level": { es: "Nivel de inglés", en: "English Level" },
+    "Country": { es: "País", en: "Country" },
+    "Location": { es: "Ubicación", en: "Location" },
+    "Phone": { es: "Teléfono", en: "Phone" },
+    "Recruiter": { es: "Reclutador", en: "Recruiter" },
+    "CV": { es: "CV", en: "CV" },
+    "LinkedIn": { es: "LinkedIn", en: "LinkedIn" },
+    "Select...": { es: "Seleccionar...", en: "Select..." },
+    "Nombre": { es: "Nombre", en: "First Name" },
+    "First Name": { es: "Nombre", en: "First Name" },
+    "Apellido": { es: "Apellido", en: "Last Name" },
+    "Last Name": { es: "Apellido", en: "Last Name" },
+    // Opciones comunes de selects (niveles de inglés, etc.)
+    "intermediate (B2)": { es: "intermedio (B2)", en: "intermediate (B2)" },
+    "Intermediate": { es: "Intermedio", en: "Intermediate" },
+    "intermediate (B1)": { es: "intermedio (B1)", en: "intermediate (B1)" },
+    "Advanced": { es: "Avanzado", en: "Advanced" },
+    "Professional": { es: "Profesional", en: "Professional" },
+    "Basic": { es: "Básico", en: "Basic" },
+  };
 
   const [formConfig, setFormConfig] = useState<FormFieldConfig[]>([]);
   const [recruiterData, setRecruiterData] = useState<RecruiterData | null>(null);
@@ -79,6 +112,22 @@ function RecruiterApplicationForm() {
 
         // Obtener configuración del formulario
         const config = await getFormConfig("RecruiterFormWebView", lang);
+        
+        // Console.log para ver los labels que vienen del backend
+        console.log("=== LABELS DEL BACKEND (Airtable) ===");
+        config.forEach((field, index) => {
+          console.log(`Campo ${index + 1}:`, {
+            fieldName: field.fieldName,
+            airtableField: field.airtableField,
+            label: field.label,
+            placeholder: field.placeholder,
+            instructions: field.instructions,
+            type: field.type,
+            options: field.options ? (Array.isArray(field.options) ? field.options.slice(0, 3) : "No es array") : "Sin opciones"
+          });
+        });
+        console.log("=== FIN DE LABELS ===");
+        
         // Ordenar por el campo 'order' que viene del backend
         const sortedConfig = config.sort((a, b) => {
           // Asegurar que el orden sea correcto
@@ -191,12 +240,23 @@ function RecruiterApplicationForm() {
   };
 
   // Función helper para traducir labels (disponible para validateField y renderField)
+  // Prioriza el mapeo estático de Airtable, luego i18n, luego el original
   const translateLabel = (label: string): string => {
     if (!label) return "";
-    // Si existe traducción, usarla; si no, devolver el label original
+    
+    const currentLang = lang.startsWith("es") ? "es" : "en";
+    
+    // 1. Primero verificar el mapeo estático de Airtable
+    if (airtableTranslations[label]) {
+      return airtableTranslations[label][currentLang as "es" | "en"];
+    }
+    
+    // 2. Si no está en el mapeo estático, intentar con i18n
     if (i18n.exists(label)) {
       return t(label);
     }
+    
+    // 3. Si no hay traducción, devolver el original
     return label;
   };
 
@@ -886,6 +946,7 @@ function RecruiterApplicationForm() {
 
     if (field.type === "select") {
       const baseOptions = normalizeOptionsArray(field.options);
+      const currentLang = lang.startsWith("es") ? "es" : "en";
       return renderWrapper(
         field.fieldName,
         <>
@@ -897,10 +958,10 @@ function RecruiterApplicationForm() {
             onChange={(e) => handleInputChange(field.fieldName, e.target.value)}
             className={`form-select ${error ? "error" : ""}`}
           >
-            <option value="">{field.placeholder ? translateLabel(field.placeholder) : t("Select...")}</option>
+            <option value="">{field.placeholder ? translateLabel(field.placeholder) : (currentLang === "es" ? "Seleccionar..." : "Select...")}</option>
             {baseOptions.map((option) => (
               <option key={option.value} value={option.value}>
-                {option.label}
+                {translateLabel(option.label)}
               </option>
             ))}
           </select>
@@ -921,16 +982,30 @@ function RecruiterApplicationForm() {
         ? value.map((item) => (typeof item === "string" ? item : String(item)))
         : [];
 
+      // Traducir las opciones para mostrar, manteniendo los values originales
+      const translatedOptions = options.map(opt => ({
+        value: opt.value,
+        label: translateLabel(opt.label)
+      }));
+
       const selected = currentValues
-        .map((val) => options.find((opt) => opt.value === val) || { value: val, label: val })
+        .map((val) => {
+          const found = options.find((opt) => opt.value === val);
+          if (found) {
+            return { value: found.value, label: translateLabel(found.label) };
+          }
+          return { value: val, label: translateLabel(val) };
+        })
         .filter(Boolean);
+
+      const currentLang = lang.startsWith("es") ? "es" : "en";
 
       return renderWrapper(
         field.fieldName,
         <>
           {renderLabel()}
           <Select
-            options={options}
+            options={translatedOptions}
             isMulti
             name={field.fieldName}
             value={selected}
@@ -940,6 +1015,7 @@ function RecruiterApplicationForm() {
             }}
             closeMenuOnSelect={false}
             className="form-multiselect"
+            placeholder={field.placeholder ? translateLabel(field.placeholder) : (currentLang === "es" ? "Seleccionar..." : "Select...")}
             styles={{
               multiValue: (provided) => ({
                 ...provided,
@@ -1103,13 +1179,13 @@ function RecruiterApplicationForm() {
           />
         )}
         <div className="recruiter-info">
-          <h1 className="form-title">Formulario de Talentos</h1>
+          <h1 className="form-title">{t("Formulario de Talentos")}</h1>
           <p className="form-subtitle">
-            Hola! Gracias por aplicar al rol!
+            {t("Hola! Gracias por aplicar al rol!")}
           </p>
           <p className="form-description">
-            Por favor completa el siguiente formulario para finalizar el proceso de aplicación.
-            Pronto revisaremos tu perfil!
+            {t("Por favor completa el siguiente formulario para finalizar el proceso de aplicación.")} <br />
+            {t("Pronto revisaremos tu perfil!")}
           </p>
         </div>
       </div>

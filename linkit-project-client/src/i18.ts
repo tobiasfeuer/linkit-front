@@ -5,7 +5,7 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 
 //i18next  Configuration
 export const i18nOptions: InitOptions = {
-  fallbackLng: 'en',
+  fallbackLng: 'es',
   debug: false,
   interpolation: {
     escapeValue: false,
@@ -25,6 +25,7 @@ export const i18nOptions: InitOptions = {
     es: {
       translation: {
         //!Home module A
+        "Role to apply": "Rol al que aplica",
         "Conectando al talento más destacado con los mejores proyectos IT": "Conectando al talento más destacado con los mejores proyectos IT",
         "Contrata y gestiona al mejor talento de manera global": "Contrata y gestiona al mejor talento de manera global",
         "Vacantes disponibles": "Vacantes disponibles",
@@ -438,7 +439,12 @@ export const i18nOptions: InitOptions = {
         "Enviando los cambios":"Enviando los cambios",
         "Enviando...":"Enviando...",
         "Preguntas Frecuentes":"Preguntas Frecuentes",
-
+        
+        // Formulario de postulación - Header
+        "Formulario de Talentos": "Formulario de Talentos",
+        "Hola! Gracias por aplicar al rol!": "Hola! Gracias por aplicar al rol!",
+        "Por favor completa el siguiente formulario para finalizar el proceso de aplicación.": "Por favor completa el siguiente formulario para finalizar el proceso de aplicación.",
+        "Pronto revisaremos tu perfil!": "Pronto revisaremos tu perfil!",
 
       } },
     en: {
@@ -604,6 +610,12 @@ export const i18nOptions: InitOptions = {
         "Por favor sube un archivo PDF, imagen (JPG, PNG) o documento Word (DOC, DOCX).": "Please upload a PDF file, image (JPG, PNG) or Word document (DOC, DOCX).",
         "Archivo demasiado grande": "File too large",
         "El archivo no puede ser mayor a 10 MB. Por favor comprime el archivo o sube uno más pequeño.": "The file cannot be larger than 10 MB. Please compress the file or upload a smaller one.",
+        
+        // Formulario de postulación - Header
+        "Formulario de Talentos": "Talent Application Form",
+        "Hola! Gracias por aplicar al rol!": "Hello! Thank you for applying to the role!",
+        "Por favor completa el siguiente formulario para finalizar el proceso de aplicación.": "Please complete the following form to finalize the application process.",
+        "Pronto revisaremos tu perfil!": "We will review your profile soon!",
         
         // Formulario de postulación - Campos
         "Phone": "Teléfono",
