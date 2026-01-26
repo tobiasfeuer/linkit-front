@@ -5,7 +5,7 @@ import { initReactI18next } from 'react-i18next';
 
 //i18next  Configuration
 export const i18nOptions: InitOptions = {
-  lng: 'es', // Idioma por defecto: español
+  lng: 'es',
   fallbackLng: 'es',
   debug: false,
   interpolation: {
