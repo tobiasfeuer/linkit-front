@@ -654,7 +654,7 @@ const ContactForm = () => {
         <div className={`phone-input-container-contact ${touched.telefono && errors.telefono ? "error" : ""}`}>
           <PhoneInput
             international
-            defaultCountry="US"
+            defaultCountry="CL"
             value={formData.telefono}
             onChange={(value) => {
               handleChange({

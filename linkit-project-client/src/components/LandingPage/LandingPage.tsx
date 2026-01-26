@@ -40,7 +40,7 @@ const translations = {
   en: {
     hero: {
       title1: "Looking to",
-      title2: "hire talent",
+      title2: " hire talent",
       titleConnector: " or ",
       title3: "build an IT team?",
       description:

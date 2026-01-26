@@ -1,25 +1,27 @@
 import i18n, { InitOptions } from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import LanguageDetector from 'i18next-browser-languagedetector';
+// import LanguageDetector from 'i18next-browser-languagedetector'; // Comentado: auto-detección deshabilitada temporalmente
 
 
 //i18next  Configuration
 export const i18nOptions: InitOptions = {
+  lng: 'es',
   fallbackLng: 'es',
   debug: false,
   interpolation: {
     escapeValue: false,
   },
-  detection: {
-    order: ['navigator', 'htmlTag', 'path', 'subdomain'],
-    caches: ['localStorage', 'sessionStorage'],
-    lookupLocalStorage: 'i18nextLng',
-    lookupSessionStorage: 'i18nextLng',
-    convertDetectedLanguage: (lng: string) => {
-      if (lng.startsWith('es')) return 'es';
-      return 'en';
-    }
-  },
+  // Auto-detección de idioma comentada temporalmente
+  // detection: {
+  //   order: ['navigator', 'htmlTag', 'path', 'subdomain'],
+  //   caches: ['localStorage', 'sessionStorage'],
+  //   lookupLocalStorage: 'i18nextLng',
+  //   lookupSessionStorage: 'i18nextLng',
+  //   convertDetectedLanguage: (lng: string) => {
+  //     if (lng.startsWith('es')) return 'es';
+  //     return 'en';
+  //   }
+  // },
 
   resources: {
     es: {
@@ -1307,7 +1309,10 @@ export const i18nOptions: InitOptions = {
 
 i18n
   .use(initReactI18next)
-  .use(LanguageDetector)
+  // .use(LanguageDetector) // Comentado: auto-detección deshabilitada temporalmente
   .init(i18nOptions);
+
+// Establecer español como idioma por defecto
+i18n.changeLanguage('es');
 
 export default i18n;

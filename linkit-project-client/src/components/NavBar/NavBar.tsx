@@ -17,6 +17,7 @@ import {
 import { toggleDarkMode } from "../../redux/features/darkModeSlice";
 import { logout } from "../../redux/features/AuthSlice";
 import { useTranslation } from "react-i18next";
+import i18n from "../../i18";
 import { RootState } from "../../redux/types";
 import { Avatar, CustomFlowbiteTheme, Dropdown, DropdownDivider} from "flowbite-react";
 import Swal from "sweetalert2";
@@ -93,7 +94,7 @@ const customTheme: CustomFlowbiteTheme['dropdown'] = {
 };
 
 function NavBar() {
-  const { t } = useTranslation();
+  const { t, i18n: i18nHook } = useTranslation();
   const dispatch = useDispatch();
   const pressLogin = useSelector(
     (state: RootState) => state.registerLogin.pressLogin
@@ -124,6 +125,13 @@ function NavBar() {
   const getTranslation = (key: string, fallback?: string) => {
     const translation = t(key);
     return translation !== key ? translation : (fallback || key);
+  };
+
+  // Función para cambiar el idioma
+  const handleLanguageChange = (lang: 'es' | 'en') => {
+    i18n.changeLanguage(lang);
+    sessionStorage.setItem('lang', lang);
+    sessionStorage.setItem('i18nextLng', lang);
   };
   const goAdminDashboard = () => {
     navigate("/AdminDashboard/statistics/OKRs");
@@ -563,11 +571,37 @@ function NavBar() {
               <button onClick={() => setBurgerMenu(false)}>
               
               </button>
-              <div className="cl-toggle-switch top-[1px]">
-                <label className="cl-switch" id="switchDarkModeOutside" aria-label="Cambiar modo oscuro">
-                  <input type="checkbox" readOnly onChange={darkMode} checked={isDarkMode} id="switchDarkmodeInside"/>
-                  <span></span>
-                </label>
+              <div className="flex items-center gap-4">
+                {/* Language Selector Mobile */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => handleLanguageChange('es')}
+                    className={`font-montserrat font-bold text-sm transition-colors ${
+                      i18nHook.language === 'es' 
+                        ? 'text-linkIt-300 dark:text-linkIt-300' 
+                        : 'text-gray-600 dark:text-gray-400'
+                    }`}
+                  >
+                    ES
+                  </button>
+                  <span className="text-gray-600 dark:text-gray-400">|</span>
+                  <button
+                    onClick={() => handleLanguageChange('en')}
+                    className={`font-montserrat font-bold text-sm transition-colors ${
+                      i18nHook.language === 'en' 
+                        ? 'text-linkIt-300 dark:text-linkIt-300' 
+                        : 'text-gray-600 dark:text-gray-400'
+                    }`}
+                  >
+                    EN
+                  </button>
+                </div>
+                <div className="cl-toggle-switch top-[1px]">
+                  <label className="cl-switch" id="switchDarkModeOutside" aria-label="Cambiar modo oscuro">
+                    <input type="checkbox" readOnly onChange={darkMode} checked={isDarkMode} id="switchDarkmodeInside"/>
+                    <span></span>
+                  </label>
+                </div>
               </div>
             </div>
             <li
@@ -622,8 +656,32 @@ function NavBar() {
         )}
 
         <div className="containerBtnsNavbar">
-          {/* isDarkMode */}
+          {/* Language Selector */}
+          <div className="hidden lg:flex items-center gap-2 mr-3">
+            <button
+              onClick={() => handleLanguageChange('es')}
+              className={`font-montserrat font-bold text-sm xl:text-base transition-colors ${
+                i18nHook.language === 'es' 
+                  ? 'text-linkIt-300 dark:text-linkIt-300' 
+                  : 'text-gray-600 dark:text-gray-400 hover:text-linkIt-300 dark:hover:text-linkIt-300'
+              }`}
+            >
+              ES
+            </button>
+            <span className="text-gray-600 dark:text-gray-400">|</span>
+            <button
+              onClick={() => handleLanguageChange('en')}
+              className={`font-montserrat font-bold text-sm xl:text-base transition-colors ${
+                i18nHook.language === 'en' 
+                  ? 'text-linkIt-300 dark:text-linkIt-300' 
+                  : 'text-gray-600 dark:text-gray-400 hover:text-linkIt-300 dark:hover:text-linkIt-300'
+              }`}
+            >
+              EN
+            </button>
+          </div>
 
+          {/* isDarkMode */}
           <div className="cl-toggle-switch hidden lg:flex">
             <label className="cl-switch" id="switchDarkModeOutside" aria-label="Cambiar modo oscuro">
               <input type="checkbox" onChange={darkMode} readOnly checked={isDarkMode} id="switchDarkmodeInside"/>
