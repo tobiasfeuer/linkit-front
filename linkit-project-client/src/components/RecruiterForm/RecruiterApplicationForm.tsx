@@ -263,6 +263,13 @@ function RecruiterApplicationForm() {
   const validateField = (field: FormFieldConfig, value: any): string => {
     const lowerFieldName = field.fieldName.toLowerCase();
     const lowerAirtableField = field.airtableField.toLowerCase();
+    const isPhoneField =
+      lowerFieldName.includes("phone") ||
+      lowerFieldName.includes("telefono") ||
+      lowerFieldName.includes("tel") ||
+      lowerAirtableField.includes("phone") ||
+      lowerAirtableField.includes("telefono") ||
+      lowerAirtableField.includes("tel");
     const isCvField =
       lowerFieldName === "cv" ||
       lowerAirtableField === "cv" ||
@@ -272,6 +279,15 @@ function RecruiterApplicationForm() {
 
     if (field.required && !isCvField && (!value || (Array.isArray(value) && value.length === 0))) {
       return `${translateLabel(field.label)} ${t("es requerido")}`;
+    }
+
+    // Teléfono siempre obligatorio, aunque Airtable no lo marque como required
+    if (
+      isPhoneField &&
+      (!value || (typeof value === "string" && value.trim() === ""))
+    ) {
+      const label = field.label || "Phone";
+      return `${translateLabel(label)} ${t("es requerido")}`;
     }
 
     if (!value) return "";
