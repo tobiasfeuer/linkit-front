@@ -4,6 +4,11 @@ import JobFilters from "./JobFilters/JobFilters";
 import { useTranslation } from "react-i18next";
 import { Helmet } from "react-helmet-async";
 import { useSelector } from "react-redux";
+import { Link } from "react-router-dom";
+
+// Slug y role code para "Súmate a nuestra base de datos" (campaña / base de datos)
+const BASE_DATOS_RECRUITER_SLUG = "linkit";
+const BASE_DATOS_ROLE_CODE = "880";
 
 export default function ModuloTalentosG() {
   const { t, i18n } = useTranslation();
@@ -95,13 +100,12 @@ export default function ModuloTalentosG() {
         )}
       </p>
       <div className="w-full flex justify-center xs:p-[3vh] sm:p-0 ">
-        <a
+        <Link
           className="background-button mt-[2%] hover:text-linkIt-200 hover:bg-white justify-self-center xs:text-[14px] ssm:text-base xs:px-[3.5vh]"
-          href="https://airtable.com/appPc8zZP29ez9V2O/shrZpR4J81d85O4Ty"
-          target="_blank"
+          to={`/apply/${BASE_DATOS_RECRUITER_SLUG}?roleCode=${BASE_DATOS_ROLE_CODE}`}
         >
           {t("Súmate a nuestra base de datos")}
-        </a>
+        </Link>
       </div>
     </div>
   );
