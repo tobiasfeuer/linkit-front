@@ -447,6 +447,10 @@ export const i18nOptions: InitOptions = {
         "Hola! Gracias por aplicar al rol!": "Hola! Gracias por aplicar al rol!",
         "Por favor completa el siguiente formulario para finalizar el proceso de aplicación.": "Por favor completa el siguiente formulario para finalizar el proceso de aplicación.",
         "Pronto revisaremos tu perfil!": "Pronto revisaremos tu perfil!",
+        // Flujo "Súmate a nuestra base de datos"
+        "¡Gracias por sumarte! Completa tus datos y te contactaremos cuando tengamos un rol para vos.": "¡Gracias por sumarte! Completa tus datos y te contactaremos cuando tengamos un rol para vos.",
+        "Dejanos tu perfil y en breve nos pondremos en contacto para contarte sobre oportunidades alineadas a tu experiencia.": "Dejanos tu perfil y en breve nos pondremos en contacto para contarte sobre oportunidades alineadas a tu experiencia.",
+        "¡Revisaremos tu perfil pronto!": "¡Revisaremos tu perfil pronto!",
 
       } },
     en: {
@@ -618,6 +622,11 @@ export const i18nOptions: InitOptions = {
         "Hola! Gracias por aplicar al rol!": "Hello! Thank you for applying to the role!",
         "Por favor completa el siguiente formulario para finalizar el proceso de aplicación.": "Please complete the following form to finalize the application process.",
         "Pronto revisaremos tu perfil!": "We will review your profile soon!",
+        // Flujo "Súmate a nuestra base de datos"
+        "Súmate a nuestra base de datos": "Join our database",
+        "¡Gracias por sumarte! Completa tus datos y te contactaremos cuando tengamos un rol para vos.": "Thanks for joining! Complete your details and we'll get in touch when we have a role for you.",
+        "Dejanos tu perfil y en breve nos pondremos en contacto para contarte sobre oportunidades alineadas a tu experiencia.": "Leave us your profile and we'll be in touch soon with opportunities that match your experience.",
+        "¡Revisaremos tu perfil pronto!": "We'll review your profile soon!",
         
         // Formulario de postulación - Campos
         "Phone": "Teléfono",
@@ -851,7 +860,6 @@ export const i18nOptions: InitOptions = {
         "Oportunidades en más de 100 tecnologías": "Opportunities in more than 100 technologies",
         //!Talentos modulo G
         "Si ninguna de estas vacantes es para tí, no te preocupes, ¡vendrán muchas más!": "If none of these vacancies are for you, don't worry, there are many more to come!",
-        "Súmate a nuestra base de datos": "Join our database",
         "Nivel de Inglés" : "English Level",
         "No se encontraron vacantes disponibles con las opciones seleccionadas. Prueba nuevos filtros!": "There were no vacancies available with the selected options. Try new filters!",
         //!Talentos Job filters

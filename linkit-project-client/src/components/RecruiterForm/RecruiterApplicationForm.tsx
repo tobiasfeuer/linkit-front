@@ -465,6 +465,11 @@ function RecruiterApplicationForm() {
     return (fromQuery || fromRecruiter || "").trim();
   }, [roleCodeParam, recruiterData?.recruitmentRoleCode]);
 
+  // Flujo "Súmate a nuestra base de datos": linkit + role 880
+  const isBaseDatosFlow = Boolean(
+    recruiterSlug?.toLowerCase() === "linkit" && normalizedRoleCode === "880"
+  );
+
 
   const sanitizeString = (value: any): string | undefined => {
     if (value === undefined || value === null) return undefined;
@@ -758,6 +763,8 @@ function RecruiterApplicationForm() {
   const renderField = (field: FormFieldConfig) => {
     // ocultar campos internos
     if (field.fieldName === "recruiterSlug") return null;
+    // En flujo "base de datos" (linkit + 880) ocultar "Rol al que aplica" (va por defecto)
+    if (isBaseDatosFlow && isRoleCodeFieldCheck(field)) return null;
 
     const lowerFieldName = field.fieldName.toLowerCase();
     const lowerAirtableField = field.airtableField.toLowerCase();
@@ -1195,13 +1202,20 @@ function RecruiterApplicationForm() {
           />
         )}
         <div className="recruiter-info">
-          <h1 className="form-title">{t("Formulario de Talentos")}</h1>
+          <h1 className="form-title">
+            {isBaseDatosFlow ? t("Súmate a nuestra base de datos") : t("Formulario de Talentos")}
+          </h1>
           <p className="form-subtitle">
-            {t("Hola! Gracias por aplicar al rol!")}
+            {isBaseDatosFlow
+              ? t("¡Gracias por sumarte! Completa tus datos y te contactaremos cuando tengamos un rol para vos.")
+              : t("Hola! Gracias por aplicar al rol!")}
           </p>
           <p className="form-description">
-            {t("Por favor completa el siguiente formulario para finalizar el proceso de aplicación.")} <br />
-            {t("Pronto revisaremos tu perfil!")}
+            {isBaseDatosFlow
+              ? t("Dejanos tu perfil y en breve nos pondremos en contacto para contarte sobre oportunidades alineadas a tu experiencia.")
+              : t("Por favor completa el siguiente formulario para finalizar el proceso de aplicación.")}{" "}
+            <br />
+            {isBaseDatosFlow ? t("¡Revisaremos tu perfil pronto!") : t("Pronto revisaremos tu perfil!")}
           </p>
         </div>
       </div>
