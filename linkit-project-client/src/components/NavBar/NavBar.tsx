@@ -596,12 +596,6 @@ function NavBar() {
                     EN
                   </button>
                 </div>
-                <div className="cl-toggle-switch top-[1px]">
-                  <label className="cl-switch" id="switchDarkModeOutside" aria-label="Cambiar modo oscuro">
-                    <input type="checkbox" readOnly onChange={darkMode} checked={isDarkMode} id="switchDarkmodeInside"/>
-                    <span></span>
-                  </label>
-                </div>
               </div>
             </div>
             <li
@@ -679,14 +673,6 @@ function NavBar() {
             >
               EN
             </button>
-          </div>
-
-          {/* isDarkMode */}
-          <div className="cl-toggle-switch hidden lg:flex">
-            <label className="cl-switch" id="switchDarkModeOutside" aria-label="Cambiar modo oscuro">
-              <input type="checkbox" onChange={darkMode} readOnly checked={isDarkMode} id="switchDarkmodeInside"/>
-              <span></span>
-            </label>
           </div>
 
           <motion.button

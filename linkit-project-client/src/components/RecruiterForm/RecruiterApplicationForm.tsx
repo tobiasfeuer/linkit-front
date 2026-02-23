@@ -406,11 +406,11 @@ function RecruiterApplicationForm() {
       if (isNaN(numValue)) {
         return `${translateLabel(field.label)} ${t("debe ser un número válido")}`;
       }
-      if (numValue < 0) {
-        return `${translateLabel(field.label)} ${t("no puede ser negativo")}`;
+      if (numValue < 500) {
+        return `${translateLabel(field.label)} ${t("debe ser al menos 500 USD")}`;
       }
-      if (numValue > 1000000) {
-        return `${translateLabel(field.label)} ${t("no puede ser mayor a 1,000,000 USD")}`;
+      if (numValue > 15000) {
+        return `${translateLabel(field.label)} ${t("no puede ser mayor a 15.000 USD")}`;
       }
     }
 
@@ -520,11 +520,11 @@ function RecruiterApplicationForm() {
       if (Number.isNaN(parsed)) {
         return { payload: {}, error: t("La expectativa salarial debe ser un número válido.") };
       }
-      if (parsed < 0) {
-        return { payload: {}, error: t("La expectativa salarial no puede ser negativa.") };
+      if (parsed < 500) {
+        return { payload: {}, error: t("La expectativa salarial debe ser al menos 500 USD.") };
       }
-      if (parsed > 1000000) {
-        return { payload: {}, error: t("La expectativa salarial no puede ser mayor a 1,000,000 USD.") };
+      if (parsed > 15000) {
+        return { payload: {}, error: t("La expectativa salarial no puede ser mayor a 15.000 USD.") };
       }
       salary = parsed;
     }
@@ -776,6 +776,11 @@ function RecruiterApplicationForm() {
       lowerAirtableField === "cv" ||
       lowerFieldName.includes("curriculum") ||
       lowerAirtableField.includes("curriculum");
+    const isSalaryField =
+      lowerFieldName.includes("salary") ||
+      lowerFieldName.includes("salario") ||
+      lowerAirtableField.includes("salary") ||
+      lowerAirtableField.includes("salario");
 
     const value = formData[field.fieldName];
     const error = errors[field.fieldName];
@@ -957,11 +962,16 @@ function RecruiterApplicationForm() {
             name={field.fieldName}
             value={value || ""}
             onChange={(e) => handleInputChange(field.fieldName, e.target.value)}
-            placeholder={field.placeholder ? translateLabel(field.placeholder) : ""}
-            min={field.validation?.min}
-            max={field.validation?.max}
+            placeholder={isSalaryField ? t("Ej: 500 - 15.000") : (field.placeholder ? translateLabel(field.placeholder) : "")}
+            min={isSalaryField ? 500 : field.validation?.min}
+            max={isSalaryField ? 15000 : field.validation?.max}
             className={`form-input ${error ? "error" : ""}`}
           />
+          {isSalaryField && (
+            <p className="form-instructions" style={{ marginTop: "0.5rem", fontSize: "0.875rem", color: "#6B7280" }}>
+              {t("Salario mensual expresado en USD")}
+            </p>
+          )}
           {error && <p className="form-error">{error}</p>}
         </>
       );
