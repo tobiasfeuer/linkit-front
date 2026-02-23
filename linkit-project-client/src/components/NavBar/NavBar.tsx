@@ -14,7 +14,6 @@ import {
   setPressSignUp,
   setPressRegister,
 } from "../../redux/features/registerLoginSlice";
-import { toggleDarkMode } from "../../redux/features/darkModeSlice";
 import { logout } from "../../redux/features/AuthSlice";
 import { useTranslation } from "react-i18next";
 import i18n from "../../i18";
@@ -288,9 +287,6 @@ function NavBar() {
     }, 0);
   };
 
-  const darkMode = () => {
-    dispatch(toggleDarkMode());
-  };
 
   
   useEffect(() => {
