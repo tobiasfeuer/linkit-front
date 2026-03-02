@@ -96,16 +96,25 @@ function CloudinaryUploadWidget({
     }
   }, [loaded]);
 
-  // Handler para input nativo en mobile
+  // Handler para input nativo (mobile y postulaciones)
   const handleMobileFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Validación de tipo de archivo
-    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+    // Reset input para permitir subir el mismo archivo de nuevo si falla
+    e.target.value = "";
+
+    const allowedTypes = [
+      'application/pdf',
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ];
     const allowedExtensions = ['.pdf', '.jpg', '.jpeg', '.png', '.doc', '.docx'];
-    const fileExtension = '.' + file.name.split('.').pop()?.toLowerCase();
-    
+    const fileExtension = '.' + (file.name.split('.').pop()?.toLowerCase() ?? '');
+
     if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
       Swal.fire({
         icon: "error",
@@ -116,8 +125,8 @@ function CloudinaryUploadWidget({
       return;
     }
 
-    // Validación de tamaño (10 MB máximo)
-    const maxSize = 10 * 1024 * 1024; // 10 MB en bytes
+    // Límite: 10 MB
+    const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
       Swal.fire({
         icon: "error",
@@ -129,39 +138,40 @@ function CloudinaryUploadWidget({
     }
 
     try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("upload_preset", "new-preset");
+      const fd = new FormData();
+      fd.append("file", file);
+      fd.append("upload_preset", "new-preset");
+
       const res = await fetch(
         "https://api.cloudinary.com/v1_1/dquhriqz3/auto/upload",
-        {
-          method: "POST",
-          body: formData,
-        }
+        { method: "POST", body: fd }
       );
+
       const data = await res.json();
+
+      // Cloudinary devuelve error en el body aunque el status sea 200 a veces
+      if (!res.ok || data.error || !data.public_id) {
+        throw new Error(data.error?.message || "Upload failed");
+      }
+
+      const uploadedFileName = `${data.original_filename}.${data.format}`;
       setFilePublicId && setFilePublicId(data.public_id);
-      setFileName && setFileName(data.original_filename + "." + data.format);
+      setFileName && setFileName(uploadedFileName);
       setReload && setReload(true);
-      setCv &&
-        setCv({
-          fileName: data.original_filename + "." + data.format,
-          cloudinaryId: data.public_id,
-        });
+      setCv && setCv({ fileName: uploadedFileName, cloudinaryId: data.public_id });
+
       Swal.fire({
         icon: "success",
         title: t("Enviado"),
         timer: 1000,
         showConfirmButton: false,
-        showLoaderOnConfirm: true,
       });
-    } catch (err) {
+    } catch (err: any) {
       Swal.fire({
         icon: "error",
         title: t("Error al subir archivo"),
         text: t("Intenta nuevamente o usa otro archivo."),
-        timer: 2000,
-        showConfirmButton: false,
+        confirmButtonColor: "#01A28B",
       });
     }
   };
@@ -176,7 +186,7 @@ function CloudinaryUploadWidget({
   <label className={className} style={{ width: "100%", cursor: "pointer" }}>
     <input
       type="file"
-      accept="application/pdf,image/*"
+      accept="application/pdf,image/jpeg,image/jpg,image/png,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.pdf,.doc,.docx,.jpg,.jpeg,.png"
       style={{ display: "none" }}
       onChange={handleMobileFile}
     />
