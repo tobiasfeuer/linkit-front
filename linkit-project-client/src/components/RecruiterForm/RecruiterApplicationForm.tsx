@@ -431,7 +431,25 @@ function RecruiterApplicationForm() {
 
     formConfig.forEach((field) => {
       const value = formData[field.fieldName];
-      const error = validateField(field, value);
+      let error = validateField(field, value);
+
+      // CV siempre obligatorio
+      const isCvField =
+        field.fieldName.toLowerCase() === "cv" ||
+        field.airtableField?.toLowerCase() === "cv" ||
+        field.fieldName.toLowerCase().includes("curriculum") ||
+        field.airtableField?.toLowerCase()?.includes("curriculum") ||
+        field.type === "file";
+      if (isCvField) {
+        const hasCvFile = Boolean(filePublicId?.trim());
+        const hasCvInFormData = Array.isArray(value) && value.length > 0;
+        const hasCvString = value && typeof value === "string" && String(value).trim() !== "";
+        if (!hasCvFile && !hasCvInFormData && !hasCvString) {
+          error = `${translateLabel(field.label)} ${t("es requerido")}`;
+          isValid = false;
+        }
+      }
+
       if (error) {
         newErrors[field.fieldName] = error;
         isValid = false;
@@ -827,7 +845,7 @@ function RecruiterApplicationForm() {
       <>
         <label htmlFor={field.fieldName} className="form-label">
           {translateLabel(field.label)}
-          {field.required && <span className="text-red-400">*</span>}
+          {(field.required || isCvField) && <span className="text-red-400">*</span>}
         </label>
         {field.instructions && (
           <p className="form-instructions">{translateLabel(field.instructions)}</p>
