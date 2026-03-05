@@ -323,7 +323,7 @@ function RecruiterApplicationForm() {
       lowerAirtableField.includes("linkedin");
     
     if (isLinkedInField && typeof value === "string") {
-      const linkedInRegex = /^(https?:\/\/)?(www\.)?linkedin\.com\/in\/[\w-]+\/?$/i;
+      const linkedInRegex = /^(https?:\/\/)?(www\.)?linkedin\.com\/in\/[\p{L}\p{N}\w\-]+\/?$/iu;
       if (!linkedInRegex.test(value.trim())) {
         return `${translateLabel(field.label)} ${t("debe tener el formato: www.linkedin.com/in/tu-perfil")}`;
       }
