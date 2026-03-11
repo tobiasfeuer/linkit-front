@@ -314,7 +314,7 @@ function NavBar() {
           {getTranslation("Contrata y gestiona talentos de forma global con LinkIT", "Contrata y gestiona talentos de forma global con LinkIT")} |{" "}
         </span>
         <NavLink
-          to="https://calendly.com/saleslinkit/30min"
+          to="https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3qmMK1h4c08Aw_b5gFiF-vLjHYunVGIWvt6RyOJvaaQOVd8qQm9syzfgwV03LXDEnL7R_CHXbi"
           className="ml-2 underline underline-offset-[3.3px]"
           target="_blank"
         >

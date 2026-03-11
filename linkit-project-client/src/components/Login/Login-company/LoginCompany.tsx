@@ -405,7 +405,7 @@ function LoginCompany() {
           </div>
           <Link
             className="flex flex-row border-[2px] border-linkIt-300 rounded-[8px] p-[.5rem] bg-white w-[90%] justify-center items-center content-center gap-[.5rem] hover:scale-105 transition-all duration-300 ease-in-out"
-            to={"https://calendly.com/saleslinkit/30min?month=2024-02"}
+            to={"https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3qmMK1h4c08Aw_b5gFiF-vLjHYunVGIWvt6RyOJvaaQOVd8qQm9syzfgwV03LXDEnL7R_CHXbi"}
             target="_blank"
           >
             <img src="/Vectores/calendario.svg" alt="" className="w-[2.5rem]" />
