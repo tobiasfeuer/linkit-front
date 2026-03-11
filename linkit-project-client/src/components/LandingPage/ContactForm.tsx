@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ArrowRight, X } from "lucide-react";
-import { useSelector } from "react-redux";
+import { ArrowRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import Swal from "sweetalert2";
 import axios from "axios";
@@ -39,14 +38,15 @@ const translations = {
       telefono: "+54 000 000000",
       empresa: "Ingresa nombre de empresa",
       pais: "Ingresa el país",
+      perfiles: "Ej: Frontend, Backend, Fullstack...",
       seleccionar: "Seleccionar perfiles",
       buscar: "Buscar perfiles...",
     },
     opciones: {
-      buscarTalento: "Buscar talento IT",
-      contratarTalento: "Contratar talento IT",
-      mejorarProductividad:
-        "Mejorar la productividad y fidelización de tu talento",
+      contratarPersonal: "Quiero contratar personal para mi empresa",
+      talentoProyecto: "Necesito talento para un proyecto",
+      subcontratar: "Me interesa sub-contratar talento",
+      conversar: "Me interesa conversar y saber más detalles",
     },
     perfiles: {
       frontend: "Frontend Developer",
@@ -66,6 +66,7 @@ const translations = {
       generico:
         "Hubo un error al enviar el formulario. Por favor, inténtalo de nuevo.",
       faltanDatos: "Faltan datos del formulario",
+      errorRed: "No se pudo conectar con el servidor. Verifica tu conexión a internet o que el servicio esté disponible.",
     },
   },
   en: {
@@ -93,13 +94,15 @@ const translations = {
       telefono: "+54 000 000000",
       empresa: "Enter company name",
       pais: "Enter country",
+      perfiles: "E.g.: Frontend, Backend, Fullstack...",
       seleccionar: "Select profiles",
       buscar: "Search profiles...",
     },
     opciones: {
-      buscarTalento: "Find IT talent",
-      contratarTalento: "Hire IT talent",
-      mejorarProductividad: "Improve productivity and retention of your talent",
+      contratarPersonal: "I want to hire staff for my company",
+      talentoProyecto: "I need talent for a project",
+      subcontratar: "I am interested in sub-contracting talent",
+      conversar: "I am interested in talking and learning more details",
     },
     perfiles: {
       frontend: "Frontend Developer",
@@ -118,6 +121,7 @@ const translations = {
       terminos: "You must accept the terms and conditions",
       generico: "There was an error submitting the form. Please try again.",
       faltanDatos: "Missing form data",
+      errorRed: "Could not connect to the server. Check your internet connection or that the service is available.",
     },
   },
 };
@@ -130,8 +134,7 @@ interface FormData {
   empresa: string;
   pais: string;
   buscandoTalento: string[];
-  perfiles: string[];
-  aceptaTerminos: boolean;
+  perfiles: string;
 }
 
 interface FormErrors {
@@ -142,12 +145,7 @@ interface FormErrors {
   empresa?: string;
   pais?: string;
   perfiles?: string;
-  aceptaTerminos?: string;
   buscandoTalento?: string;
-}
-
-interface Technology {
-  name: string;
 }
 
 const ContactForm = () => {
@@ -161,14 +159,11 @@ const ContactForm = () => {
     empresa: "",
     pais: "",
     buscandoTalento: [],
-    perfiles: [],
-    aceptaTerminos: false,
+    perfiles: "",
   });
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
 
   //GTM
   const pushToDataLayer = () => {
@@ -205,17 +200,18 @@ const ContactForm = () => {
     return translation;
   };
 
-  // Obtener las tecnologías del stack desde Redux
-  const allStackTechnologies = useSelector(
-    (state: any) => (state.resources?.stackTechnologies as Technology[]) || []
-  );
-
   // Cargar datos guardados del localStorage al montar el componente
   useEffect(() => {
     const savedData = localStorage.getItem("talentFormData");
     if (savedData) {
       try {
         const parsedData = JSON.parse(savedData);
+        // Normalizar perfiles: si viene como array (formato antiguo), convertir a string
+        if (Array.isArray(parsedData.perfiles)) {
+          parsedData.perfiles = parsedData.perfiles.join(", ");
+        } else if (typeof parsedData.perfiles !== "string") {
+          parsedData.perfiles = "";
+        }
         setFormData(parsedData);
       } catch (error) {
         console.error("Error parsing saved form data:", error);
@@ -223,32 +219,13 @@ const ContactForm = () => {
     }
   }, []);
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest(".profile-dropdown")) {
-        setIsProfileDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
-
   // Validar el formulario
   const validateForm = (): FormErrors => {
     const newErrors: FormErrors = {};
 
-    // Validar campos requeridos
+    // Validar campos requeridos (empresa y pais ya no son obligatorios)
     if (!formData.nombre) newErrors.nombre = t("errores.requerido");
     if (!formData.apellido) newErrors.apellido = t("errores.requerido");
-    if (!formData.empresa) newErrors.empresa = t("errores.requerido");
-    if (!formData.pais) newErrors.pais = t("errores.requerido");
-    if (formData.perfiles.length === 0) {
-      newErrors.perfiles = t("errores.requerido");
-    }
     if (formData.buscandoTalento.length === 0) {
       newErrors.buscandoTalento = t("errores.requerido");
     }
@@ -262,10 +239,6 @@ const ContactForm = () => {
     } else if (!isValidPhoneNumber(formData.telefono)) {
       newErrors.telefono = t("errores.telefono");
     }
-    if (!formData.aceptaTerminos) {
-      newErrors.aceptaTerminos = t("errores.terminos");
-    }
-
     return newErrors;
   };
 
@@ -318,56 +291,6 @@ const ContactForm = () => {
     }));
   };
 
-  const handleProfileToggle = (profileName: string) => {
-    setFormData((prev) => {
-      let updatedProfiles = [...prev.perfiles];
-
-      if (updatedProfiles.includes(profileName)) {
-        updatedProfiles = updatedProfiles.filter((p) => p !== profileName);
-      } else {
-        updatedProfiles.push(profileName);
-      }
-
-      const updatedData = { ...prev, perfiles: updatedProfiles };
-
-      // Si el usuario ha interactuado con el campo, actualizar los errores
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        perfiles:
-          updatedProfiles.length === 0 ? t("errores.requerido") : undefined,
-      }));
-
-      return updatedData;
-    });
-
-    setTouched((prev) => ({
-      ...prev,
-      perfiles: true,
-    }));
-  };
-
-  const handleRemoveProfile = (profileName: string) => {
-    setFormData((prev) => {
-      const updatedProfiles = prev.perfiles.filter((p) => p !== profileName);
-
-      const updatedData = { ...prev, perfiles: updatedProfiles };
-
-      // Si el usuario borra todos los perfiles, marcar como error
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        perfiles:
-          updatedProfiles.length === 0 ? t("errores.requerido") : undefined,
-      }));
-
-      return updatedData;
-    });
-
-    setTouched((prev) => ({
-      ...prev,
-      perfiles: true,
-    }));
-  };
-
   const handleBlur = (
     e: React.FocusEvent<
       HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
@@ -385,28 +308,6 @@ const ContactForm = () => {
       [name]: fieldErrors[name as keyof FormErrors],
     }));
   };
-
-  const fallbackProfiles = [
-    { name: "Frontend Developer" },
-    { name: "Backend Developer" },
-    { name: "Fullstack Developer" },
-    { name: "DevOps Engineer" },
-    { name: "QA Engineer" },
-    { name: "Mobile Developer" },
-    { name: "Data Scientist/Engineer" },
-    { name: "UI/UX Designer" },
-    { name: "Java: Springboot" },
-  ];
-
-  const profileOptions =
-    allStackTechnologies && allStackTechnologies.length > 0
-      ? allStackTechnologies
-      : fallbackProfiles;
-
-  // Filtrar perfiles según el término de búsqueda
-  const filteredProfiles = profileOptions.filter((tech) =>
-    tech.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
 
   const contactsBtn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -428,96 +329,72 @@ const ContactForm = () => {
     try {
       setIsSubmitting(true);
 
-      const confirmMessage = await Swal.fire({
-        icon: "info",
-        title: t("confirmarServicios"),
-        showCancelButton: true,
-        showConfirmButton: true,
-        confirmButtonColor: "#01A28B",
-        confirmButtonText: t("confirmar"),
-        cancelButtonText: t("cancelar"),
-        reverseButtons: true,
-      });
+      const formDataToSend = { ...formData };
+      const dataToSend = {
+        ...formDataToSend,
+        perfil: formData.perfiles,
+      };
+      delete (dataToSend as any).perfiles;
 
-      if (confirmMessage.isConfirmed) {
-        const { aceptaTerminos, ...formDataToSend } = formData;
-        const dataToSend = {
-          ...formDataToSend,
-          perfil: formDataToSend.perfiles.join(", "),
-        };
-        delete (dataToSend as any).perfiles;
-        // Intentar con el endpoint de producción como fallback
-        try {
-          const prodResponse = await axios.post(
-            `${import.meta.env.VITE_ENDPOINT_URL}/resources/contactus/form`,
-            dataToSend,
-            {
-              headers: {
-                Authorization: `Bearer ${SUPERADMN_ID}`,
-                "Accept-Language":
-                  sessionStorage.getItem("lang") || currentLang,
-              },
-            }
-          );
-
-          if (prodResponse.status === 200) {
-            // Limpiar el formulario y localStorage después del envío exitoso
-            setFormData({
-              nombre: "",
-              apellido: "",
-              correo: "",
-              telefono: "",
-              empresa: "",
-              pais: "",
-              buscandoTalento: [],
-              perfiles: [],
-              aceptaTerminos: false,
-            });
-            pushToDataLayer();
-            localStorage.removeItem("talentFormData");
-            navigate("/Gracias");
-          }
-        } catch (prodError: any) {
-          setIsSubmitting(false);
-
-          // Mostrar información detallada del error
-          const errorMessage =
-            prodError.response?.data?.message || prodError.message;
-          const errorDetails =
-            prodError.response?.data?.error || "No hay detalles adicionales";
-
-          Swal.fire({
-            customClass: {
-              confirmButton: "background-button",
-            },
-            title: "Error al enviar el formulario",
-            html: `
-                <p>${errorMessage}</p>
-                <p class="text-sm text-gray-500 mt-2">Detalles técnicos: ${errorDetails}</p>
-              `,
-            icon: "error",
-            showConfirmButton: true,
-            buttonsStyling: false,
-          });
-
-          console.error(`${t("errores.faltanDatos")}:`, prodError);
-          console.error("Respuesta completa:", prodError.response?.data);
+      const prodResponse = await axios.post(
+        `${import.meta.env.VITE_ENDPOINT_URL}/resources/contactus/form`,
+        dataToSend,
+        {
+          headers: {
+            Authorization: `Bearer ${SUPERADMN_ID}`,
+            "Accept-Language":
+              sessionStorage.getItem("lang") || currentLang,
+          },
         }
-      } else {
-        setIsSubmitting(false);
+      );
+
+      if (prodResponse.status === 200) {
+        setFormData({
+          nombre: "",
+          apellido: "",
+          correo: "",
+          telefono: "",
+          empresa: "",
+          pais: "",
+          buscandoTalento: [],
+          perfiles: "",
+        });
+        pushToDataLayer();
+        localStorage.removeItem("talentFormData");
+        navigate("/Gracias");
       }
-    } catch (error: any) {
+    } catch (prodError: any) {
       setIsSubmitting(false);
+
+      const isNetworkError =
+        prodError.code === "ERR_NETWORK" ||
+        prodError.message === "Network Error";
+      const errorMessage = isNetworkError
+        ? t("errores.errorRed")
+        : prodError.response?.data?.message || prodError.message;
+      const errorDetails = isNetworkError
+        ? ""
+        : prodError.response?.data?.error || "No hay detalles adicionales";
+
       Swal.fire({
         customClass: {
           confirmButton: "background-button",
         },
-        title: (error as Error).message,
+        title: "Error al enviar el formulario",
+        html: errorDetails
+          ? `<p>${errorMessage}</p><p class="text-sm text-gray-500 mt-2">Detalles técnicos: ${errorDetails}</p>`
+          : `<p>${errorMessage}</p>`,
         icon: "error",
         showConfirmButton: true,
         buttonsStyling: false,
       });
-      console.error(`${t("errores.faltanDatos")}: ${(error as Error).message}`);
+
+      if (isNetworkError) {
+        console.error("Error de conexión - el backend puede no estar corriendo. Inicia el servidor con: cd LinkIt-backend/linkit-project-server/server && npm run dev", prodError);
+      } else {
+        console.error("Error al enviar formulario:", prodError);
+        console.error("Respuesta:", prodError.response?.data);
+      }
     }
   };
 
@@ -694,7 +571,7 @@ const ContactForm = () => {
           htmlFor="empresa"
           className="block text-sm font-medium text-gray-700"
         >
-          {t("empresa")} <span className="text-red-500">*</span>
+          {t("empresa")}
         </label>
         <input
           id="empresa"
@@ -707,7 +584,6 @@ const ContactForm = () => {
           className={getInputClassName("empresa")}
           aria-invalid={touched.empresa && !!errors.empresa}
           aria-describedby={errors.empresa ? "empresa-error" : undefined}
-          required
         />
         {touched.empresa && errors.empresa && (
           <p
@@ -726,7 +602,7 @@ const ContactForm = () => {
           htmlFor="pais"
           className="block text-sm font-medium text-gray-700"
         >
-          {t("pais")} <span className="text-red-500">*</span>
+          {t("pais")}
         </label>
         <input
           id="pais"
@@ -739,7 +615,6 @@ const ContactForm = () => {
           className={getInputClassName("pais")}
           aria-invalid={touched.pais && !!errors.pais}
           aria-describedby={errors.pais ? "pais-error" : undefined}
-          required
         />
         {touched.pais && errors.pais && (
           <p
@@ -762,57 +637,73 @@ const ContactForm = () => {
             <div className="flex items-center bg-gray-50 p-2 rounded-md border border-gray-200 hover:border-[#4ECDC4] transition-colors">
               <input
                 type="checkbox"
-                id="buscarTalento"
+                id="contratarPersonal"
                 name="buscandoTalento"
-                value="Buscar talento IT"
-                checked={formData.buscandoTalento.includes("Buscar talento IT")}
+                value="Quiero contratar personal para mi empresa"
+                checked={formData.buscandoTalento.includes("Quiero contratar personal para mi empresa")}
                 onChange={handleChange}
                 className="w-4 h-4 text-[#4ECDC4] focus:ring-[#4ECDC4]"
                 aria-describedby="servicios-description"
               />
               <label
-                htmlFor="buscarTalento"
+                htmlFor="contratarPersonal"
                 className="ml-2 text-sm font-medium"
               >
-                {t("opciones.buscarTalento")}
+                {t("opciones.contratarPersonal")}
               </label>
             </div>
             <div className="flex items-center bg-gray-50 p-2 rounded-md border border-gray-200 hover:border-[#4ECDC4] transition-colors">
               <input
                 type="checkbox"
-                id="contratarTalento"
+                id="talentoProyecto"
                 name="buscandoTalento"
-                value="Contratar talento"
-                checked={formData.buscandoTalento.includes("Contratar talento")}
+                value="Necesito talento para un proyecto"
+                checked={formData.buscandoTalento.includes("Necesito talento para un proyecto")}
                 onChange={handleChange}
                 className="w-4 h-4 text-[#4ECDC4] focus:ring-[#4ECDC4]"
                 aria-describedby="servicios-description"
               />
               <label
-                htmlFor="contratarTalento"
+                htmlFor="talentoProyecto"
                 className="ml-2 text-sm font-medium"
               >
-                {t("opciones.contratarTalento")}
+                {t("opciones.talentoProyecto")}
               </label>
             </div>
-            <div className="flex items-center bg-gray-50 p-2 rounded-md border border-gray-200 hover:border-[#4ECDC4] transition-colors col-span-2">
+            <div className="flex items-center bg-gray-50 p-2 rounded-md border border-gray-200 hover:border-[#4ECDC4] transition-colors">
               <input
                 type="checkbox"
-                id="mejorarProductividad"
+                id="subcontratar"
                 name="buscandoTalento"
-                value="Mejorar la productividad y fidelización de tu talento"
-                checked={formData.buscandoTalento.includes(
-                  "Mejorar la productividad y fidelización de tu talento"
-                )}
+                value="Me interesa sub-contratar talento"
+                checked={formData.buscandoTalento.includes("Me interesa sub-contratar talento")}
                 onChange={handleChange}
                 className="w-4 h-4 text-[#4ECDC4] focus:ring-[#4ECDC4]"
                 aria-describedby="servicios-description"
               />
               <label
-                htmlFor="mejorarProductividad"
+                htmlFor="subcontratar"
                 className="ml-2 text-sm font-medium"
               >
-                {t("opciones.mejorarProductividad")}
+                {t("opciones.subcontratar")}
+              </label>
+            </div>
+            <div className="flex items-center bg-gray-50 p-2 rounded-md border border-gray-200 hover:border-[#4ECDC4] transition-colors">
+              <input
+                type="checkbox"
+                id="conversar"
+                name="buscandoTalento"
+                value="Me interesa conversar y saber más detalles"
+                checked={formData.buscandoTalento.includes("Me interesa conversar y saber más detalles")}
+                onChange={handleChange}
+                className="w-4 h-4 text-[#4ECDC4] focus:ring-[#4ECDC4]"
+                aria-describedby="servicios-description"
+              />
+              <label
+                htmlFor="conversar"
+                className="ml-2 text-sm font-medium"
+              >
+                {t("opciones.conversar")}
               </label>
             </div>
           </div>
@@ -831,153 +722,33 @@ const ContactForm = () => {
         </fieldset>
       </div>
 
-      {/* ¿Qué perfiles estás buscando? - Multiselect */}
+      {/* ¿Qué perfiles estás buscando? - Input de texto */}
       <div className="space-y-1 col-span-1 md:col-span-2">
         <label
           htmlFor="perfiles"
           className="block text-sm font-medium text-gray-700"
         >
-          {t("perfilBuscando")} <span className="text-red-500">*</span>
+          {t("perfilBuscando")}
         </label>
-        <div className="relative profile-dropdown">
-          {/* Mostrar perfiles seleccionados como tags */}
-          <div
-            className={`flex flex-wrap gap-2 min-h-[42px] p-2 border rounded-md ${
-              touched.perfiles && errors.perfiles
-                ? "border-red-500 bg-red-50"
-                : touched.perfiles && !errors.perfiles
-                ? "border-green-500 bg-green-50"
-                : "border-gray-300"
-            } cursor-pointer`}
-            onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
-          >
-            {formData.perfiles.length > 0 ? (
-              formData.perfiles.map((profile) => (
-                <div
-                  key={profile}
-                  className="flex items-center bg-[#4ECDC4] bg-opacity-20 text-[#01A28B] px-2 py-1 rounded-md text-sm"
-                >
-                  {profile}
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemoveProfile(profile);
-                    }}
-                    className="ml-1 text-gray-500 hover:text-gray-700"
-                    aria-label={`Eliminar ${profile}`}
-                  >
-                    <X size={14} />
-                  </button>
-                </div>
-              ))
-            ) : (
-              <span className="text-gray-400 text-sm py-1">
-                {t("placeholder.seleccionar")}
-              </span>
-            )}
-          </div>
-
-          {/* Dropdown para seleccionar perfiles */}
-          {isProfileDropdownOpen && (
-             <div className="absolute z-50 left-0 top-full w-full border border-gray-300 rounded-md shadow-lg max-h-60 overflow-auto bg-white">
-              <div className="sticky top-0 bg-white p-2 border-b">
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder={t("placeholder.buscar")}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#4ECDC4] text-black"
-                  onClick={(e) => e.stopPropagation()}
-                />
-              </div>
-              <div className="py-1">
-                {filteredProfiles.length > 0 ? (
-                  filteredProfiles.map((tech) => (
-                    <div
-                      key={tech.name}
-                      className={`px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center ${
-                        formData.perfiles.includes(tech.name)
-                          ? "bg-gray-100"
-                          : ""
-                      }`}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleProfileToggle(tech.name);
-                      }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={formData.perfiles.includes(tech.name)}
-                        onChange={() => {}}
-                        className="mr-2 h-4 w-4 text-[#010202] focus:ring-[#4ECDC4]"
-                      />
-                      <span className="text-sm text-black">{tech.name}</span>
-                    </div>
-                  ))
-                ) : (
-                  <div className="px-4 py-2 text-sm text-gray-500">
-                    No se encontraron resultados
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          {touched.perfiles && errors.perfiles && (
-            <p
-              id="perfiles-error"
-              className="text-red-500 text-xs mt-1"
-              aria-live="polite"
-            >
-              {errors.perfiles}
-            </p>
-          )}
-        </div>
-      </div>
-
-      {/* Términos y condiciones */}
-      <div className="col-span-1 md:col-span-2">
-        <div
-          className={`flex items-start p-3 rounded-md border ${
-            touched.aceptaTerminos && errors.aceptaTerminos
-              ? "bg-red-50 border-red-200"
-              : "bg-gray-50 border-gray-200"
-          }`}
-        >
-          <input
-            type="checkbox"
-            id="terminos"
-            name="aceptaTerminos"
-            checked={formData.aceptaTerminos}
-            onChange={handleChange}
-            onBlur={handleBlur}
-            className="mt-1 w-4 h-4 text-[#4ECDC4] focus:ring-[#4ECDC4] rounded"
-            aria-invalid={touched.aceptaTerminos && !!errors.aceptaTerminos}
-            aria-describedby={
-              errors.aceptaTerminos ? "terminos-error" : undefined
-            }
-            required
-          />
-          <label htmlFor="terminos" className="ml-2 text-sm text-gray-700">
-            {t("terminos")}{" "}
-            <span className="text-[#4ECDC4] hover:underline cursor-pointer font-medium">
-              {t("terminosLink")}
-            </span>{" "}
-            {t("y")}{" "}
-            <span className="text-[#4ECDC4] hover:underline cursor-pointer font-medium">
-              {t("privacidadLink")}
-            </span>{" "}
-            <span className="text-red-500">*</span>
-          </label>
-        </div>
-        {touched.aceptaTerminos && errors.aceptaTerminos && (
+        <input
+          id="perfiles"
+          type="text"
+          name="perfiles"
+          value={formData.perfiles}
+          onChange={handleChange}
+          onBlur={handleBlur}
+          placeholder={t("placeholder.perfiles")}
+          className={getInputClassName("perfiles")}
+          aria-invalid={touched.perfiles && !!errors.perfiles}
+          aria-describedby={errors.perfiles ? "perfiles-error" : undefined}
+        />
+        {touched.perfiles && errors.perfiles && (
           <p
-            id="terminos-error"
+            id="perfiles-error"
             className="text-red-500 text-xs mt-1"
             aria-live="polite"
           >
-            {errors.aceptaTerminos}
+            {errors.perfiles}
           </p>
         )}
       </div>
