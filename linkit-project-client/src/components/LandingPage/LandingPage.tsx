@@ -211,7 +211,7 @@ const LandingPage = () => {
               <h2 className="text-3xl font-bold text-white mb-4">{t("cta.title")}</h2>
               <p className="text-gray-200 text-lg mb-4 md:mb-0">{t("cta.description")}</p>
             </motion.div>
-            <NavLink to="https://calendly.com/saleslinkit/30min">
+            <NavLink to="https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3qmMK1h4c08Aw_b5gFiF-vLjHYunVGIWvt6RyOJvaaQOVd8qQm9syzfgwV03LXDEnL7R_CHXbi">
               <motion.button
                 className="flex items-center gap-2 bg-linkIt-300 hover:bg-[#3dbdb5] text-white font-bold py-3 px-8 rounded-lg shadow-lg transition-colors"
                 whileHover={{ scale: 1.05 }}
