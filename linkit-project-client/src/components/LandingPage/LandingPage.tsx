@@ -1,3 +1,4 @@
+import { useEffect } from "react"
 import { motion } from "framer-motion"
 import SplitText from "../../Utils/splitText"
 import BenefitItem from "./BenefitItem"
@@ -8,6 +9,8 @@ import Testimonials from "./Testimonials"
 import { ArrowRight, CheckCircle, Zap, Clock } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { NavLink } from "react-router-dom"
+
+const GOOGLE_ADS_ID = "AW-17878189526"
 
 // Traducciones específicas para este componente
 const translations = {
@@ -66,6 +69,23 @@ const translations = {
 
 const LandingPage = () => {
   const { i18n } = useTranslation()
+
+  // Google Ads tag - solo se carga en la landing page
+  useEffect(() => {
+    if (document.getElementById("gtag-ads-landing")) return
+
+    const script1 = document.createElement("script")
+    script1.id = "gtag-ads-landing"
+    script1.async = true
+    script1.src = `https://www.googletagmanager.com/gtag/js?id=${GOOGLE_ADS_ID}`
+    document.head.appendChild(script1)
+
+    ;(window as any).dataLayer = (window as any).dataLayer || []
+    const gtag = (...args: unknown[]) => (window as any).dataLayer.push(args)
+    ;(window as any).gtag = gtag
+    gtag("js", new Date())
+    gtag("config", GOOGLE_ADS_ID)
+  }, [])
 
   // Determinar el idioma actual (con fallback a español)
   const currentLang = i18n.language.startsWith("en") ? "en" : "es"
