@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -7,9 +7,11 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import PhoneInput from "react-phone-number-input";
 import { isValidPhoneNumber } from "libphonenumber-js";
+import ReCAPTCHA from "react-google-recaptcha";
 import "react-phone-number-input/style.css";
 
 const SUPERADMN_ID = import.meta.env.VITE_SUPERADMN_ID;
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
 // Traducciones específicas para este componente
 const translations = {
@@ -63,6 +65,7 @@ const translations = {
       email: "Por favor ingresa un correo electrónico válido",
       telefono: "Por favor ingresa un número de teléfono válido",
       terminos: "Debes aceptar los términos y condiciones",
+      recaptcha: "Por favor completa la verificación de seguridad.",
       generico:
         "Hubo un error al enviar el formulario. Por favor, inténtalo de nuevo.",
       faltanDatos: "Faltan datos del formulario",
@@ -119,6 +122,7 @@ const translations = {
       email: "Please enter a valid email address",
       telefono: "Please enter a valid phone number",
       terminos: "You must accept the terms and conditions",
+      recaptcha: "Please complete the security verification.",
       generico: "There was an error submitting the form. Please try again.",
       faltanDatos: "Missing form data",
       errorRed: "Could not connect to the server. Check your internet connection or that the service is available.",
@@ -146,6 +150,7 @@ interface FormErrors {
   pais?: string;
   perfiles?: string;
   buscandoTalento?: string;
+  recaptcha?: string;
 }
 
 const ContactForm = () => {
@@ -164,6 +169,8 @@ const ContactForm = () => {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
 
   //GTM
   const pushToDataLayer = () => {
@@ -314,6 +321,11 @@ const ContactForm = () => {
 
     // Validar todo el formulario
     const formErrors = validateForm();
+
+    // Validar reCAPTCHA si está configurado
+    if (RECAPTCHA_SITE_KEY && !recaptchaToken) {
+      formErrors.recaptcha = t("errores.recaptcha");
+    }
     setErrors(formErrors);
 
     // Verificar si hay errores
@@ -336,9 +348,14 @@ const ContactForm = () => {
       };
       delete (dataToSend as any).perfiles;
 
+      const payload = { ...dataToSend };
+      if (recaptchaToken) {
+        (payload as Record<string, unknown>).recaptchaToken = recaptchaToken;
+      }
+
       const prodResponse = await axios.post(
         `${import.meta.env.VITE_ENDPOINT_URL}/resources/contactus/form`,
-        dataToSend,
+        payload,
         {
           headers: {
             Authorization: `Bearer ${SUPERADMN_ID}`,
@@ -359,6 +376,8 @@ const ContactForm = () => {
           buscandoTalento: [],
           perfiles: "",
         });
+        setRecaptchaToken(null);
+        recaptchaRef.current?.reset();
         pushToDataLayer();
         localStorage.removeItem("talentFormData");
         navigate("/Gracias");
@@ -752,6 +771,29 @@ const ContactForm = () => {
           </p>
         )}
       </div>
+
+      {/* reCAPTCHA - verificación antes de enviar */}
+      {RECAPTCHA_SITE_KEY && (
+        <div className="col-span-1 md:col-span-2 space-y-1">
+          <div className="flex justify-center md:justify-start">
+            <ReCAPTCHA
+              ref={recaptchaRef}
+              sitekey={RECAPTCHA_SITE_KEY}
+              onChange={(token: string | null) => {
+                setRecaptchaToken(token);
+                if (token) setErrors((prev) => ({ ...prev, recaptcha: undefined }));
+              }}
+              onExpired={() => setRecaptchaToken(null)}
+              theme="light"
+            />
+          </div>
+          {errors.recaptcha && (
+            <p className="text-red-500 text-xs mt-1" aria-live="polite">
+              {errors.recaptcha}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Botón de envío */}
       <div className="col-span-1 md:col-span-2 mt-2">
