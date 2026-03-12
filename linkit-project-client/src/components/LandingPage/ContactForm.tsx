@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -173,6 +173,8 @@ const ContactFormBase = ({ executeRecaptcha }: ContactFormProps) => {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+  const recaptchaRef = useRef<ReCAPTCHA>(null);
 
   //GTM
   const pushToDataLayer = () => {
@@ -323,6 +325,11 @@ const ContactFormBase = ({ executeRecaptcha }: ContactFormProps) => {
 
     // Validar todo el formulario
     const formErrors = validateForm();
+
+    // Validar reCAPTCHA si está configurado
+    if (RECAPTCHA_SITE_KEY && !recaptchaToken) {
+      formErrors.recaptcha = t("errores.recaptcha");
+    }
     setErrors(formErrors);
 
     // Verificar si hay errores
@@ -385,6 +392,8 @@ const ContactFormBase = ({ executeRecaptcha }: ContactFormProps) => {
           buscandoTalento: [],
           perfiles: "",
         });
+        setRecaptchaToken(null);
+        recaptchaRef.current?.reset();
         pushToDataLayer();
         localStorage.removeItem("talentFormData");
         navigate("/Gracias");
