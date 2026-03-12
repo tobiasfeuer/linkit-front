@@ -12,7 +12,7 @@ import { NavLink } from "react-router-dom"
 
 const GOOGLE_ADS_ID = "AW-17878189526"
 
-// Traducciones específicas para este componente
+
 const translations = {
   es: {
     hero: {
