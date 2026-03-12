@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ArrowRight } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -7,7 +7,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import PhoneInput from "react-phone-number-input";
 import { isValidPhoneNumber } from "libphonenumber-js";
-import ReCAPTCHA from "react-google-recaptcha";
+import { useGoogleReCaptcha } from "react-google-recaptcha-hook";
 import "react-phone-number-input/style.css";
 
 const SUPERADMN_ID = import.meta.env.VITE_SUPERADMN_ID;
@@ -65,7 +65,7 @@ const translations = {
       email: "Por favor ingresa un correo electrónico válido",
       telefono: "Por favor ingresa un número de teléfono válido",
       terminos: "Debes aceptar los términos y condiciones",
-      recaptcha: "Por favor completa la verificación de seguridad.",
+      recaptcha: "Error en la verificación de seguridad. Intenta de nuevo.",
       generico:
         "Hubo un error al enviar el formulario. Por favor, inténtalo de nuevo.",
       faltanDatos: "Faltan datos del formulario",
@@ -122,7 +122,7 @@ const translations = {
       email: "Please enter a valid email address",
       telefono: "Please enter a valid phone number",
       terminos: "You must accept the terms and conditions",
-      recaptcha: "Please complete the security verification.",
+      recaptcha: "Security verification failed. Please try again.",
       generico: "There was an error submitting the form. Please try again.",
       faltanDatos: "Missing form data",
       errorRed: "Could not connect to the server. Check your internet connection or that the service is available.",
@@ -153,7 +153,11 @@ interface FormErrors {
   recaptcha?: string;
 }
 
-const ContactForm = () => {
+interface ContactFormProps {
+  executeRecaptcha?: (action: string) => Promise<string>;
+}
+
+const ContactFormBase = ({ executeRecaptcha }: ContactFormProps) => {
   const { i18n } = useTranslation();
   const navigate = useNavigate();
   const [formData, setFormData] = useState<FormData>({
@@ -169,8 +173,6 @@ const ContactForm = () => {
   const [errors, setErrors] = useState<FormErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [touched, setTouched] = useState<Record<string, boolean>>({});
-  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
-  const recaptchaRef = useRef<ReCAPTCHA>(null);
 
   //GTM
   const pushToDataLayer = () => {
@@ -321,11 +323,6 @@ const ContactForm = () => {
 
     // Validar todo el formulario
     const formErrors = validateForm();
-
-    // Validar reCAPTCHA si está configurado
-    if (RECAPTCHA_SITE_KEY && !recaptchaToken) {
-      formErrors.recaptcha = t("errores.recaptcha");
-    }
     setErrors(formErrors);
 
     // Verificar si hay errores
@@ -340,6 +337,18 @@ const ContactForm = () => {
 
     try {
       setIsSubmitting(true);
+
+      // reCAPTCHA v3 - ejecutar al enviar (invisible)
+      let recaptchaToken: string | null = null;
+      if (executeRecaptcha) {
+        try {
+          recaptchaToken = await executeRecaptcha("submit");
+        } catch {
+          setErrors((prev) => ({ ...prev, recaptcha: t("errores.recaptcha") }));
+          setIsSubmitting(false);
+          return;
+        }
+      }
 
       const formDataToSend = { ...formData };
       const dataToSend = {
@@ -376,8 +385,6 @@ const ContactForm = () => {
           buscandoTalento: [],
           perfiles: "",
         });
-        setRecaptchaToken(null);
-        recaptchaRef.current?.reset();
         pushToDataLayer();
         localStorage.removeItem("talentFormData");
         navigate("/Gracias");
@@ -772,26 +779,12 @@ const ContactForm = () => {
         )}
       </div>
 
-      {/* reCAPTCHA - verificación antes de enviar */}
-      {RECAPTCHA_SITE_KEY && (
-        <div className="col-span-1 md:col-span-2 space-y-1">
-          <div className="flex justify-center md:justify-start">
-            <ReCAPTCHA
-              ref={recaptchaRef}
-              sitekey={RECAPTCHA_SITE_KEY}
-              onChange={(token: string | null) => {
-                setRecaptchaToken(token);
-                if (token) setErrors((prev) => ({ ...prev, recaptcha: undefined }));
-              }}
-              onExpired={() => setRecaptchaToken(null)}
-              theme="light"
-            />
-          </div>
-          {errors.recaptcha && (
-            <p className="text-red-500 text-xs mt-1" aria-live="polite">
-              {errors.recaptcha}
-            </p>
-          )}
+      {/* reCAPTCHA v3 es invisible - se ejecuta al enviar */}
+      {errors.recaptcha && (
+        <div className="col-span-1 md:col-span-2">
+          <p className="text-red-500 text-xs" aria-live="polite">
+            {errors.recaptcha}
+          </p>
         </div>
       )}
 
@@ -838,6 +831,18 @@ const ContactForm = () => {
       </div>
     </form>
   );
+};
+
+const ContactFormWithRecaptcha = () => {
+  const { executeGoogleReCaptcha } = useGoogleReCaptcha(RECAPTCHA_SITE_KEY!);
+  return <ContactFormBase executeRecaptcha={executeGoogleReCaptcha} />;
+};
+
+const ContactForm = () => {
+  if (RECAPTCHA_SITE_KEY) {
+    return <ContactFormWithRecaptcha />;
+  }
+  return <ContactFormBase />;
 };
 
 export default ContactForm;
