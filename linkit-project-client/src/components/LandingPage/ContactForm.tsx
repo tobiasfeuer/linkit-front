@@ -385,6 +385,10 @@ const ContactFormBase = ({ executeRecaptcha }: ContactFormProps) => {
           buscandoTalento: [],
           perfiles: "",
         });
+        // Google Ads: reportar conversión de formulario de clientes potenciales
+        if (typeof (window as any).gtag_report_conversion === "function") {
+          (window as any).gtag_report_conversion();
+        }
         pushToDataLayer();
         localStorage.removeItem("talentFormData");
         navigate("/Gracias");

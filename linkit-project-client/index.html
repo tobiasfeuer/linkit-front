@@ -31,6 +31,22 @@
     gtag("js", new Date());
 
     gtag("config", "G-P1N01HPY7X");
+
+    /* Event snippet for Enviar formulario de clientes potenciales conversion page */
+    function gtag_report_conversion(url) {
+      var callback = function () {
+        if (typeof url != "undefined") {
+          window.location = url;
+        }
+      };
+      gtag("event", "conversion", {
+        send_to: "AW-17878189526/MBjNCMvM2oYcENaL_sxC",
+        value: 1.0,
+        currency: "USD",
+        event_callback: callback,
+      });
+      return false;
+    }
   </script>
   <!-- Google Tag Manager -->
   <script>
