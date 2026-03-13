@@ -6,7 +6,11 @@ import Swal from "sweetalert2";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import PhoneInput from "react-phone-number-input";
-import { isValidPhoneNumber } from "libphonenumber-js";
+import { isValidPhoneNumber, parsePhoneNumber } from "libphonenumber-js";
+import {
+  COUNTRY_CODE_TO_AIRTABLE,
+  PAIS_SIN_ESPECIFICAR,
+} from "./countryCodeToAirtable";
 import { useGoogleReCaptcha } from "react-google-recaptcha-hook";
 import "react-phone-number-input/style.css";
 
@@ -21,7 +25,7 @@ const translations = {
     correo: "Correo corporativo",
     telefono: "Número de teléfono",
     empresa: "Empresa",
-    pais: "País de la empresa",
+    web: "Web",
     buscandoTalento: "¿Qué servicios te interesan?",
     perfilBuscando: "¿Qué perfiles estás buscando?",
     terminos: "He leído y acepto los",
@@ -39,7 +43,7 @@ const translations = {
       correo: "ejemplo@mail.com",
       telefono: "+54 000 000000",
       empresa: "Ingresa nombre de empresa",
-      pais: "Ingresa el país",
+      web: "https://ejemplo.com",
       perfiles: "Ej: Frontend, Backend, Fullstack...",
       seleccionar: "Seleccionar perfiles",
       buscar: "Buscar perfiles...",
@@ -64,6 +68,7 @@ const translations = {
       requerido: "Este campo es obligatorio",
       email: "Por favor ingresa un correo electrónico válido",
       telefono: "Por favor ingresa un número de teléfono válido",
+      web: "Por favor ingresa una URL válida (ej: https://ejemplo.com)",
       terminos: "Debes aceptar los términos y condiciones",
       recaptcha: "Error en la verificación de seguridad. Intenta de nuevo.",
       generico:
@@ -78,7 +83,7 @@ const translations = {
     correo: "Corporate Email",
     telefono: "Phone Number",
     empresa: "Company",
-    pais: "Company Country",
+    web: "Website",
     buscandoTalento: "What services are you interested in?",
     perfilBuscando: "What profiles are you looking for?",
     terminos: "I have read and accept the",
@@ -96,7 +101,7 @@ const translations = {
       correo: "example@mail.com",
       telefono: "+54 000 000000",
       empresa: "Enter company name",
-      pais: "Enter country",
+      web: "https://example.com",
       perfiles: "E.g.: Frontend, Backend, Fullstack...",
       seleccionar: "Select profiles",
       buscar: "Search profiles...",
@@ -121,6 +126,7 @@ const translations = {
       requerido: "This field is required",
       email: "Please enter a valid email address",
       telefono: "Please enter a valid phone number",
+      web: "Please enter a valid URL (e.g. https://example.com)",
       terminos: "You must accept the terms and conditions",
       recaptcha: "Security verification failed. Please try again.",
       generico: "There was an error submitting the form. Please try again.",
@@ -136,7 +142,8 @@ interface FormData {
   correo: string;
   telefono: string;
   empresa: string;
-  pais: string;
+  web: string;
+  pais: string; // Derivado del prefijo del teléfono (oculto)
   buscandoTalento: string[];
   perfiles: string;
 }
@@ -147,7 +154,7 @@ interface FormErrors {
   correo?: string;
   telefono?: string;
   empresa?: string;
-  pais?: string;
+  web?: string;
   perfiles?: string;
   buscandoTalento?: string;
   recaptcha?: string;
@@ -166,6 +173,7 @@ const ContactFormBase = ({ executeRecaptcha }: ContactFormProps) => {
     correo: "",
     telefono: "",
     empresa: "",
+    web: "",
     pais: "",
     buscandoTalento: [],
     perfiles: "",
@@ -221,9 +229,28 @@ const ContactFormBase = ({ executeRecaptcha }: ContactFormProps) => {
         } else if (typeof parsedData.perfiles !== "string") {
           parsedData.perfiles = "";
         }
+        // Asegurar que web y pais existan
+        if (!("web" in parsedData)) parsedData.web = "";
+        if (!("pais" in parsedData)) parsedData.pais = "";
+        // Derivar país del teléfono guardado si es válido
+        if (
+          parsedData.telefono &&
+          isValidPhoneNumber(parsedData.telefono) &&
+          !parsedData.pais
+        ) {
+          try {
+            const parsed = parsePhoneNumber(parsedData.telefono);
+            const countryCode = parsed?.country;
+            parsedData.pais = countryCode
+              ? COUNTRY_CODE_TO_AIRTABLE[countryCode] ?? PAIS_SIN_ESPECIFICAR
+              : PAIS_SIN_ESPECIFICAR;
+          } catch {
+            /* ignorar */
+          }
+        }
         setFormData(parsedData);
-      } catch (error) {
-        console.error("Error parsing saved form data:", error);
+      } catch {
+        localStorage.removeItem("talentFormData");
       }
     }
   }, []);
@@ -232,9 +259,10 @@ const ContactFormBase = ({ executeRecaptcha }: ContactFormProps) => {
   const validateForm = (): FormErrors => {
     const newErrors: FormErrors = {};
 
-    // Validar campos requeridos (empresa y pais ya no son obligatorios)
+    // Validar campos requeridos (web y pais -derivado del teléfono- son opcionales)
     if (!formData.nombre) newErrors.nombre = t("errores.requerido");
     if (!formData.apellido) newErrors.apellido = t("errores.requerido");
+    if (!formData.empresa?.trim()) newErrors.empresa = t("errores.requerido");
     if (formData.buscandoTalento.length === 0) {
       newErrors.buscandoTalento = t("errores.requerido");
     }
@@ -247,6 +275,15 @@ const ContactFormBase = ({ executeRecaptcha }: ContactFormProps) => {
       newErrors.telefono = t("errores.requerido");
     } else if (!isValidPhoneNumber(formData.telefono)) {
       newErrors.telefono = t("errores.telefono");
+    }
+    if (formData.web.trim()) {
+      try {
+        const url = formData.web.trim();
+        const toTest = url.startsWith("http") ? url : `https://${url}`;
+        new URL(toTest);
+      } catch {
+        newErrors.web = t("errores.web");
+      }
     }
     return newErrors;
   };
@@ -350,7 +387,19 @@ const ContactFormBase = ({ executeRecaptcha }: ContactFormProps) => {
         }
       }
 
-      const formDataToSend = { ...formData };
+      // Derivar país del teléfono si aún no está (ej: pegar y enviar rápido)
+      let paisToSend = formData.pais || PAIS_SIN_ESPECIFICAR;
+      if (formData.telefono && isValidPhoneNumber(formData.telefono)) {
+        try {
+          const parsed = parsePhoneNumber(formData.telefono);
+          paisToSend = parsed?.country
+            ? COUNTRY_CODE_TO_AIRTABLE[parsed.country] ?? PAIS_SIN_ESPECIFICAR
+            : PAIS_SIN_ESPECIFICAR;
+        } catch {
+          /* ignorar */
+        }
+      }
+      const formDataToSend = { ...formData, pais: paisToSend };
       const dataToSend = {
         ...formDataToSend,
         perfil: formData.perfiles,
@@ -381,6 +430,7 @@ const ContactFormBase = ({ executeRecaptcha }: ContactFormProps) => {
           correo: "",
           telefono: "",
           empresa: "",
+          web: "",
           pais: "",
           buscandoTalento: [],
           perfiles: "",
@@ -419,23 +469,9 @@ const ContactFormBase = ({ executeRecaptcha }: ContactFormProps) => {
         buttonsStyling: false,
       });
 
-      if (isNetworkError) {
-        console.error("Error de conexión - el backend puede no estar corriendo. Inicia el servidor con: cd LinkIt-backend/linkit-project-server/server && npm run dev", prodError);
-      } else {
-        console.error("Error al enviar formulario:", prodError);
-        console.error("Respuesta:", prodError.response?.data);
-      }
     }
   };
 
-  // Clase condicional para campos con error
-  
-  
-
-  
-  
-  
-  
   const getInputClassName = (fieldName: keyof FormData) => {
     const baseClass =
       "w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#4ECDC4] text-sm transition-all text-black";
@@ -564,9 +600,28 @@ const ContactFormBase = ({ executeRecaptcha }: ContactFormProps) => {
             defaultCountry="CL"
             value={formData.telefono}
             onChange={(value) => {
-              handleChange({
-                target: { name: "telefono", value: value || "" },
-              } as React.ChangeEvent<HTMLInputElement>);
+              const telefonoValue = value || "";
+              let paisValue = PAIS_SIN_ESPECIFICAR;
+              if (telefonoValue && isValidPhoneNumber(telefonoValue)) {
+                try {
+                  const parsed = parsePhoneNumber(telefonoValue);
+                  const countryCode = parsed?.country;
+                  paisValue = countryCode
+                    ? COUNTRY_CODE_TO_AIRTABLE[countryCode] ?? PAIS_SIN_ESPECIFICAR
+                    : PAIS_SIN_ESPECIFICAR;
+                } catch {
+                  /* ignorar si no se puede parsear */
+                }
+              }
+              setFormData((prev) => ({
+                ...prev,
+                telefono: telefonoValue,
+                pais: paisValue,
+              }));
+              setTouched((prev) => ({ ...prev, telefono: true }));
+              if (telefonoValue && isValidPhoneNumber(telefonoValue)) {
+                setErrors((prev) => ({ ...prev, telefono: undefined }));
+              }
             }}
             onBlur={handleBlur}
             placeholder={t("placeholder.telefono")}
@@ -601,7 +656,7 @@ const ContactFormBase = ({ executeRecaptcha }: ContactFormProps) => {
           htmlFor="empresa"
           className="block text-sm font-medium text-gray-700"
         >
-          {t("empresa")}
+          {t("empresa")} <span className="text-red-500">*</span>
         </label>
         <input
           id="empresa"
@@ -614,6 +669,7 @@ const ContactFormBase = ({ executeRecaptcha }: ContactFormProps) => {
           className={getInputClassName("empresa")}
           aria-invalid={touched.empresa && !!errors.empresa}
           aria-describedby={errors.empresa ? "empresa-error" : undefined}
+          required
         />
         {touched.empresa && errors.empresa && (
           <p
@@ -626,33 +682,33 @@ const ContactFormBase = ({ executeRecaptcha }: ContactFormProps) => {
         )}
       </div>
 
-      {/* País de la empresa */}
+      {/* Web */}
       <div className="space-y-1">
         <label
-          htmlFor="pais"
+          htmlFor="web"
           className="block text-sm font-medium text-gray-700"
         >
-          {t("pais")}
+          {t("web")}
         </label>
         <input
-          id="pais"
-          type="text"
-          name="pais"
-          value={formData.pais}
+          id="web"
+          type="url"
+          name="web"
+          value={formData.web}
           onChange={handleChange}
           onBlur={handleBlur}
-          placeholder={t("placeholder.pais")}
-          className={getInputClassName("pais")}
-          aria-invalid={touched.pais && !!errors.pais}
-          aria-describedby={errors.pais ? "pais-error" : undefined}
+          placeholder={t("placeholder.web")}
+          className={getInputClassName("web")}
+          aria-invalid={touched.web && !!errors.web}
+          aria-describedby={errors.web ? "web-error" : undefined}
         />
-        {touched.pais && errors.pais && (
+        {touched.web && errors.web && (
           <p
-            id="pais-error"
+            id="web-error"
             className="text-red-500 text-xs mt-1"
             aria-live="polite"
           >
-            {errors.pais}
+            {errors.web}
           </p>
         )}
       </div>
