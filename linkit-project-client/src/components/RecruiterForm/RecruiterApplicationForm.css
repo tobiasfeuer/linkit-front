@@ -194,13 +194,20 @@
   grid-column: 1 / -1;
 }
 
+.form-field-placeholder {
+  visibility: hidden;
+  pointer-events: none;
+  min-height: 1px;
+}
+
 .form-label {
   display: block;
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 0.98rem;
+  font-weight: 700;
   color: #173951;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.55rem;
   font-family: 'Montserrat', sans-serif;
+  letter-spacing: 0.01em;
 }
 
 .form-instructions {
@@ -214,19 +221,23 @@
 .form-textarea,
 .form-select {
   width: 100%;
-  padding: 0.75rem;
-  border: 2px solid #CBDAE8;
-  border-radius: 8px;
+  padding: 0.92rem 1rem;
+  border: 1.5px solid #CBDAE8;
+  border-radius: 12px;
   font-size: 1rem;
   font-family: 'Montserrat', sans-serif;
-  transition: border-color 0.3s;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 251, 255, 0.98) 100%);
+  box-shadow: 0 10px 24px rgba(15, 45, 75, 0.06);
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.08s ease;
+  color: #173951;
 }
 
 .input-readonly {
-  background-color: #f0f4f9 !important;
   cursor: not-allowed;
-  color: #173951;
-  border-color: #CBDAE8;
+  color: #5b6b7f;
+  background: linear-gradient(180deg, rgba(245, 248, 252, 0.98) 0%, rgba(239, 244, 251, 0.98) 100%);
+  border-color: #C2DAEE;
+  box-shadow: inset 0 0 0 1px rgba(1, 162, 139, 0.04);
 }
 
 .form-input:focus,
@@ -234,17 +245,37 @@
 .form-select:focus {
   outline: none;
   border-color: #01A28B;
+  box-shadow: 0 0 0 4px rgba(1, 162, 139, 0.14), 0 14px 34px rgba(1, 162, 139, 0.12);
+  transform: translateY(-1px);
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+  color: #9ca3af;
 }
 
 .form-input.error,
 .form-textarea.error,
 .form-select.error {
   border-color: #F87171;
+  box-shadow: none;
+  transform: none;
 }
 
 .form-textarea {
   resize: vertical;
   min-height: 120px;
+  padding: 1rem;
+  border-radius: 12px;
+}
+
+.form-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Cpath fill='%23173251' d='M5.3 7.3a1 1 0 0 1 1.4 0L10 10.6l3.3-3.3a1 1 0 1 1 1.4 1.4l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 0 1 0-1.4z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.9rem center;
+  background-size: 18px 18px;
+  padding-right: 2.4rem;
 }
 
 .form-error {
@@ -487,12 +518,14 @@
   border: 2px solid #CBDAE8;
   border-radius: 8px;
   background: white;
-  transition: border-color 0.3s;
+  box-shadow: 0 10px 30px rgba(15, 45, 75, 0.06);
+  transition: border-color 0.2s, box-shadow 0.2s;
 }
 
 .phone-input-wrapper .PhoneInput:focus-within {
   border-color: #01A28B;
   outline: none;
+  box-shadow: 0 0 0 4px rgba(1, 162, 139, 0.14), 0 10px 30px rgba(15, 45, 75, 0.08);
 }
 
 .phone-input-wrapper.error .PhoneInput {
@@ -500,7 +533,7 @@
 }
 
 .phone-input-wrapper .PhoneInputCountry {
-  padding: 0.75rem 0.5rem;
+  padding: 0.85rem 0.6rem;
   border-right: 2px solid #CBDAE8;
   background: #f9fafb;
   border-radius: 8px 0 0 8px;
@@ -529,7 +562,7 @@
 
 .phone-input-wrapper .phone-input {
   flex: 1;
-  padding: 0.75rem;
+  padding: 0.85rem 1rem;
   border: none;
   border-radius: 0 8px 8px 0;
   font-size: 1rem;
@@ -556,3 +589,64 @@
     font-size: 0.95rem;
   }
 }
+
+/* ============================================
+   OVERRIDES DE ESPECIFICIDAD - inputs nativos
+   Necesario para ganar a Tailwind preflight
+   ============================================ */
+
+   .recruiter-form input.form-input,
+   .recruiter-form textarea.form-textarea,
+   .recruiter-form select.form-select {
+     width: 100% !important;
+     padding: 0.92rem 1rem !important;
+     border: 1.5px solid #CBDAE8 !important;
+     border-radius: 12px !important;
+     font-size: 1rem !important;
+     font-family: 'Montserrat', sans-serif !important;
+     background: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, rgba(248, 251, 255, 0.98) 100%) !important;
+     box-shadow: 0 10px 24px rgba(15, 45, 75, 0.06) !important;
+     color: #173951 !important;
+     outline: none !important;
+     box-sizing: border-box !important;
+     -webkit-appearance: none !important;
+     appearance: none !important;
+   }
+   
+   .recruiter-form input.form-input:focus,
+   .recruiter-form textarea.form-textarea:focus,
+   .recruiter-form select.form-select:focus {
+     border-color: #01A28B !important;
+     box-shadow: 0 0 0 4px rgba(1, 162, 139, 0.14), 0 14px 34px rgba(1, 162, 139, 0.12) !important;
+     transform: translateY(-1px) !important;
+   }
+   
+   .recruiter-form input.form-input.error,
+   .recruiter-form textarea.form-textarea.error,
+   .recruiter-form select.form-select.error {
+     border-color: #F87171 !important;
+     box-shadow: none !important;
+     transform: none !important;
+   }
+   
+   .recruiter-form input.form-input::placeholder,
+   .recruiter-form textarea.form-textarea::placeholder {
+     color: #9ca3af !important;
+   }
+   
+   /* Select: restaurar la flecha custom que se pierde con appearance: none */
+   .recruiter-form select.form-select {
+     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 20 20'%3E%3Cpath fill='%23173251' d='M5.3 7.3a1 1 0 0 1 1.4 0L10 10.6l3.3-3.3a1 1 0 1 1 1.4 1.4l-4 4a1 1 0 0 1-1.4 0l-4-4a1 1 0 0 1 0-1.4z'/%3E%3C/svg%3E") !important;
+     background-repeat: no-repeat !important;
+     background-position: right 0.9rem center !important;
+     background-size: 18px 18px !important;
+     padding-right: 2.4rem !important;
+   }
+   
+   /* Input readonly (Reclutador) */
+   .recruiter-form input.form-input.input-readonly {
+     cursor: not-allowed !important;
+     color: #5b6b7f !important;
+     background: linear-gradient(180deg, rgba(245, 248, 252, 0.98) 0%, rgba(239, 244, 251, 0.98) 100%) !important;
+     border-color: #C2DAEE !important;
+   }

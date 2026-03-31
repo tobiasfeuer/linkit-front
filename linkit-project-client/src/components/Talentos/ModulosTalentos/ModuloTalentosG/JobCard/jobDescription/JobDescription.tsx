@@ -1,14 +1,12 @@
 import { useEffect, useState } from "react";
 //import "./JobDescription.css";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import axios from "axios";
-import type { JobDescriptionProps, State } from "./typesJobs";
+import type { JobDescriptionProps } from "./typesJobs";
 import { useTranslation } from "react-i18next";
 import { motion } from "framer-motion";
-import { useSelector, useDispatch } from "react-redux";
-import { setFormVisible } from "../../../../../../redux/features/ApplicationSlice";
+import { useSelector } from "react-redux";
 import Swal from "sweetalert2";
-import { setPressLogin } from "../../../../../../redux/features/registerLoginSlice";
 import Newsletter from "../../../../../../Utils/newsletter/newsletter";
 import blackArrow from "/Vectores/arrowBlackLeft.png";
 import whiteArrow from "/Vectores/arrowWhiteLeft.png";
@@ -28,8 +26,6 @@ function JobDescription() {
   const { id, slug } = useParams<{ id: string; slug: string }>();
 
   const { t } = useTranslation();
-  const dispatch = useDispatch();
-  const authentication = useSelector((state: State) => state.Authentication);
   const [jobData, setJobData] = useState<JobDescriptionProps>(
     {} as JobDescriptionProps
   );
@@ -37,6 +33,7 @@ function JobDescription() {
   const { i18n } = useTranslation();
   const { language } = i18n;
   const navigate = useNavigate();
+  const location = useLocation();
   const isDarkMode = useSelector((state: RootState) => state.darkMode);
   const isSpanish = language === "es";
   const [translatedJobData, setTranslatedJobData] = useState<any>({});
@@ -107,43 +104,24 @@ function JobDescription() {
   };
 
   const handleApply = () => {
-    if (!authentication.isAuthenticated) {
-      Swal.fire({
-        title: "¡Ups!",
-        text: "Debes iniciar sesión para poder aplicar a esta vacante",
-        icon: "warning",
-        confirmButtonText: "Iniciar sesión",
-        confirmButtonColor: "#01A28B",
-      }).then((result) => {
-        if (result.isConfirmed) {
-          dispatch(setPressLogin("visible"));
-        }
-      });
+    // Permite tracking opcional del origen/campaña:
+    // - /soyTalento/Joboffer/:id/:slug?recruiterSlug=linkedin
+    // - /soyTalento/Joboffer/:id/:slug?campaign=linkedin
+    const searchParams = new URLSearchParams(location.search);
+    const recruiterSlugFromUrl =
+      searchParams.get("recruiterSlug")?.trim() ||
+      searchParams.get("campaign")?.trim() ||
+      "";
+
+    const base = `/apply/candidate?roleCode=${id}`;
+    if (!recruiterSlugFromUrl) {
+      navigate(base);
       return;
     }
 
-    if (authentication.user.role !== "user") {
-      Swal.fire({
-        title: "Acceso denegado",
-        text: "Esta acción es solo para talentos. Las empresas no pueden aplicar.",
-        icon: "error",
-        confirmButtonColor: "#F87171",
-        confirmButtonText: "Aceptar",
-      });
-      return;
-    }
-    if (!authentication.user.active) {
-      Swal.fire({
-        title: "Cuenta no verificada",
-        text: "Debes confirmar tu correo electrónico para poder aplicar.",
-        icon: "info",
-        confirmButtonText: "Aceptar",
-        confirmButtonColor: "#3B82F6",
-      });
-      return;
-    }
-    navigate(`application`);
-    dispatch(setFormVisible(true));
+    navigate(
+      `${base}&recruiterSlug=${encodeURIComponent(recruiterSlugFromUrl)}`
+    );
   };
 
   // Extraer texto plano para los schemas
