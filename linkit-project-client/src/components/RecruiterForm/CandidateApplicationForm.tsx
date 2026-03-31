@@ -235,13 +235,15 @@ function CandidateApplicationFormBase({
           const fullName = recruiter.lastName
             ? `${recruiter.name} ${recruiter.lastName}`.trim()
             : recruiter.name;
+          const recruiterUrlSlugLower = recruiter.urlSlug?.toLowerCase() || "";
+          const recruiterNameLower = recruiter.name?.toLowerCase() || "";
           const matchBySlug = RECRUITER_OPTIONS.find(
-            (r) => r.slug.toLowerCase() === recruiter.urlSlug?.toLowerCase()
+            (r) => r.slug.toLowerCase() === recruiterUrlSlugLower
           );
           const matchByName = RECRUITER_OPTIONS.find(
             (r) =>
               r.value.toLowerCase() === fullName.toLowerCase() ||
-              r.value.toLowerCase() === recruiter.name?.toLowerCase()
+              r.value.toLowerCase() === recruiterNameLower
           );
           const match = matchBySlug || matchByName;
           if (match) {
@@ -785,10 +787,9 @@ function CandidateApplicationFormBase({
     try {
       setLoading(true);
 
-      let recaptchaToken: string | null = null;
       if (executeRecaptcha) {
         try {
-          recaptchaToken = await executeRecaptcha("submit");
+          await executeRecaptcha("submit");
         } catch {
           Swal.fire({
             icon: "error",
