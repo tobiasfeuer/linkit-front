@@ -162,7 +162,7 @@ function CloudinaryUploadWidget({
 
       Swal.fire({
         icon: "success",
-        title: t("Enviado"),
+        title: t("Cargado correctamente"),
         timer: 1000,
         showConfirmButton: false,
       });

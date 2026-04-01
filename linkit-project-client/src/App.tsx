@@ -37,6 +37,7 @@ import ProfileContainer from "./components/Profiles/ProfileContainer.tsx";
 import PrivacyPolicy from "./components/PrivacyPolicy/PrivacyPolicy.tsx";
 import TermsAndConditions from "./components/TermsAndConditions/TermsAndConditions.tsx";
 import RecruiterApplicationForm from "./components/RecruiterForm/RecruiterApplicationForm.tsx";
+import CandidateApplicationForm from "./components/RecruiterForm/CandidateApplicationForm.tsx";
 import SuccesfullForm from "./Utils/contactUs/SuccesfullForm.tsx";
 import lightIcon from "/Vectores/Favicon de prueba ph 48x48.png";
 import darkIcon from "/Vectores/FaviconDark.svg";
@@ -379,6 +380,7 @@ useEffect(() => {
         <Route path="/Gracias" element={<SuccesfullForm />} />
         <Route path="/contrata-talento-it" element={<LandingPage />} />
         <Route path="/hire-it-talent" element={<LandingPage />} />
+        <Route path="/apply/candidate" element={<CandidateApplicationForm />} />
         <Route path="/apply/:recruiterSlug" element={<RecruiterApplicationForm />} />
       </Routes>
       {!isLandingPage && <TopButton />}

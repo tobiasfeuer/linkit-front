@@ -85,7 +85,12 @@ const customStyles = {
   }),
 };
 
-export function SelectCountryFormEs({ setCountry, country, setUser }: any) {
+export function SelectCountryFormEs({
+  setCountry,
+  country,
+  setUser,
+  isSearchable = true,
+}: any) {
   const { t } = useTranslation();
   const countryList = useSelector(
     (state: RootState) => state.resources.countries
@@ -114,7 +119,7 @@ export function SelectCountryFormEs({ setCountry, country, setUser }: any) {
       onChange={handleChange}
       components={{ DropdownIndicator }}
       isClearable={false}
-      isSearchable={true}
+      isSearchable={isSearchable}
     />
   );
 }
