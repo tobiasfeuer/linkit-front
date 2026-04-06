@@ -89,10 +89,13 @@ export const getRecruiterBySlug = async (slug: string, roleCode?: string): Promi
  */
 export const submitRecruiterApplication = async (formData: Record<string, any>, recruiterSlug: string) => {
   try {
-    const payload = {
-      ...formData,
-      recruiterSlug
-    };
+    const payload: Record<string, any> = { ...formData };
+    const trimmedSlug = (recruiterSlug ?? "").trim();
+    if (trimmedSlug) {
+      payload.recruiterSlug = trimmedSlug;
+    } else {
+      delete payload.recruiterSlug;
+    }
 
     const response = await axios.post(
       `${ENDPOINT_URL}/postulations/create`,
