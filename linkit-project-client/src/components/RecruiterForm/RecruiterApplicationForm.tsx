@@ -9,6 +9,10 @@ import CloudinaryUploadWidget from "../Services/cloudinaryWidget";
 import Loading from "../Loading/Loading";
 import { getFormConfig, getRecruiterBySlug, submitRecruiterApplication } from "../Services/recruiterForm.service";
 import { FormFieldConfig, RecruiterData, FormData, FormErrors } from "./types";
+import {
+  isRoleCodeFieldCheck,
+  resolveJdCodeForPayload,
+} from "./recruiterFormFields";
 import { SelectCountryFormEs } from "../Talentos/ModulosTalentos/ModuloTalentosG/JobCard/jobDescription/job-form/jobFormCountry/JobFormSelectCountry";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
@@ -169,7 +173,7 @@ function RecruiterApplicationForm() {
 
         // Inicializar formData con valores vacíos
         const initialData: FormData = {};
-        let roleCodeField: FormFieldConfig | undefined;
+        const roleCodeFields: FormFieldConfig[] = [];
 
         config.forEach((field) => {
           if (field.type === "multi-select") {
@@ -179,7 +183,7 @@ function RecruiterApplicationForm() {
           }
 
           if (isRoleCodeFieldCheck(field)) {
-            roleCodeField = field;
+            roleCodeFields.push(field);
           }
         });
         
@@ -202,8 +206,10 @@ function RecruiterApplicationForm() {
           initialData[recruiterField.fieldName] = fullName;
         }
         const roleCodeValue = (roleCodeParam || recruiter.recruitmentRoleCode || "").trim();
-        if (roleCodeField && roleCodeValue) {
-          initialData[roleCodeField.fieldName] = roleCodeValue;
+        if (roleCodeValue) {
+          roleCodeFields.forEach((f) => {
+            initialData[f.fieldName] = roleCodeValue;
+          });
         }
         
         setFormData(initialData);
@@ -464,19 +470,6 @@ function RecruiterApplicationForm() {
     field.fieldName.toLowerCase() === "recruiter" ||
     field.airtableField.toLowerCase() === "recruiter";
 
-  const isRoleCodeFieldCheck = (field: FormFieldConfig) => {
-    const name = field.fieldName.toLowerCase();
-    const airtable = field.airtableField.toLowerCase();
-    return (
-      name.includes("role code") ||
-      airtable.includes("role code") ||
-      name.includes("recruitment role") ||
-      airtable.includes("recruitment role") ||
-      name.includes("rol al que aplica") ||
-      airtable.includes("rol al que aplica")
-    );
-  };
-
   const normalizedRoleCode = useMemo(() => {
     const fromQuery = roleCodeParam;
     const fromRecruiter = recruiterData?.recruitmentRoleCode?.trim();
@@ -579,8 +572,16 @@ function RecruiterApplicationForm() {
       }
     }
 
+    const jdCode = resolveJdCodeForPayload(
+      formConfig,
+      formData,
+      normalizedRoleCode
+    );
+    const slugForPost =
+      recruiterData?.urlSlug?.trim() || recruiterSlug?.trim() || "";
+
     const payload: Record<string, any> = {
-      code: sanitizeString(formData.rolAlQueAplica ?? normalizedRoleCode),
+      code: sanitizeString(jdCode),
       stack,
       techStack,
       email: sanitizeString(formData.candidateEmail ?? formData.email),
@@ -592,7 +593,7 @@ function RecruiterApplicationForm() {
       linkedin: sanitizeString(formData.linkedIn ?? formData.linkedin),
       firstName: sanitizeString(formData.nombre ?? formData.firstName),
       lastName: sanitizeString(formData.apellido ?? formData.lastName),
-      recruiterSlug: sanitizeString(formData.recruiterSlug ?? recruiterSlug),
+      recruiterSlug: sanitizeString(slugForPost),
       recruiter: sanitizeString(formData.recruiter),
     };
 

@@ -18,6 +18,10 @@ import {
   FormData,
   FormErrors,
 } from "./types";
+import {
+  isRoleCodeFieldCheck,
+  resolveJdCodeForPayload,
+} from "./recruiterFormFields";
 import { SelectCountryFormEs } from "../Talentos/ModulosTalentos/ModuloTalentosG/JobCard/jobDescription/job-form/jobFormCountry/JobFormSelectCountry";
 import PhoneInput from "react-phone-number-input";
 import { useGoogleReCaptcha } from "react-google-recaptcha-hook";
@@ -27,12 +31,19 @@ import "./RecruiterApplicationForm.css";
 const SUPERADMN_ID = import.meta.env.VITE_SUPERADMN_ID;
 const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
+/** `slug` debe coincidir exactamente con la columna «URL Slug» en Airtable (mayúsculas/tilde). */
 const RECRUITER_OPTIONS: { value: string; label: string; slug: string }[] = [
-  { value: "Julieta", label: "Julieta", slug: "julieta" },
-  { value: "Shayna", label: "Shayna", slug: "shayna" },
-  { value: "Magali", label: "Magali", slug: "magali" },
-  { value: "Tobias", label: "Tobias", slug: "tobias" },
+  { value: "Tobias", label: "Tobias", slug: "Tobias" },
+  { value: "Julieta", label: "Julieta", slug: "Julieta" },
+  { value: "Shayna", label: "Shayna", slug: "Shayna" },
+  { value: "Ary", label: "Ary", slug: "Ary" },
+  { value: "Magali", label: "Magali", slug: "Magali" },
+  { value: "Belén", label: "Belén", slug: "Belén" },
 ];
+
+const KNOWN_RECRUITER_SLUGS = new Set(
+  RECRUITER_OPTIONS.map((r) => r.slug)
+);
 
 interface CandidateApplicationFormProps {
   executeRecaptcha?: (action: string) => Promise<string>;
@@ -210,7 +221,7 @@ function CandidateApplicationFormBase({
         }
 
         const initialData: FormData = {};
-        let roleCodeField: FormFieldConfig | undefined;
+        const roleCodeFields: FormFieldConfig[] = [];
 
         config.forEach((field) => {
           if (field.type === "multi-select") {
@@ -220,7 +231,7 @@ function CandidateApplicationFormBase({
           }
 
           if (isRoleCodeFieldCheck(field)) {
-            roleCodeField = field;
+            roleCodeFields.push(field);
           }
         });
 
@@ -262,8 +273,10 @@ function CandidateApplicationFormBase({
         const roleCodeValue = (
           roleCodeParam || recruiter?.recruitmentRoleCode || ""
         ).trim();
-        if (roleCodeField && roleCodeValue) {
-          initialData[roleCodeField.fieldName] = roleCodeValue;
+        if (roleCodeValue) {
+          roleCodeFields.forEach((f) => {
+            initialData[f.fieldName] = roleCodeValue;
+          });
         }
 
         setFormData(initialData);
@@ -526,19 +539,6 @@ function CandidateApplicationFormBase({
     field.fieldName.toLowerCase() === "recruiter" ||
     field.airtableField.toLowerCase() === "recruiter";
 
-  const isRoleCodeFieldCheck = (field: FormFieldConfig) => {
-    const name = field.fieldName.toLowerCase();
-    const airtable = field.airtableField.toLowerCase();
-    return (
-      name.includes("role code") ||
-      airtable.includes("role code") ||
-      name.includes("recruitment role") ||
-      airtable.includes("recruitment role") ||
-      name.includes("rol al que aplica") ||
-      airtable.includes("rol al que aplica")
-    );
-  };
-
   const normalizedRoleCode = useMemo(() => {
     const fromQuery = roleCodeParam;
     const fromRecruiter = recruiterData?.recruitmentRoleCode?.trim();
@@ -669,13 +669,32 @@ function CandidateApplicationFormBase({
       }
     }
 
-    const recruiterSlugForPayload =
-      selectedRecruiter?.slug || recruiterSlugParam;
+    const resolveTrustedRecruiterSlug = (): string | undefined => {
+      if (recruiterData?.urlSlug) {
+        const fromApi = recruiterData.urlSlug.trim();
+        if (fromApi) return fromApi;
+      }
+      const fromSelect = selectedRecruiter?.slug?.trim();
+      if (fromSelect && KNOWN_RECRUITER_SLUGS.has(fromSelect)) {
+        return fromSelect;
+      }
+      const param = recruiterSlugParam.trim();
+      if (param && KNOWN_RECRUITER_SLUGS.has(param)) return param;
+      return undefined;
+    };
+
+    const recruiterSlugForPayload = resolveTrustedRecruiterSlug();
     const recruiterNameForPayload =
       selectedRecruiter?.value || formData.recruiter;
 
+    const jdCode = resolveJdCodeForPayload(
+      formConfig,
+      formData,
+      normalizedRoleCode
+    );
+
     const payload: Record<string, any> = {
-      code: sanitizeString(formData.rolAlQueAplica ?? normalizedRoleCode),
+      code: sanitizeString(jdCode),
       stack,
       techStack,
       email: sanitizeString(formData.candidateEmail ?? formData.email),
@@ -1063,9 +1082,15 @@ function CandidateApplicationFormBase({
                   setSelectedRecruiter({
                     value: opt.value,
                     label: opt.label,
-                    slug: opt.value.toLowerCase().replace(/\s+/g, "-"),
+                    slug: "",
                   });
                 }
+              } else if (opt) {
+                setSelectedRecruiter({
+                  value: opt.value,
+                  label: opt.label,
+                  slug: "",
+                });
               } else {
                 setSelectedRecruiter(null);
               }
