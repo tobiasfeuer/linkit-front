@@ -31,7 +31,7 @@ export default function ModuloG() {
                     <img src="/people-LinkIt/shay-perfil.png" className="bg-linkIt-500 rounded-xl w-full max-w-[200px] aspect-square object-cover" alt="Shayna Iskandarani" />
                     <img src="/people-LinkIt/Magali.png" className="bg-linkIt-500 rounded-xl w-full max-w-[200px] aspect-square object-cover" alt="Magali Di Catarina" />
                     <img src="/people-LinkIt/Zoe.png" className="bg-linkIt-500 rounded-xl w-full max-w-[200px] aspect-square object-cover" alt="Zoe Feuer" />
-                    <img src="/people-LinkIt/juan1.png" className="bg-linkIt-500 rounded-xl w-full max-w-[200px] aspect-square object-cover" alt="Juan Meyer" />
+                    <img src="/people-LinkIt/juanimagen.png" className="bg-linkIt-500 rounded-xl w-full max-w-[200px] aspect-square object-cover" alt="Juan Meyer" />
 
                     <div className="flex flex-col space-y-1">
                     <Link target="_blank" to="https://www.linkedin.com/in/shayna-iskandarani-126270211/" className="text-center subtitles-size font-bold font-montserrat">Shayna Iskandarani</Link>
@@ -47,7 +47,7 @@ export default function ModuloG() {
                     </div>
                     <div className="flex flex-col space-y-1">
                     <Link target="_blank" to="https://www.linkedin.com/in/zoe-feuer-1a75261a2/" className="text-center subtitles-size font-bold font-montserrat">Juan Meyer</Link>
-                    <span className="font-normal text-size  font-montserrat">Full Stack Developer</span>
+                    <span className="font-normal text-size  font-montserrat">Automation Engineer</span>
                     </div>
                 </div>
             </div>
