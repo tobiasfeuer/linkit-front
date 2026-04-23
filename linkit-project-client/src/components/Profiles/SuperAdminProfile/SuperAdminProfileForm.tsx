@@ -5,7 +5,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../../redux/types";
 import { setUser } from "../../../redux/features/AuthSlice";
 import { useTranslation } from "react-i18next";
-import axios from "axios";
 import Loading from "../../Loading/Loading";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
@@ -18,10 +17,12 @@ const SuperAdminProfileForm: FunctionComponent = () => {
     (state: RootState) => state.Authentication.user as IAdmin
   );
   const { token } = useSelector((state: RootState) => state.Authentication);
+  const countries = useSelector((state: RootState): string[] =>
+    ((state as any).resources.countries || []).map((c: { name: string }) => c.name)
+  );
   const [country, setCountry] = useState(admin.country);
   const [firstName, setFirstName] = useState(admin.firstName);
   const [lastName, setLastName] = useState(admin.lastName);
-  const [countries, setCountries] = useState([]);
   const [loading, isLoading] = useState(false);
   const [filePublicId, setFilePublicId] = useState(admin.image ?? "");
   const [fileName, setFileName] = useState("");
@@ -56,15 +57,7 @@ const SuperAdminProfileForm: FunctionComponent = () => {
 
   useEffect(() => {
     if (!token) navigate("/unauthorized");
-    const fetchData = async () => {
-      const { data } = await axios.get(
-        `${import.meta.env.VITE_ENDPOINT_URL}/resources/countries`
-      );
-      const countries = data.map((country: any) => country.name);
-      setCountries(countries);
-    };
-    fetchData();
-  }, []);
+  }, [token, navigate]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     try {
@@ -201,8 +194,8 @@ const SuperAdminProfileForm: FunctionComponent = () => {
                 className="border-[.125rem] border-linkIt-400 bg-transparent pl-[1rem] md:w-[24rem] h-[2.75rem] rounded-[10px] min-w-[15rem]"
               >
                 <option value=""></option>
-                {countries.map((country, index) => (
-                  <option key={index}>{country}</option>
+                {countries.map((countryName: string, index: number) => (
+                  <option key={index}>{countryName}</option>
                 ))}
               </select>
             </div>

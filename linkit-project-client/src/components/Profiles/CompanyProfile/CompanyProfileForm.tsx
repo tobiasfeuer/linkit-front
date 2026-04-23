@@ -1,11 +1,10 @@
-import { FunctionComponent, useEffect, useState } from "react";
+import { FunctionComponent, useState } from "react";
 import { ICompany } from "../types";
 import { editCompany } from "../api";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { setUser } from "../../../redux/features/AuthSlice";
 import { useTranslation } from "react-i18next";
 import Swal from "sweetalert2";
-import axios from "axios";
 import Loading from "../../Loading/Loading";
 
 interface IComponentProps {
@@ -20,19 +19,10 @@ const CompanyForm: FunctionComponent<IComponentProps> = ({ company }) => {
   const [companyName, setCompanyName] = useState(company.companyName);
   const [interested, setInterests] = useState(company.interested);
   const [linkedin, setLinkedin] = useState(company.linkedin);
-  const [countries, setCountries] = useState([]);
+  const countries = useSelector((state: any): string[] =>
+    (state.resources.countries || []).map((c: { name: string }) => c.name)
+  );
   const [loading, isLoading] = useState(false);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      const { data } = await axios.get(
-        `${import.meta.env.VITE_ENDPOINT_URL}/resources/countries`
-      );
-      const countries = data.map((country: any) => country.name);
-      setCountries(countries);
-    };
-    fetchData();
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     try {
@@ -110,8 +100,8 @@ const CompanyForm: FunctionComponent<IComponentProps> = ({ company }) => {
               className="border-[.125rem] border-linkIt-400 bg-transparent pl-[1rem] md:w-[24rem] h-[2.75rem] rounded-[10px]"
             >
               <option value=""></option>
-              {countries.map((country, index) => (
-                <option key={index}>{country}</option>
+              {countries.map((countryName: string, index: number) => (
+                <option key={index}>{countryName}</option>
               ))}
             </select>
           </div>

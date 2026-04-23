@@ -539,6 +539,17 @@ function CandidateApplicationFormBase({
     field.fieldName.toLowerCase() === "recruiter" ||
     field.airtableField.toLowerCase() === "recruiter";
 
+  const isCountryFieldCheck = (field: FormFieldConfig) => {
+    const lowerFieldName = field.fieldName.toLowerCase();
+    const lowerAirtableField = field.airtableField.toLowerCase();
+    return (
+      lowerFieldName === "country" ||
+      lowerAirtableField === "country" ||
+      lowerAirtableField === "paises (no borrar)" ||
+      lowerAirtableField === "países (no borrar)"
+    );
+  };
+
   const normalizedRoleCode = useMemo(() => {
     const fromQuery = roleCodeParam;
     const fromRecruiter = recruiterData?.recruitmentRoleCode?.trim();
@@ -692,6 +703,9 @@ function CandidateApplicationFormBase({
       formData,
       normalizedRoleCode
     );
+    const countryField = formConfig.find((field) => isCountryFieldCheck(field));
+    const countryValue =
+      (countryField ? formData[countryField.fieldName] : undefined) ?? formData.country;
 
     const payload: Record<string, any> = {
       code: sanitizeString(jdCode),
@@ -702,7 +716,7 @@ function CandidateApplicationFormBase({
       reason: sanitizeString(formData.whyChange),
       salary,
       english: sanitizeString(formData.englishLevel),
-      country: sanitizeString(formData.country),
+      country: sanitizeString(countryValue),
       linkedin: sanitizeString(formData.linkedIn ?? formData.linkedin),
       firstName: sanitizeString(formData.nombre ?? formData.firstName),
       lastName: sanitizeString(formData.apellido ?? formData.lastName),
@@ -922,8 +936,7 @@ function CandidateApplicationFormBase({
 
     const lowerFieldName = field.fieldName.toLowerCase();
     const lowerAirtableField = field.airtableField.toLowerCase();
-    const isCountryField =
-      lowerFieldName === "country" || lowerAirtableField === "country";
+    const isCountryField = isCountryFieldCheck(field);
     const isRecruiterField = isRecruiterFieldCheck(field);
     const isRoleCodeField = isRoleCodeFieldCheck(field);
     const isCvField =
@@ -1018,7 +1031,7 @@ function CandidateApplicationFormBase({
             }}
             country={country}
             setUser={() => ({})}
-            isSearchable={false}
+            isSearchable={true}
           />
           {error && <p className="form-error">{error}</p>}
         </>
@@ -1100,8 +1113,8 @@ function CandidateApplicationFormBase({
             styles={{
               control: (base, state) => ({
                 ...base,
-                minHeight: "unset",
-                height: "auto",
+                minHeight: "2.9rem",
+                height: "2.9rem",
                 borderRadius: 12,
                 borderWidth: 1.5,
                 borderColor: error
@@ -1118,16 +1131,18 @@ function CandidateApplicationFormBase({
                 "&:hover": {
                   borderColor: error ? "#F87171" : "#CBDAE8",
                 },
-                padding: 0,
+                padding: "0 0.25rem",
               }),
               valueContainer: (base) => ({
                 ...base,
                 padding: "0 1rem",
+                height: "2.9rem",
               }),
               input: (base) => ({
                 ...base,
                 margin: 0,
                 padding: 0,
+                color: "#173951",
               }),
               placeholder: (base) => ({
                 ...base,

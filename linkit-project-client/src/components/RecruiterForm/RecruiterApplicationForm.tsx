@@ -470,6 +470,18 @@ function RecruiterApplicationForm() {
     field.fieldName.toLowerCase() === "recruiter" ||
     field.airtableField.toLowerCase() === "recruiter";
 
+  const isCountryFieldCheck = (field: FormFieldConfig) => {
+    const lowerFieldName = field.fieldName.toLowerCase();
+    const lowerAirtableField = field.airtableField.toLowerCase();
+    return (
+      // lowerFieldName === "country" ||
+      // lowerAirtableField === "country" ||
+      lowerAirtableField === "paises (no borrar)" ||
+      lowerAirtableField === "países (no borrar)" ||
+      lowerFieldName === "paises (no borrar)"
+    );
+  };
+
   const normalizedRoleCode = useMemo(() => {
     const fromQuery = roleCodeParam;
     const fromRecruiter = recruiterData?.recruitmentRoleCode?.trim();
@@ -577,6 +589,9 @@ function RecruiterApplicationForm() {
       formData,
       normalizedRoleCode
     );
+    const countryField = formConfig.find((field) => isCountryFieldCheck(field));
+    const countryValue =
+      (countryField ? formData[countryField.fieldName] : undefined) ?? formData.country;
     const slugForPost =
       recruiterData?.urlSlug?.trim() || recruiterSlug?.trim() || "";
 
@@ -589,7 +604,7 @@ function RecruiterApplicationForm() {
       reason: sanitizeString(formData.whyChange),
       salary,
       english: sanitizeString(formData.englishLevel),
-      country: sanitizeString(formData.country),
+      country: sanitizeString(countryValue),
       linkedin: sanitizeString(formData.linkedIn ?? formData.linkedin),
       firstName: sanitizeString(formData.nombre ?? formData.firstName),
       lastName: sanitizeString(formData.apellido ?? formData.lastName),
@@ -787,7 +802,7 @@ function RecruiterApplicationForm() {
 
     const lowerFieldName = field.fieldName.toLowerCase();
     const lowerAirtableField = field.airtableField.toLowerCase();
-    const isCountryField = lowerFieldName === "country" || lowerAirtableField === "country";
+    const isCountryField = isCountryFieldCheck(field);
     const isRecruiterField = isRecruiterFieldCheck(field);
     const isRoleCodeField = isRoleCodeFieldCheck(field);
     const isCvField =

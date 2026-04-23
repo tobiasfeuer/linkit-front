@@ -1,4 +1,4 @@
-import { FunctionComponent, useEffect, useState } from "react";
+import { FunctionComponent, useState } from "react";
 import CloudinaryUploadWidget from "../../Services/cloudinaryWidget";
 import { EnglishLevelEnum, IUser } from "../types";
 import { editUser } from "../api";
@@ -6,7 +6,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { setUser } from "../../../redux/features/AuthSlice";
 import { useTranslation } from "react-i18next";
 import Swal from "sweetalert2";
-import axios from "axios";
 import Loading from "../../Loading/Loading";
 import Select from "react-select";
 
@@ -19,6 +18,9 @@ interface IComponentProps {
 const TalentForm: FunctionComponent<IComponentProps> = ({ user }) => {
   const objectsTechnologies = useSelector(
     (state: any) => state.resources.stackTechnologies
+  );
+  const countries = useSelector((state: any): string[] =>
+    (state.resources.countries || []).map((c: { name: string }) => c.name)
   );
 
   const selectTechnologies = objectsTechnologies.map((tech: any) => {
@@ -34,20 +36,8 @@ const TalentForm: FunctionComponent<IComponentProps> = ({ user }) => {
   const [linkedin, setLinkedin] = useState(user.linkedin);
   const [firstName, setFirstName] = useState(user.firstName);
   const [lastName, setLastName] = useState(user.lastName);
-  const [countries, setCountries] = useState([]);
   const [loading, isLoading] = useState(false);
   const [filePublicId, setFilePublicId] = useState("");
-
-  useEffect(() => {
-    const fetchData = async () => {
-      const { data } = await axios.get(
-        `${import.meta.env.VITE_ENDPOINT_URL}/resources/countries`
-      );
-      const countries = data.map((country: any) => country.name);
-      setCountries(countries);
-    };
-    fetchData();
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     try {
@@ -136,8 +126,8 @@ const TalentForm: FunctionComponent<IComponentProps> = ({ user }) => {
               className="border-[.125rem] border-linkIt-400 bg-transparent pl-[1rem] md:w-[24rem] h-[2.75rem] rounded-[10px] min-w-[15rem]"
             >
               <option value=""></option>
-              {countries.map((country, index) => (
-                <option key={index}>{country}</option>
+              {countries.map((countryName: string, index: number) => (
+                <option key={index}>{countryName}</option>
               ))}
             </select>
           </div>

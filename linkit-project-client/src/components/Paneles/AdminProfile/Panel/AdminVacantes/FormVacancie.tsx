@@ -46,9 +46,11 @@ export default function FormVacancie({
   const dispatch = useDispatch();
   const [companyNames, setCompanyNames] = useState<string[]>([]);
   const [technologiesNames, setTechnologiesNames] = useState<string[]>([]);
-  const [countries, setCountries] = useState([]);
   const editor = useRef(null);
   const token = useSelector((state: any) => state.Authentication.token);
+  const countries = useSelector((state: any): string[] =>
+    (state.resources.countries || []).map((c: { name: string }) => c.name)
+  );
   const [information, setInformation] = useState<Partial<VacancyProps>>({
     code: "",
     title: "",
@@ -376,15 +378,7 @@ export default function FormVacancie({
 
   useEffect(() => {
     if (!token) navigate("/unauthorized");
-    const fetchData = async () => {
-      const { data } = await axios.get(
-        `${import.meta.env.VITE_ENDPOINT_URL}/resources/countries`
-      );
-      const countries = data.map((country: any) => country.name);
-      setCountries(countries);
-    };
-    fetchData();
-  }, []);
+  }, [token, navigate]);
   
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -602,8 +596,8 @@ export default function FormVacancie({
                 onBlur={handleBlurErrors}
               >
                 <option value=""></option>
-                {countries.map((country, index) => (
-                  <option key={index}>{country}</option>
+                {countries.map((countryName: string, index: number) => (
+                  <option key={index}>{countryName}</option>
                 ))}
               </select>
             </div>
