@@ -19,8 +19,8 @@ const TalentForm: FunctionComponent<IComponentProps> = ({ user }) => {
   const objectsTechnologies = useSelector(
     (state: any) => state.resources.stackTechnologies
   );
-  const countries = useSelector((state: any) =>
-    (state.resources.countries || []).map((country: any) => country.name)
+  const countries = useSelector((state: any): string[] =>
+    (state.resources.countries || []).map((c: { name: string }) => c.name)
   );
 
   const selectTechnologies = objectsTechnologies.map((tech: any) => {
@@ -126,8 +126,8 @@ const TalentForm: FunctionComponent<IComponentProps> = ({ user }) => {
               className="border-[.125rem] border-linkIt-400 bg-transparent pl-[1rem] md:w-[24rem] h-[2.75rem] rounded-[10px] min-w-[15rem]"
             >
               <option value=""></option>
-              {countries.map((country, index) => (
-                <option key={index}>{country}</option>
+              {countries.map((countryName: string, index: number) => (
+                <option key={index}>{countryName}</option>
               ))}
             </select>
           </div>

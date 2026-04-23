@@ -17,8 +17,8 @@ const SuperAdminProfileForm: FunctionComponent = () => {
     (state: RootState) => state.Authentication.user as IAdmin
   );
   const { token } = useSelector((state: RootState) => state.Authentication);
-  const countries = useSelector((state: RootState) =>
-    (state as any).resources.countries.map((country: any) => country.name)
+  const countries = useSelector((state: RootState): string[] =>
+    ((state as any).resources.countries || []).map((c: { name: string }) => c.name)
   );
   const [country, setCountry] = useState(admin.country);
   const [firstName, setFirstName] = useState(admin.firstName);
@@ -194,8 +194,8 @@ const SuperAdminProfileForm: FunctionComponent = () => {
                 className="border-[.125rem] border-linkIt-400 bg-transparent pl-[1rem] md:w-[24rem] h-[2.75rem] rounded-[10px] min-w-[15rem]"
               >
                 <option value=""></option>
-                {countries.map((country, index) => (
-                  <option key={index}>{country}</option>
+                {countries.map((countryName: string, index: number) => (
+                  <option key={index}>{countryName}</option>
                 ))}
               </select>
             </div>

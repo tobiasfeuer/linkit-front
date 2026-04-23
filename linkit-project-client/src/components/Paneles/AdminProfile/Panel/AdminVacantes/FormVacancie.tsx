@@ -48,8 +48,8 @@ export default function FormVacancie({
   const [technologiesNames, setTechnologiesNames] = useState<string[]>([]);
   const editor = useRef(null);
   const token = useSelector((state: any) => state.Authentication.token);
-  const countries = useSelector((state: any) =>
-    (state.resources.countries || []).map((country: any) => country.name)
+  const countries = useSelector((state: any): string[] =>
+    (state.resources.countries || []).map((c: { name: string }) => c.name)
   );
   const [information, setInformation] = useState<Partial<VacancyProps>>({
     code: "",
@@ -596,8 +596,8 @@ export default function FormVacancie({
                 onBlur={handleBlurErrors}
               >
                 <option value=""></option>
-                {countries.map((country, index) => (
-                  <option key={index}>{country}</option>
+                {countries.map((countryName: string, index: number) => (
+                  <option key={index}>{countryName}</option>
                 ))}
               </select>
             </div>

@@ -19,8 +19,8 @@ const CompanyForm: FunctionComponent<IComponentProps> = ({ company }) => {
   const [companyName, setCompanyName] = useState(company.companyName);
   const [interested, setInterests] = useState(company.interested);
   const [linkedin, setLinkedin] = useState(company.linkedin);
-  const countries = useSelector((state: any) =>
-    (state.resources.countries || []).map((country: any) => country.name)
+  const countries = useSelector((state: any): string[] =>
+    (state.resources.countries || []).map((c: { name: string }) => c.name)
   );
   const [loading, isLoading] = useState(false);
 
@@ -100,8 +100,8 @@ const CompanyForm: FunctionComponent<IComponentProps> = ({ company }) => {
               className="border-[.125rem] border-linkIt-400 bg-transparent pl-[1rem] md:w-[24rem] h-[2.75rem] rounded-[10px]"
             >
               <option value=""></option>
-              {countries.map((country, index) => (
-                <option key={index}>{country}</option>
+              {countries.map((countryName: string, index: number) => (
+                <option key={index}>{countryName}</option>
               ))}
             </select>
           </div>
