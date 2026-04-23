@@ -10,7 +10,11 @@ import Loading from "../Loading/Loading";
 import { getFormConfig, getRecruiterBySlug, submitRecruiterApplication } from "../Services/recruiterForm.service";
 import { FormFieldConfig, RecruiterData, FormData, FormErrors } from "./types";
 import {
+  getPrimaryCountryField,
+  isCountrySelectorField,
   isRoleCodeFieldCheck,
+  isSupersededLegacyCountryField,
+  isCountryMappedToPayloadCountry,
   resolveJdCodeForPayload,
 } from "./recruiterFormFields";
 import { SelectCountryFormEs } from "../Talentos/ModulosTalentos/ModuloTalentosG/JobCard/jobDescription/job-form/jobFormCountry/JobFormSelectCountry";
@@ -41,6 +45,8 @@ function RecruiterApplicationForm() {
     "Salary expectation (USD)": { es: "Expectativa salarial (USD)", en: "Salary expectation (USD)" },
     "English Level": { es: "Nivel de inglés", en: "English Level" },
     "Country": { es: "País", en: "Country" },
+    "Paises (No borrar)": { es: "País", en: "Country" },
+    "Países (No borrar)": { es: "País", en: "Country" },
     "Location": { es: "Ubicación", en: "Location" },
     "Phone": { es: "Teléfono", en: "Phone" },
     "Recruiter": { es: "Reclutador", en: "Recruiter" },
@@ -256,7 +262,11 @@ function RecruiterApplicationForm() {
     if (airtableTranslations[label]) {
       return airtableTranslations[label][currentLang as "es" | "en"];
     }
-    
+
+    if (/^pa[ií]ses\s*\(\s*no\s*borrar\s*\)$/i.test(label.trim())) {
+      return currentLang === "es" ? "País" : "Country";
+    }
+
     // 2. Si no está en el mapeo estático, intentar con i18n
     if (i18n.exists(label)) {
       return t(label);
@@ -436,6 +446,7 @@ function RecruiterApplicationForm() {
     let isValid = true;
 
     formConfig.forEach((field) => {
+      if (isSupersededLegacyCountryField(field, formConfig)) return;
       const value = formData[field.fieldName];
       let error = validateField(field, value);
 
@@ -469,18 +480,6 @@ function RecruiterApplicationForm() {
   const isRecruiterFieldCheck = (field: FormFieldConfig) =>
     field.fieldName.toLowerCase() === "recruiter" ||
     field.airtableField.toLowerCase() === "recruiter";
-
-  const isCountryFieldCheck = (field: FormFieldConfig) => {
-    const lowerFieldName = field.fieldName.toLowerCase();
-    const lowerAirtableField = field.airtableField.toLowerCase();
-    return (
-      // lowerFieldName === "country" ||
-      // lowerAirtableField === "country" ||
-      lowerAirtableField === "paises (no borrar)" ||
-      lowerAirtableField === "países (no borrar)" ||
-      lowerFieldName === "paises (no borrar)"
-    );
-  };
 
   const normalizedRoleCode = useMemo(() => {
     const fromQuery = roleCodeParam;
@@ -589,9 +588,11 @@ function RecruiterApplicationForm() {
       formData,
       normalizedRoleCode
     );
-    const countryField = formConfig.find((field) => isCountryFieldCheck(field));
+    const primaryCountryField = getPrimaryCountryField(formConfig);
     const countryValue =
-      (countryField ? formData[countryField.fieldName] : undefined) ?? formData.country;
+      (primaryCountryField
+        ? formData[primaryCountryField.fieldName]
+        : undefined) ?? formData.country;
     const slugForPost =
       recruiterData?.urlSlug?.trim() || recruiterSlug?.trim() || "";
 
@@ -638,6 +639,7 @@ function RecruiterApplicationForm() {
         field.fieldName === "whyChange" ||
         field.fieldName === "englishLevel" ||
         field.fieldName === "country" ||
+        isCountryMappedToPayloadCountry(field) ||
         field.fieldName === "linkedIn" ||
         field.fieldName === "linkedin" ||
         field.fieldName === "nombre" ||
@@ -799,10 +801,11 @@ function RecruiterApplicationForm() {
     if (field.fieldName === "recruiterSlug") return null;
     // En flujo "base de datos" (linkit + 880) ocultar "Rol al que aplica" (va por defecto)
     if (isBaseDatosFlow && isRoleCodeFieldCheck(field)) return null;
+    if (isSupersededLegacyCountryField(field, formConfig)) return null;
 
     const lowerFieldName = field.fieldName.toLowerCase();
     const lowerAirtableField = field.airtableField.toLowerCase();
-    const isCountryField = isCountryFieldCheck(field);
+    const isCountryField = isCountrySelectorField(field, formConfig);
     const isRecruiterField = isRecruiterFieldCheck(field);
     const isRoleCodeField = isRoleCodeFieldCheck(field);
     const isCvField =

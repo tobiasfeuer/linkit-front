@@ -19,7 +19,11 @@ import {
   FormErrors,
 } from "./types";
 import {
+  getPrimaryCountryField,
+  isCountryMappedToPayloadCountry,
+  isCountrySelectorField,
   isRoleCodeFieldCheck,
+  isSupersededLegacyCountryField,
   resolveJdCodeForPayload,
 } from "./recruiterFormFields";
 import { SelectCountryFormEs } from "../Talentos/ModulosTalentos/ModuloTalentosG/JobCard/jobDescription/job-form/jobFormCountry/JobFormSelectCountry";
@@ -96,6 +100,8 @@ function CandidateApplicationFormBase({
     },
     "English Level": { es: "Nivel de inglés", en: "English Level" },
     Country: { es: "País", en: "Country" },
+    "Paises (No borrar)": { es: "País", en: "Country" },
+    "Países (No borrar)": { es: "País", en: "Country" },
     Location: { es: "Ubicación", en: "Location" },
     Phone: { es: "Teléfono", en: "Phone" },
     Recruiter: { es: "Reclutador", en: "Recruiter" },
@@ -316,6 +322,9 @@ function CandidateApplicationFormBase({
     if (airtableTranslations[label]) {
       return airtableTranslations[label][currentLang as "es" | "en"];
     }
+    if (/^pa[ií]ses\s*\(\s*no\s*borrar\s*\)$/i.test(label.trim())) {
+      return currentLang === "es" ? "País" : "Country";
+    }
     if (i18n.exists(label)) {
       return t(label);
     }
@@ -497,6 +506,7 @@ function CandidateApplicationFormBase({
     let isValid = true;
 
     formConfig.forEach((field) => {
+      if (isSupersededLegacyCountryField(field, formConfig)) return;
       const value = formData[field.fieldName];
       let error = validateField(field, value);
 
@@ -538,17 +548,6 @@ function CandidateApplicationFormBase({
   const isRecruiterFieldCheck = (field: FormFieldConfig) =>
     field.fieldName.toLowerCase() === "recruiter" ||
     field.airtableField.toLowerCase() === "recruiter";
-
-  const isCountryFieldCheck = (field: FormFieldConfig) => {
-    const lowerFieldName = field.fieldName.toLowerCase();
-    const lowerAirtableField = field.airtableField.toLowerCase();
-    return (
-      lowerFieldName === "country" ||
-      lowerAirtableField === "country" ||
-      lowerAirtableField === "paises (no borrar)" ||
-      lowerAirtableField === "países (no borrar)"
-    );
-  };
 
   const normalizedRoleCode = useMemo(() => {
     const fromQuery = roleCodeParam;
@@ -703,9 +702,11 @@ function CandidateApplicationFormBase({
       formData,
       normalizedRoleCode
     );
-    const countryField = formConfig.find((field) => isCountryFieldCheck(field));
+    const primaryCountryField = getPrimaryCountryField(formConfig);
     const countryValue =
-      (countryField ? formData[countryField.fieldName] : undefined) ?? formData.country;
+      (primaryCountryField
+        ? formData[primaryCountryField.fieldName]
+        : undefined) ?? formData.country;
 
     const payload: Record<string, any> = {
       code: sanitizeString(jdCode),
@@ -751,6 +752,7 @@ function CandidateApplicationFormBase({
         field.fieldName === "whyChange" ||
         field.fieldName === "englishLevel" ||
         field.fieldName === "country" ||
+        isCountryMappedToPayloadCountry(field) ||
         field.fieldName === "linkedIn" ||
         field.fieldName === "linkedin" ||
         field.fieldName === "nombre" ||
@@ -933,10 +935,11 @@ function CandidateApplicationFormBase({
 
   const renderField = (field: FormFieldConfig) => {
     if (field.fieldName === "recruiterSlug") return null;
+    if (isSupersededLegacyCountryField(field, formConfig)) return null;
 
     const lowerFieldName = field.fieldName.toLowerCase();
     const lowerAirtableField = field.airtableField.toLowerCase();
-    const isCountryField = isCountryFieldCheck(field);
+    const isCountryField = isCountrySelectorField(field, formConfig);
     const isRecruiterField = isRecruiterFieldCheck(field);
     const isRoleCodeField = isRoleCodeFieldCheck(field);
     const isCvField =
