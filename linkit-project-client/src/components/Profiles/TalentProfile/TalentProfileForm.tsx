@@ -1,4 +1,4 @@
-import { FunctionComponent, useEffect, useState } from "react";
+import { FunctionComponent, useState } from "react";
 import CloudinaryUploadWidget from "../../Services/cloudinaryWidget";
 import { EnglishLevelEnum, IUser } from "../types";
 import { editUser } from "../api";
@@ -6,7 +6,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { setUser } from "../../../redux/features/AuthSlice";
 import { useTranslation } from "react-i18next";
 import Swal from "sweetalert2";
-import axios from "axios";
 import Loading from "../../Loading/Loading";
 import Select from "react-select";
 
@@ -19,6 +18,9 @@ interface IComponentProps {
 const TalentForm: FunctionComponent<IComponentProps> = ({ user }) => {
   const objectsTechnologies = useSelector(
     (state: any) => state.resources.stackTechnologies
+  );
+  const countries = useSelector((state: any) =>
+    (state.resources.countries || []).map((country: any) => country.name)
   );
 
   const selectTechnologies = objectsTechnologies.map((tech: any) => {
@@ -34,20 +36,8 @@ const TalentForm: FunctionComponent<IComponentProps> = ({ user }) => {
   const [linkedin, setLinkedin] = useState(user.linkedin);
   const [firstName, setFirstName] = useState(user.firstName);
   const [lastName, setLastName] = useState(user.lastName);
-  const [countries, setCountries] = useState([]);
   const [loading, isLoading] = useState(false);
   const [filePublicId, setFilePublicId] = useState("");
-
-  useEffect(() => {
-    const fetchData = async () => {
-      const { data } = await axios.get(
-        `${import.meta.env.VITE_ENDPOINT_URL}/resources/countries`
-      );
-      const countries = data.map((country: any) => country.name);
-      setCountries(countries);
-    };
-    fetchData();
-  }, []);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     try {

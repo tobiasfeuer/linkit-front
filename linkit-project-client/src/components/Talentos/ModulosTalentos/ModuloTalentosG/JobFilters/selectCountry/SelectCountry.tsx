@@ -1,8 +1,7 @@
-import countries from "i18n-iso-countries";
-import english from "i18n-iso-countries/langs/en.json";
-import espanish from "i18n-iso-countries/langs/es.json";
 import { CustomFlowbiteTheme, Dropdown } from "flowbite-react";
-import { useRef, useState, useEffect } from "react";
+import { useRef, useState, useEffect, useMemo } from "react";
+import { useSelector } from "react-redux";
+import { RootState } from "../../../../../../redux/types";
 import whiteArrow from "/Vectores/downArrowFilters.svg";
 import blackArrow from "/Vectores/blackArrowFilters.svg";
 
@@ -51,78 +50,34 @@ interface OptionType {
   label: string;
 }
 
-countries.registerLocale(english);
-countries.registerLocale(espanish);
+interface CountryEntry {
+  id: number;
+  name: string;
+}
 
-const countryOptionsEs: OptionType[] = [
-  // Paises de habla hispana
-  { value: "Argentina", label: "Argentina" },
-  { value: "Bolivia", label: "Bolivia" },
-  { value: "Chile", label: "Chile" },
-  { value: "Colombia", label: "Colombia" },
-  { value: "Costa Rica", label: "Costa Rica" },
-  { value: "Dominican Republic", label: "República Dominicana" },
-  { value: "Ecuador", label: "Ecuador" },
-  { value: "Spain", label: "España" },
-  { value: "Guatemala", label: "Guatemala" },
-  { value: "Honduras", label: "Honduras" },
-  { value: "Mexico", label: "México" },
-  { value: "Nicaragua", label: "Nicaragua" },
-  { value: "Panama", label: "Panamá" },
-  { value: "Peru", label: "Perú" },
-  { value: "Puerto Rico", label: "Puerto Rico" },
-  { value: "Paraguay", label: "Paraguay" },
-  { value: "El Salvador", label: "El Salvador" },
-  { value: "Uruguay", label: "Uruguay" },
-  { value: "Venezuela", label: "Venezuela" },
-  // Otros países
-  { value: "United States", label: "Estados Unidos" },
-  { value: "Canada", label: "Canadá" },
-  //
-  { value: "India", label: "India" },
-  { value: "Emiratos Arabes", label: "Emiratos Arabes" },
-  { value: "Filipinas", label: "Filipinas" },
-  { value: "Sudáfrica", label: "Sudáfrica" },
-  { value: "Nigeria", label: "Nigeria" },
-  { value: "Brasil", label: "Brasil" },
-  { value: "Albania", label: "Albania" },
-];
+interface CountrySelectProps {
+  setCountry: (country: OptionType) => void;
+  country: OptionType;
+}
 
-const countryOptionsEn: OptionType[] = [
-  // Paises de habla hispana
-  { value: "Argentina", label: "Argentina" },
-  { value: "Bolivia", label: "Bolivia" },
-  { value: "Chile", label: "Chile" },
-  { value: "Colombia", label: "Colombia" },
-  { value: "Costa Rica", label: "Costa Rica" },
-  { value: "Dominican Republic", label: "Dominican Republic" },
-  { value: "Ecuador", label: "Ecuador" },
-  { value: "Spain", label: "Spain" },
-  { value: "Guatemala", label: "Guatemala" },
-  { value: "Honduras", label: "Honduras" },
-  { value: "Mexico", label: "Mexico" },
-  { value: "Nicaragua", label: "Nicaragua" },
-  { value: "Panama", label: "Panama" },
-  { value: "Peru", label: "Peru" },
-  { value: "Puerto Rico", label: "Puerto Rico" },
-  { value: "Paraguay", label: "Paraguay" },
-  { value: "El Salvador", label: "El Salvador" },
-  { value: "Uruguay", label: "Uruguay" },
-  { value: "Venezuela", label: "Venezuela" },
-  { value: "United States", label: "United States" },
-  { value: "Canada", label: "Canada" },
-  { value: "India", label: "India" },
-  { value: "United Arab Emirates", label: "United Arab Emirates" },
-  { value: "Philippines", label: "Philippines" },
-  { value: "South Africa", label: "South Africa" },
-  { value: "Nigeria", label: "Nigeria" },
-  { value: "Brasil", label: "Brasil" },
-  { value: "Albania", label: "Albania" },
-];
+const useCountryOptions = () => {
+  const countryList = useSelector(
+    (state: RootState) => state.resources.countries as CountryEntry[]
+  );
 
-export function SelectCountryEs({ setCountry, country }: any) {
+  return useMemo(
+    () =>
+      countryList
+        .map((item) => ({ value: item.name, label: item.name }))
+        .sort((a, b) => a.label.localeCompare(b.label)),
+    [countryList]
+  );
+};
+
+export function SelectCountryEs({ setCountry, country }: CountrySelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const countryOptions = useCountryOptions();
 
   const toggleDropdown = () => {
     setIsOpen(!isOpen);
@@ -157,9 +112,7 @@ export function SelectCountryEs({ setCountry, country }: any) {
           className="h-28 lg:h-40 overflow-y-scroll font-medium"
           theme={customTheme}
         >
-          {countryOptionsEs
-            .sort((a, b) => a.label.localeCompare(b.label))
-            .map((option) => (
+          {countryOptions.map((option) => (
               <a
                 key={option.value}
                 className="block px-2 cursor-pointer"
@@ -197,9 +150,7 @@ export function SelectCountryEs({ setCountry, country }: any) {
 
           {isOpen && (
             <div className="absolute bg-white text-black w-full rounded shadow-lg z-10 max-h-40 overflow-y-auto">
-              {countryOptionsEs
-                .sort((a, b) => a.label.localeCompare(b.label))
-                .map((option) => (
+              {countryOptions.map((option) => (
                   <a
                     key={option.value}
                     className="block px-2 cursor-pointer font-montserrat"
@@ -218,9 +169,10 @@ export function SelectCountryEs({ setCountry, country }: any) {
   );
 }
 
-export function SelectCountryEn({ setCountry, country }: any) {
+export function SelectCountryEn({ setCountry, country }: CountrySelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const countryOptions = useCountryOptions();
 
   const toggleDropdown = () => {
     setIsOpen(!isOpen);
@@ -256,9 +208,7 @@ export function SelectCountryEn({ setCountry, country }: any) {
           className="h-28 lg:h-40 overflow-y-scroll font-medium"
           theme={customTheme}
         >
-          {countryOptionsEn
-            .sort((a, b) => a.label.localeCompare(b.label))
-            .map((option) => (
+          {countryOptions.map((option) => (
               <a
                 key={option.value}
                 className="block px-2 cursor-pointer"
@@ -295,9 +245,7 @@ export function SelectCountryEn({ setCountry, country }: any) {
 
           {isOpen && (
             <div className="absolute bg-white text-black w-full rounded shadow-lg z-10 max-h-40 overflow-y-auto ">
-              {countryOptionsEn
-                .sort((a, b) => a.label.localeCompare(b.label))
-                .map((option) => (
+              {countryOptions.map((option) => (
                   <a
                     key={option.value}
                     className="block px-2 cursor-pointer font-montserrat"

@@ -3,6 +3,7 @@ import countries from "i18n-iso-countries";
 import english from "i18n-iso-countries/langs/en.json";
 import espanish from "i18n-iso-countries/langs/es.json";
 import { components } from "react-select";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useSelector } from "react-redux";
 import { RootState } from "../../../../../../../../redux/types";
@@ -31,26 +32,24 @@ const customStyles = {
   control: (provided: any) => ({
     ...provided,
     backgroundColor: "#fff",
-    border: "none",
-    minHeight: "2rem",
-    height: "2rem",
+    border: "1.5px solid #CBDAE8",
+    borderRadius: "12px",
+    minHeight: "2.9rem",
+    height: "2.9rem",
     boxShadow: "none",
     width: "100%",
   }),
 
   container: (provided: any) => ({
     ...provided,
-    border: "2px solid #CBDAE8",
-    height: "2.5rem",
-    paddingRight: "2rem",
-    paddingLeft: ".5rem",
-    borderRadius: "5px",
+    height: "2.9rem",
+    width: "100%",
   }),
 
   valueContainer: (provided: any) => ({
     ...provided,
-    height: "30px",
-    padding: "0 3rem 0 0",
+    height: "2.9rem",
+    padding: "0 3rem 0 0.5rem",
     maxWidth: "100%",
     overflow: "hidden",
   }),
@@ -58,18 +57,20 @@ const customStyles = {
   input: (provided: any) => ({
     ...provided,
     margin: "0px",
+    color: "#173951",
+    caretColor: "#173951",
     maxWidth: "100%",
     overflow: "hidden",
   }),
 
   indicatorsContainer: (provided: any) => ({
     ...provided,
-    height: "30px",
+    height: "2.9rem",
   }),
   menu: (provided: any) => ({
     ...provided,
     fontFamily: "Montserrat",
-    width: "90%",
+    width: "100%",
     maxWidth: "100%",
     marginLeft: "",
   }),
@@ -91,14 +92,51 @@ export function SelectCountryFormEs({
   setUser,
   isSearchable = true,
 }: any) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const countryList = useSelector(
     (state: RootState) => state.resources.countries
   );
-  const countryOptionsEs: OptionType[] = countryList.map(
-    (country: { id: number; name: string }) => {
-      return { label: country.name, value: country.name };
+  const currentLang = i18n.language?.startsWith("en") ? "en" : "es";
+
+  const legacyEnglishOverrides: Record<string, string> = {
+    USA: "United States",
+    "Costa rica": "Costa Rica",
+    Mexico: "Mexico",
+    Peru: "Peru",
+    Panama: "Panama",
+    Lithuania: "Lithuania",
+    Philippines: "Philippines",
+    "South Africa": "South Africa",
+    Canada: "Canada",
+    "Emiratos Arabes": "United Arab Emirates",
+    "Islas Malvinas": "Malvinas Islands",
+  };
+
+  const getCountryLabel = (countryName: string) => {
+    if (currentLang === "es") return countryName;
+    if (legacyEnglishOverrides[countryName]) return legacyEnglishOverrides[countryName];
+
+    const alpha2FromEs = countries.getAlpha2Code(countryName, "es");
+    if (alpha2FromEs) {
+      return countries.getName(alpha2FromEs, "en", { select: "official" }) || countryName;
     }
+
+    const alpha2FromEn = countries.getAlpha2Code(countryName, "en");
+    if (alpha2FromEn) {
+      return countries.getName(alpha2FromEn, "en", { select: "official" }) || countryName;
+    }
+
+    return countryName;
+  };
+
+  const countryOptionsEs: OptionType[] = useMemo(
+    () =>
+      countryList.map((country: { id: number; name: string }) => ({
+        label: getCountryLabel(country.name),
+        // value se mantiene en español/legacy para que Airtable reciba lo esperado.
+        value: country.name,
+      })),
+    [countryList, currentLang]
   );
 
   const handleChange = (selectedOption: OptionType | null) => {
