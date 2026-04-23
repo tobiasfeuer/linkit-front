@@ -48,3 +48,54 @@ export function resolveJdCodeForPayload(
   const legacy = trimmedString(formData.rolAlQueAplica);
   return legacy || undefined;
 }
+
+/** Campo link en Airtable → tabla Forms Values (opciones de país). */
+export function isPaisesNoBorrarField(field: FormFieldConfig): boolean {
+  const a = field.airtableField.toLowerCase().trim();
+  return a === "paises (no borrar)" || a === "países (no borrar)";
+}
+
+/** Columna legacy de texto/select "Country". */
+export function isLegacyCountryField(field: FormFieldConfig): boolean {
+  const a = field.airtableField.toLowerCase().trim();
+  const n = field.fieldName.toLowerCase().trim();
+  return a === "country" || n === "country";
+}
+
+/**
+ * Un solo selector: si la vista incluye "Países (No borrar)", es el canónico;
+ * si no, se usa Country.
+ */
+export function getPrimaryCountryField(
+  config: FormFieldConfig[]
+): FormFieldConfig | undefined {
+  const linked = config.find(isPaisesNoBorrarField);
+  if (linked) return linked;
+  return config.find(isLegacyCountryField);
+}
+
+/** Ocultar Country en UI cuando ya existe el link Países (No borrar). */
+export function isSupersededLegacyCountryField(
+  field: FormFieldConfig,
+  config: FormFieldConfig[]
+): boolean {
+  if (!isLegacyCountryField(field)) return false;
+  return config.some(isPaisesNoBorrarField);
+}
+
+/** Este campo debe mostrar el único selector de país. */
+export function isCountrySelectorField(
+  field: FormFieldConfig,
+  config: FormFieldConfig[]
+): boolean {
+  const primary = getPrimaryCountryField(config);
+  return Boolean(primary && primary.fieldName === field.fieldName);
+}
+
+/**
+ * Valor que va en `payload.country` (backend → link Países (No borrar));
+ * no duplicar en el spread de airtableField.
+ */
+export function isCountryMappedToPayloadCountry(field: FormFieldConfig): boolean {
+  return isPaisesNoBorrarField(field) || isLegacyCountryField(field);
+}
