@@ -21,18 +21,17 @@
     rel="stylesheet" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>LinkIT</title>
-  <!-- Google tag (gtag.js) -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=G-P1N01HPY7X"></script>
-  <script>
+  <!-- VITE_INJECT_COOKIEBOT -->
+  <!-- Google tag (gtag.js): loads after marketing/statistics consent (Cookiebot) -->
+  <script type="text/plain" data-cookieconsent="marketing,statistics" data-src="https://www.googletagmanager.com/gtag/js?id=G-P1N01HPY7X"></script>
+  <script type="text/plain" data-cookieconsent="marketing,statistics">
     window.dataLayer = window.dataLayer || [];
     function gtag() {
       dataLayer.push(arguments);
     }
     gtag("js", new Date());
-
     gtag("config", "G-P1N01HPY7X");
-
-    /* Event snippet for Enviar formulario de clientes potenciales conversion page */
+    gtag("config", "AW-17878189526");
     function gtag_report_conversion(url) {
       var callback = function () {
         if (typeof url != "undefined") {
@@ -49,7 +48,7 @@
     }
   </script>
   <!-- Google Tag Manager -->
-  <script>
+  <script type="text/plain" data-cookieconsent="marketing,statistics">
     (function (w, d, s, l, i) {
       w[l] = w[l] || [];
       w[l].push({ "gtm.start": new Date().getTime(), event: "gtm.js" });
