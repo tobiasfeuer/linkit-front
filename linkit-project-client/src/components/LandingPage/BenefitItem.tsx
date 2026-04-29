@@ -2,37 +2,36 @@ import { motion } from "framer-motion"
 import type { ReactNode } from "react"
 import { useTranslation } from "react-i18next"
 
-// Traducciones específicas para este componente
 const translations = {
   es: {
     benefits: {
       timeEfficiency: {
-        title: "Eficientiza tu tiempo",
-        description: "Reduce el tiempo de contratación hasta en un 60%",
+        title: "Candidatos en 5 días hábiles",
+        description: "Te presentamos candidatos prefiltrados en menos de una semana hábil",
       },
       riskFree: {
-        title: "Contrata sin riesgos",
-        description: "Garantía de reemplazo de 3 meses",
+        title: "Sólo pagás al contratar",
+        description: "Sin costos ocultos ni riesgos. Garantía de reemplazo de 3 meses",
       },
       resourceOptimization: {
-        title: "Optimiza tus recursos",
-        description: "Ahorra hasta un 40% en costos de contratación",
+        title: "Te asesoramos en estrategias contractuales",
+        description: "Modalidades, plazos y compliance alineados a tu operación",
       },
     },
   },
   en: {
     benefits: {
       timeEfficiency: {
-        title: "Optimize your time",
-        description: "Reduce hiring time by up to 60%",
+        title: "Candidates within 5 business days",
+        description: "We present pre-screened candidates in less than one business week",
       },
       riskFree: {
-        title: "Risk-free hiring",
-        description: "3-month replacement guarantee",
+        title: "You only pay when you hire",
+        description: "No hidden costs or risks. 3-month replacement guarantee",
       },
       resourceOptimization: {
-        title: "Optimize your resources",
-        description: "Save up to 40% on hiring costs",
+        title: "We advise you on contracting strategies",
+        description: "Engagement models, timelines, and compliance aligned with your operations",
       },
     },
   },
@@ -48,12 +47,9 @@ interface BenefitItemProps {
 const BenefitItem = ({ icon, text, description, translationKey }: BenefitItemProps) => {
   const { i18n } = useTranslation()
 
-  // Determinar el idioma actual (con fallback a español)
   const currentLang = i18n.language.startsWith("en") ? "en" : "es"
 
-  // Función para obtener traducciones
   const t = (key: string) => {
-    // Navegar por el objeto de traducciones usando la ruta de la clave
     const keys = key.split(".")
     let translation: any = translations[currentLang]
 
@@ -65,7 +61,6 @@ const BenefitItem = ({ icon, text, description, translationKey }: BenefitItemPro
     return translation
   }
 
-  // Si hay una clave de traducción, usar los textos traducidos
   let displayText = text
   let displayDescription = description
 
@@ -95,4 +90,3 @@ const BenefitItem = ({ icon, text, description, translationKey }: BenefitItemPro
 }
 
 export default BenefitItem
-
