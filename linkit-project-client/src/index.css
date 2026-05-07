@@ -10,6 +10,20 @@ body {
 
 }
 
+/* Oculta el diálogo nativo de Cookiebot mientras usamos la barra custom en React */
+body.cookiebot-ui-custom #CybotCookiebotDialog,
+body.cookiebot-ui-custom #CybotCookiebotDialogBodyUnderlay,
+body.cookiebot-ui-custom #CybotCookiebotDialogPoweredByText,
+body.cookiebot-ui-custom .CybotCookiebotDialogDetailBodyUnderlay {
+  display: none !important;
+  visibility: hidden !important;
+  pointer-events: none !important;
+}
+
+body.cookiebot-ui-custom #CookiebotWidget {
+  display: none !important;
+}
+
 
 :root {
   height: 100%;

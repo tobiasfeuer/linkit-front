@@ -29,7 +29,7 @@ import LoginCompany from "./components/Login/Login-company/LoginCompany.tsx";
 import JobDescription from "./components/Talentos/ModulosTalentos/ModuloTalentosG/JobCard/jobDescription/JobDescription.tsx";
 import BlogView from "./components/recursos/Modulos-Recursos/blogs/blogs-view/BlogView.tsx";
 import TopButton from "./Utils/TopButton.tsx";
-import ReactGA from "react-ga4";
+import CookieConsentBar from "./Utils/CookieConsent/CookieConsentBar.tsx";
 import { setAdmins } from "./redux/features/ApplicationSlice.ts";
 import JobForm from "./components/Talentos/ModulosTalentos/ModuloTalentosG/JobCard/jobDescription/job-form/JobForm.tsx";
 import Footer from "./Utils/Footer/Footer.tsx";
@@ -181,18 +181,6 @@ useEffect(() => {
         .matchMedia("(prefers-color-scheme: dark)")
         .removeEventListener("change", handleFaviconChange);
     };
-  }, []);
-
-  //* GOOGLE ANALYTICS IN PROGRESS
-  useEffect(() => {
-    const googleAnalytics = async () => {
-      try {
-        ReactGA.initialize("G-SJ3KWGF9FD");
-      } catch (error) {
-        console.log(error);
-      }
-    };
-    googleAnalytics();
   }, []);
 
   //cambiar este use effect y que se hagan las peticiones en cada componente.
@@ -385,6 +373,7 @@ useEffect(() => {
       </Routes>
       {!isLandingPage && <TopButton />}
       {!isLandingPage && <Footer />}
+      <CookieConsentBar />
     </div>
   );
 }
