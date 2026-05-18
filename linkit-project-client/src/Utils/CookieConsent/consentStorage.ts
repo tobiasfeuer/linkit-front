@@ -31,7 +31,3 @@ export function saveConsent(consent: Pick<CookieConsent, "statistics" | "marketi
   localStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify(payload))
   return payload
 }
-
-export function hasConsentChoice(): boolean {
-  return getStoredConsent() !== null
-}
