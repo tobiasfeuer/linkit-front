@@ -22,10 +22,19 @@ import {
   getPrimaryCountryField,
   isCountryMappedToPayloadCountry,
   isCountrySelectorField,
+  isRecruiterFieldCheck,
   isRoleCodeFieldCheck,
   isSupersededLegacyCountryField,
+  orderRecruiterFormFields,
   resolveJdCodeForPayload,
+  shouldRenderFieldFullWidth,
 } from "./recruiterFormFields";
+import {
+  isAvailabilityField,
+  isReasonField,
+  validateAvailabilityText,
+  validateReasonText,
+} from "./recruiterFormValidation";
 import { SelectCountryFormEs } from "../Talentos/ModulosTalentos/ModuloTalentosG/JobCard/jobDescription/job-form/jobFormCountry/JobFormSelectCountry";
 import PhoneInput from "react-phone-number-input";
 import { useGoogleReCaptcha } from "react-google-recaptcha-hook";
@@ -425,44 +434,34 @@ function CandidateApplicationFormBase({
       }
     }
 
-    const isAvailabilityField =
-      lowerFieldName.includes("availability") ||
-      lowerFieldName.includes("disponibilidad") ||
-      lowerAirtableField.includes("availability") ||
-      lowerAirtableField.includes("disponibilidad");
-
-    if (isAvailabilityField && typeof value === "string") {
-      const trimmedValue = value.trim();
-      if (trimmedValue.length < 5) {
-        return `${translateLabel(field.label)} ${t("debe tener al menos")} 5 ${t("caracteres")}`;
-      }
-      if (trimmedValue.length > 200) {
-        return `${translateLabel(field.label)} ${t("debe tener máximo")} 200 ${t("caracteres")}`;
-      }
-      const contentRegex = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s.,!?-]{5,200}$/;
-      if (!contentRegex.test(trimmedValue)) {
+    if (
+      isAvailabilityField(lowerFieldName, lowerAirtableField) &&
+      typeof value === "string"
+    ) {
+      const result = validateAvailabilityText(value);
+      if (!result.valid) {
+        if (result.errorKey === "min") {
+          return `${translateLabel(field.label)} ${t("debe tener al menos")} 5 ${t("caracteres")}`;
+        }
+        if (result.errorKey === "max") {
+          return `${translateLabel(field.label)} ${t("debe tener máximo")} 200 ${t("caracteres")}`;
+        }
         return `${translateLabel(field.label)} ${t("contiene caracteres no permitidos")}`;
       }
     }
 
-    const isReasonField =
-      lowerFieldName.includes("reason") ||
-      lowerFieldName.includes("razon") ||
-      lowerFieldName.includes("whychange") ||
-      lowerAirtableField.includes("reason") ||
-      lowerAirtableField.includes("razon") ||
-      lowerAirtableField.includes("why change");
-
-    if (isReasonField && typeof value === "string") {
-      const trimmedValue = value.trim();
-      if (trimmedValue.length < 10) {
-        return `${translateLabel(field.label)} ${t("debe tener al menos")} 10 ${t("caracteres")}`;
-      }
-      if (trimmedValue.length > 500) {
-        return `${translateLabel(field.label)} ${t("debe tener máximo")} 500 ${t("caracteres")}`;
-      }
-      const contentRegex = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s.,!?-]{10,500}$/;
-      if (!contentRegex.test(trimmedValue)) {
+    if (
+      isReasonField(lowerFieldName, lowerAirtableField) &&
+      typeof value === "string"
+    ) {
+      const result = validateReasonText(value);
+      if (!result.valid) {
+        if (result.errorKey === "min") {
+          return `${translateLabel(field.label)} ${t("debe tener al menos")} 10 ${t("caracteres")}`;
+        }
+        if (result.errorKey === "max") {
+          return `${translateLabel(field.label)} ${t("debe tener máximo")} 500 ${t("caracteres")}`;
+        }
         return `${translateLabel(field.label)} ${t("contiene caracteres no permitidos")}`;
       }
     }
@@ -544,10 +543,6 @@ function CandidateApplicationFormBase({
     setErrors(newErrors);
     return isValid;
   };
-
-  const isRecruiterFieldCheck = (field: FormFieldConfig) =>
-    field.fieldName.toLowerCase() === "recruiter" ||
-    field.airtableField.toLowerCase() === "recruiter";
 
   const normalizedRoleCode = useMemo(() => {
     const fromQuery = roleCodeParam;
@@ -1239,11 +1234,12 @@ function CandidateApplicationFormBase({
           )}
           {error && <p className="form-error">{error}</p>}
         </>,
-        { fullWidth: true }
+        { fullWidth: shouldRenderFieldFullWidth(field) }
       );
     }
 
     if (field.type === "textarea") {
+      const fieldFullWidth = shouldRenderFieldFullWidth(field);
       return renderWrapper(
         field.fieldName,
         <>
@@ -1256,12 +1252,12 @@ function CandidateApplicationFormBase({
             placeholder={
               field.placeholder ? translateLabel(field.placeholder) : ""
             }
-            rows={6}
+            rows={fieldFullWidth ? 6 : 4}
             className={`form-textarea ${error ? "error" : ""}`}
           />
           {error && <p className="form-error">{error}</p>}
         </>,
-        { fullWidth: true }
+        { fullWidth: fieldFullWidth }
       );
     }
 
@@ -1414,7 +1410,7 @@ function CandidateApplicationFormBase({
           />
           {error && <p className="form-error">{error}</p>}
         </>,
-        { fullWidth: true }
+        { fullWidth: shouldRenderFieldFullWidth(field) }
       );
     }
 
@@ -1505,89 +1501,10 @@ function CandidateApplicationFormBase({
     );
   };
 
-  const formFieldsForGrid = useMemo(() => {
-    if (!formConfig.length) return formConfig as any[];
-
-    const isRecruiterFieldCheckLocal = (field: FormFieldConfig) =>
-      field.fieldName.toLowerCase() === "recruiter" ||
-      field.airtableField.toLowerCase() === "recruiter";
-
-    const isPhoneFieldCheck = (field: FormFieldConfig) => {
-      const lowerFieldName = field.fieldName.toLowerCase();
-      const lowerAirtableField = field.airtableField?.toLowerCase() || "";
-      return (
-        lowerFieldName.includes("phone") ||
-        lowerFieldName.includes("telefono") ||
-        lowerFieldName.includes("tel") ||
-        lowerAirtableField.includes("phone") ||
-        lowerAirtableField.includes("telefono") ||
-        lowerAirtableField.includes("tel")
-      );
-    };
-
-    const isFirstNameFieldCheck = (field: FormFieldConfig) => {
-      const lowerFieldName = field.fieldName.toLowerCase();
-      const lowerAirtableField = field.airtableField?.toLowerCase() || "";
-      return (
-        lowerFieldName.includes("nombre") ||
-        lowerFieldName.includes("firstname") ||
-        lowerFieldName.includes("first name") ||
-        lowerAirtableField.includes("nombre") ||
-        lowerAirtableField.includes("firstname") ||
-        lowerAirtableField.includes("first name")
-      );
-    };
-
-    const isLastNameFieldCheck = (field: FormFieldConfig) => {
-      const lowerFieldName = field.fieldName.toLowerCase();
-      const lowerAirtableField = field.airtableField?.toLowerCase() || "";
-      return (
-        lowerFieldName.includes("apellido") ||
-        lowerFieldName.includes("lastname") ||
-        lowerFieldName.includes("last name") ||
-        lowerAirtableField.includes("apellido") ||
-        lowerAirtableField.includes("lastname") ||
-        lowerAirtableField.includes("last name")
-      );
-    };
-
-    // Layout objetivo en grid (2 columnas):
-    // - Fila 1: Reclutador (full width)
-    // - Fila 2: (col 1) primero disponible, (col 2) Apellido
-    // - Fila 3: (col 1) Teléfono, (col 2) Rol al que aplica
-    const recruiterField = formConfig.find(isRecruiterFieldCheckLocal);
-    const firstNameField = formConfig.find(isFirstNameFieldCheck);
-    const lastNameField = formConfig.find(isLastNameFieldCheck);
-    const phoneField = formConfig.find(isPhoneFieldCheck);
-    const roleField = formConfig.find((f) => isRoleCodeFieldCheck(f));
-
-    const nonRecruiterFields = formConfig.filter(
-      (f) => f !== recruiterField && f.fieldName !== "recruiterSlug"
-    );
-
-    const reserved: Array<FormFieldConfig | null> = [null, null, null, null];
-    if (firstNameField) reserved[0] = firstNameField;
-    if (lastNameField) reserved[1] = lastNameField;
-    if (phoneField) reserved[2] = phoneField;
-    if (roleField) reserved[3] = roleField;
-
-    const remaining = nonRecruiterFields.filter((f) => !reserved.includes(f));
-
-    let cursor = 0;
-    for (let i = 0; i < reserved.length; i++) {
-      if (!reserved[i] && cursor < remaining.length) {
-        reserved[i] = remaining[cursor++];
-      }
-    }
-
-    const used = new Set<FormFieldConfig>(reserved.filter(Boolean) as FormFieldConfig[]);
-    const rest = nonRecruiterFields.filter((f) => !used.has(f));
-
-    const orderedNonRecruiter = reserved.filter(Boolean) as FormFieldConfig[];
-    return recruiterField
-      ? [recruiterField, ...orderedNonRecruiter, ...rest]
-      : [...orderedNonRecruiter, ...rest];
-  }, [formConfig]);
+  const formFieldsForGrid = useMemo(
+    () => orderRecruiterFormFields(formConfig),
+    [formConfig]
+  );
 
   const backgroundVisuals = (
     <div className="recruiter-visuals">
