@@ -2,14 +2,6 @@ import { useEffect } from 'react';
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 
-declare global {
-  interface Window {
-    dataLayer: {
-      push: (event: any) => void;
-    };
-  }
-}
-
 export default function SuccesfullForm() {
   const { t } = useTranslation();
   const navigate = useNavigate();
