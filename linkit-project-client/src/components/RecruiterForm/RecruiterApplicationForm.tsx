@@ -12,11 +12,20 @@ import { FormFieldConfig, RecruiterData, FormData, FormErrors } from "./types";
 import {
   getPrimaryCountryField,
   isCountrySelectorField,
+  isRecruiterFieldCheck,
   isRoleCodeFieldCheck,
   isSupersededLegacyCountryField,
   isCountryMappedToPayloadCountry,
+  orderRecruiterFormFields,
   resolveJdCodeForPayload,
+  shouldRenderFieldFullWidth,
 } from "./recruiterFormFields";
+import {
+  isAvailabilityField,
+  isReasonField,
+  validateAvailabilityText,
+  validateReasonText,
+} from "./recruiterFormValidation";
 import { SelectCountryFormEs } from "../Talentos/ModulosTalentos/ModuloTalentosG/JobCard/jobDescription/job-form/jobFormCountry/JobFormSelectCountry";
 import PhoneInput from "react-phone-number-input";
 import "react-phone-number-input/style.css";
@@ -366,46 +375,34 @@ function RecruiterApplicationForm() {
       }
     }
 
-    // Validación para Disponibilidad (availability)
-    const isAvailabilityField =
-      lowerFieldName.includes("availability") ||
-      lowerFieldName.includes("disponibilidad") ||
-      lowerAirtableField.includes("availability") ||
-      lowerAirtableField.includes("disponibilidad");
-    
-    if (isAvailabilityField && typeof value === "string") {
-      const trimmedValue = value.trim();
-      if (trimmedValue.length < 5) {
-        return `${translateLabel(field.label)} ${t("debe tener al menos")} 5 ${t("caracteres")}`;
-      }
-      if (trimmedValue.length > 200) {
-        return `${translateLabel(field.label)} ${t("debe tener máximo")} 200 ${t("caracteres")}`;
-      }
-      const contentRegex = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s.,!?-]{5,200}$/;
-      if (!contentRegex.test(trimmedValue)) {
+    if (
+      isAvailabilityField(lowerFieldName, lowerAirtableField) &&
+      typeof value === "string"
+    ) {
+      const result = validateAvailabilityText(value);
+      if (!result.valid) {
+        if (result.errorKey === "min") {
+          return `${translateLabel(field.label)} ${t("debe tener al menos")} 5 ${t("caracteres")}`;
+        }
+        if (result.errorKey === "max") {
+          return `${translateLabel(field.label)} ${t("debe tener máximo")} 200 ${t("caracteres")}`;
+        }
         return `${translateLabel(field.label)} ${t("contiene caracteres no permitidos")}`;
       }
     }
 
-    // Validación para Razón para cambiar (whyChange/reason)
-    const isReasonField =
-      lowerFieldName.includes("reason") ||
-      lowerFieldName.includes("razon") ||
-      lowerFieldName.includes("whychange") ||
-      lowerAirtableField.includes("reason") ||
-      lowerAirtableField.includes("razon") ||
-      lowerAirtableField.includes("why change");
-    
-    if (isReasonField && typeof value === "string") {
-      const trimmedValue = value.trim();
-      if (trimmedValue.length < 10) {
-        return `${translateLabel(field.label)} ${t("debe tener al menos")} 10 ${t("caracteres")}`;
-      }
-      if (trimmedValue.length > 500) {
-        return `${translateLabel(field.label)} ${t("debe tener máximo")} 500 ${t("caracteres")}`;
-      }
-      const contentRegex = /^[a-zA-Z0-9áéíóúÁÉÍÓÚñÑüÜ\s.,!?-]{10,500}$/;
-      if (!contentRegex.test(trimmedValue)) {
+    if (
+      isReasonField(lowerFieldName, lowerAirtableField) &&
+      typeof value === "string"
+    ) {
+      const result = validateReasonText(value);
+      if (!result.valid) {
+        if (result.errorKey === "min") {
+          return `${translateLabel(field.label)} ${t("debe tener al menos")} 10 ${t("caracteres")}`;
+        }
+        if (result.errorKey === "max") {
+          return `${translateLabel(field.label)} ${t("debe tener máximo")} 500 ${t("caracteres")}`;
+        }
         return `${translateLabel(field.label)} ${t("contiene caracteres no permitidos")}`;
       }
     }
@@ -477,10 +474,6 @@ function RecruiterApplicationForm() {
     return isValid;
   };
 
-  const isRecruiterFieldCheck = (field: FormFieldConfig) =>
-    field.fieldName.toLowerCase() === "recruiter" ||
-    field.airtableField.toLowerCase() === "recruiter";
-
   const normalizedRoleCode = useMemo(() => {
     const fromQuery = roleCodeParam;
     const fromRecruiter = recruiterData?.recruitmentRoleCode?.trim();
@@ -492,6 +485,10 @@ function RecruiterApplicationForm() {
     recruiterSlug?.toLowerCase() === "linkit" && normalizedRoleCode === "880"
   );
 
+  const formFieldsForGrid = useMemo(
+    () => orderRecruiterFormFields(formConfig),
+    [formConfig]
+  );
 
   const sanitizeString = (value: any): string | undefined => {
     if (value === undefined || value === null) return undefined;
@@ -912,7 +909,8 @@ function RecruiterApplicationForm() {
             className="form-input input-readonly"
           />
           {error && <p className="form-error">{error}</p>}
-        </>
+        </>,
+        { fullWidth: true }
       );
     }
 
@@ -964,11 +962,12 @@ function RecruiterApplicationForm() {
           {fileName && <p className="form-file-name">{t("Archivo:")} {fileName}</p>}
           {error && <p className="form-error">{error}</p>}
         </>,
-        { fullWidth: true }
+        { fullWidth: shouldRenderFieldFullWidth(field) }
       );
     }
 
     if (field.type === "textarea") {
+      const fieldFullWidth = shouldRenderFieldFullWidth(field);
       return renderWrapper(
         field.fieldName,
         <>
@@ -979,12 +978,12 @@ function RecruiterApplicationForm() {
             value={value || ""}
             onChange={(e) => handleInputChange(field.fieldName, e.target.value)}
             placeholder={field.placeholder ? translateLabel(field.placeholder) : ""}
-            rows={6}
+            rows={fieldFullWidth ? 6 : 4}
             className={`form-textarea ${error ? "error" : ""}`}
           />
           {error && <p className="form-error">{error}</p>}
         </>,
-        { fullWidth: true }
+        { fullWidth: fieldFullWidth }
       );
     }
 
@@ -1099,7 +1098,7 @@ function RecruiterApplicationForm() {
           />
           {error && <p className="form-error">{error}</p>}
         </>,
-        { fullWidth: true }
+        { fullWidth: shouldRenderFieldFullWidth(field) }
       );
     }
 
@@ -1275,7 +1274,7 @@ function RecruiterApplicationForm() {
         transition={{ duration: 0.5 }}
       >
         <div className="form-fields-grid">
-          {formConfig.map((field) => renderField(field))}
+          {formFieldsForGrid.map((field) => renderField(field))}
         </div>
 
         <div className="form-actions">

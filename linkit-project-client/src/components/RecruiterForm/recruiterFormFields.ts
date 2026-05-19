@@ -99,3 +99,231 @@ export function isCountrySelectorField(
 export function isCountryMappedToPayloadCountry(field: FormFieldConfig): boolean {
   return isPaisesNoBorrarField(field) || isLegacyCountryField(field);
 }
+
+export function isRecruiterFieldCheck(field: FormFieldConfig): boolean {
+  return (
+    field.fieldName.toLowerCase() === "recruiter" ||
+    field.airtableField.toLowerCase() === "recruiter"
+  );
+}
+
+export function isPhoneFieldCheck(field: FormFieldConfig): boolean {
+  const lowerFieldName = field.fieldName.toLowerCase();
+  const lowerAirtableField = field.airtableField?.toLowerCase() || "";
+  return (
+    lowerFieldName.includes("phone") ||
+    lowerFieldName.includes("telefono") ||
+    lowerFieldName.includes("tel") ||
+    lowerAirtableField.includes("phone") ||
+    lowerAirtableField.includes("telefono") ||
+    lowerAirtableField.includes("tel")
+  );
+}
+
+export function isLastNameFieldCheck(field: FormFieldConfig): boolean {
+  const lowerFieldName = field.fieldName.toLowerCase();
+  const lowerAirtableField = field.airtableField?.toLowerCase() || "";
+  return (
+    lowerFieldName.includes("apellido") ||
+    lowerFieldName.includes("lastname") ||
+    lowerFieldName.includes("last name") ||
+    lowerAirtableField.includes("apellido") ||
+    lowerAirtableField.includes("lastname") ||
+    lowerAirtableField.includes("last name")
+  );
+}
+
+export function isFirstNameFieldCheck(field: FormFieldConfig): boolean {
+  if (isLastNameFieldCheck(field)) return false;
+
+  const lowerFieldName = field.fieldName.toLowerCase();
+  const lowerAirtableField = field.airtableField?.toLowerCase() || "";
+
+  if (lowerFieldName === "name" || lowerAirtableField === "name") return true;
+
+  return (
+    lowerFieldName.includes("nombre") ||
+    lowerFieldName.includes("firstname") ||
+    lowerFieldName.includes("first name") ||
+    lowerAirtableField.includes("nombre") ||
+    lowerAirtableField.includes("firstname") ||
+    lowerAirtableField.includes("first name") ||
+    (lowerFieldName.includes("name") &&
+      !lowerFieldName.includes("company") &&
+      !lowerFieldName.includes("user") &&
+      !lowerFieldName.includes("file") &&
+      !lowerFieldName.includes("recruiter") &&
+      !lowerAirtableField.includes("company") &&
+      !lowerAirtableField.includes("user") &&
+      !lowerAirtableField.includes("file") &&
+      !lowerAirtableField.includes("recruiter"))
+  );
+}
+
+export function isCvFieldCheck(field: FormFieldConfig): boolean {
+  const lowerFieldName = field.fieldName.toLowerCase();
+  const lowerAirtableField = field.airtableField?.toLowerCase() || "";
+  return (
+    lowerFieldName === "cv" ||
+    lowerAirtableField === "cv" ||
+    lowerFieldName.includes("curriculum") ||
+    lowerAirtableField.includes("curriculum") ||
+    field.type === "file"
+  );
+}
+
+export function isCandidateStackPmFieldCheck(field: FormFieldConfig): boolean {
+  const lowerFieldName = field.fieldName.toLowerCase();
+  const lowerAirtableField = field.airtableField?.toLowerCase() || "";
+  return (
+    lowerFieldName.includes("candidatestackpmtools") ||
+    lowerAirtableField.includes("candidate stack + pm tools") ||
+    lowerAirtableField.includes("stack del candidato")
+  );
+}
+
+export function isAvailabilityFieldCheck(field: FormFieldConfig): boolean {
+  const lowerFieldName = field.fieldName.toLowerCase();
+  const lowerAirtableField = field.airtableField?.toLowerCase() || "";
+  return (
+    lowerFieldName.includes("availability") ||
+    lowerFieldName.includes("disponibilidad") ||
+    lowerFieldName.includes("whentostart") ||
+    lowerAirtableField.includes("availability") ||
+    lowerAirtableField.includes("disponibilidad") ||
+    lowerAirtableField.includes("when to start")
+  );
+}
+
+/** Textareas/multi-select anchos salvo Stack PM y Disponibilidad (media columna). */
+export function shouldRenderFieldFullWidth(field: FormFieldConfig): boolean {
+  if (isCandidateStackPmFieldCheck(field)) return false;
+  if (isAvailabilityFieldCheck(field)) return false;
+  if (isCvFieldCheck(field)) return true;
+  if (
+    field.type === "textarea" ||
+    field.type === "multi-select" ||
+    field.type === "file"
+  ) {
+    return true;
+  }
+  return false;
+}
+
+export function isEnglishLevelFieldCheck(field: FormFieldConfig): boolean {
+  const lowerFieldName = field.fieldName.toLowerCase();
+  const lowerAirtableField = field.airtableField?.toLowerCase() || "";
+  return (
+    lowerFieldName.includes("english") ||
+    lowerFieldName.includes("ingles") ||
+    lowerFieldName.includes("inglés") ||
+    lowerAirtableField.includes("english") ||
+    lowerAirtableField.includes("ingles") ||
+    lowerAirtableField.includes("inglés") ||
+    lowerAirtableField === "english level" ||
+    lowerAirtableField === "nivel de inglés" ||
+    lowerAirtableField === "nivel de ingles"
+  );
+}
+
+/** País inmediatamente antes de Nivel de inglés; resto conserva orden de Airtable. */
+function placeCountryBeforeEnglish(
+  config: FormFieldConfig[],
+  fields: FormFieldConfig[]
+): FormFieldConfig[] {
+  const countryField = fields.find((f) => isCountrySelectorField(f, config));
+  const englishField = fields.find(isEnglishLevelFieldCheck);
+  if (!countryField || !englishField || countryField === englishField) {
+    return fields;
+  }
+
+  const withoutCountry = fields.filter((f) => f !== countryField);
+  const englishIndex = withoutCountry.findIndex((f) => f === englishField);
+  if (englishIndex === -1) return fields;
+
+  return [
+    ...withoutCountry.slice(0, englishIndex),
+    countryField,
+    ...withoutCountry.slice(englishIndex),
+  ];
+}
+
+/** Stack PM | Disponibilidad en una fila; CV al final. */
+function finalizeRestFieldOrder(
+  config: FormFieldConfig[],
+  fields: FormFieldConfig[]
+): FormFieldConfig[] {
+  let ordered = placeCountryBeforeEnglish(config, fields);
+
+  const cvField = ordered.find(isCvFieldCheck);
+  const stackField = ordered.find(isCandidateStackPmFieldCheck);
+  const availabilityField = ordered.find(isAvailabilityFieldCheck);
+
+  const pulled = new Set(
+    [cvField, stackField, availabilityField].filter(Boolean) as FormFieldConfig[]
+  );
+
+  let core = ordered.filter((f) => !pulled.has(f));
+
+  if (stackField && availabilityField) {
+    core = [...core, stackField, availabilityField];
+  } else {
+    if (stackField) core.push(stackField);
+    if (availabilityField) core.push(availabilityField);
+  }
+
+  if (cvField) core.push(cvField);
+
+  return core;
+}
+
+/**
+ * Orden del grid (2 columnas):
+ * 1. Reclutador (full width en render)
+ * 2. Nombre | Apellido
+ * 3. Teléfono | Rol al que aplica
+ * 4. Resto (País antes de inglés; Stack PM | Disponibilidad; CV al final)
+ */
+export function orderRecruiterFormFields(
+  config: FormFieldConfig[]
+): FormFieldConfig[] {
+  if (!config.length) return config;
+
+  const recruiterField = config.find(isRecruiterFieldCheck);
+  const firstNameField = config.find(isFirstNameFieldCheck);
+  const lastNameField = config.find(isLastNameFieldCheck);
+  const phoneField = config.find(isPhoneFieldCheck);
+  const roleField = config.find((f) => isRoleCodeFieldCheck(f));
+
+  const nonRecruiterFields = config.filter(
+    (f) => f !== recruiterField && f.fieldName !== "recruiterSlug"
+  );
+
+  const reserved: Array<FormFieldConfig | null> = [null, null, null, null];
+  if (firstNameField) reserved[0] = firstNameField;
+  if (lastNameField) reserved[1] = lastNameField;
+  if (phoneField) reserved[2] = phoneField;
+  if (roleField) reserved[3] = roleField;
+
+  const remaining = nonRecruiterFields.filter((f) => !reserved.includes(f));
+
+  let cursor = 0;
+  for (let i = 0; i < reserved.length; i++) {
+    if (!reserved[i] && cursor < remaining.length) {
+      reserved[i] = remaining[cursor++];
+    }
+  }
+
+  const used = new Set<FormFieldConfig>(
+    reserved.filter(Boolean) as FormFieldConfig[]
+  );
+  const rest = finalizeRestFieldOrder(
+    config,
+    nonRecruiterFields.filter((f) => !used.has(f))
+  );
+
+  const orderedNonRecruiter = reserved.filter(Boolean) as FormFieldConfig[];
+  return recruiterField
+    ? [recruiterField, ...orderedNonRecruiter, ...rest]
+    : [...orderedNonRecruiter, ...rest];
+}
