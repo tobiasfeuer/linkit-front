@@ -39,7 +39,7 @@ export default function ModuloG() {
                     <span className="font-normal text-size  font-montserrat">Sr. Talent Acquisition Specialist</span>
                     </div>
                     <div className="flex flex-col space-y-1">
-                    <Link target="_blank" to="https://www.linkedin.com/" className="text-center subtitles-size font-bold font-montserrat">Magali Di Catarina</Link>
+                    <Link target="_blank" to="https://www.linkedin.com/in/magali-di-catarina/" className="text-center subtitles-size font-bold font-montserrat">Magali Di Catarina</Link>
                     <span className="font-normal text-size  font-montserrat">Talent Acquisition Specialist</span>
                     </div>
                     <div className="flex flex-col space-y-1">
@@ -47,7 +47,7 @@ export default function ModuloG() {
                     <span className="font-normal text-size  font-montserrat">Growth Marketing Specialist</span>
                     </div>
                     <div className="flex flex-col space-y-1">
-                    <Link target="_blank" to="https://www.linkedin.com/in/zoe-feuer-1a75261a2/" className="text-center subtitles-size font-bold font-montserrat">Juan Meyer</Link>
+                    <Link target="_blank" to="https://www.linkedin.com/in/juan-meyer-9b34a5269/" className="text-center subtitles-size font-bold font-montserrat">Juan Meyer</Link>
                     <span className="font-normal text-size  font-montserrat">Automation Engineer</span>
                     </div>
                     <div className="flex flex-col space-y-1">

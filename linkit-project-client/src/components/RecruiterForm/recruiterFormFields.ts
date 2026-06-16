@@ -195,6 +195,28 @@ export function isAvailabilityFieldCheck(field: FormFieldConfig): boolean {
   );
 }
 
+export function isCandidateEmailFieldCheck(field: FormFieldConfig): boolean {
+  const lowerFieldName = field.fieldName.toLowerCase();
+  const lowerAirtableField = field.airtableField?.toLowerCase() || "";
+  return (
+    lowerFieldName === "email" ||
+    lowerFieldName.includes("candidateemail") ||
+    lowerAirtableField === "email" ||
+    lowerAirtableField.includes("candidate email")
+  );
+}
+
+export function isSalaryFieldCheck(field: FormFieldConfig): boolean {
+  const lowerFieldName = field.fieldName.toLowerCase();
+  const lowerAirtableField = field.airtableField?.toLowerCase() || "";
+  return (
+    lowerFieldName.includes("salary") ||
+    lowerFieldName.includes("salario") ||
+    lowerAirtableField.includes("salary") ||
+    lowerAirtableField.includes("salario")
+  );
+}
+
 /** Textareas/multi-select anchos salvo Stack PM y Disponibilidad (media columna). */
 export function shouldRenderFieldFullWidth(field: FormFieldConfig): boolean {
   if (isCandidateStackPmFieldCheck(field)) return false;
@@ -248,12 +270,29 @@ function placeCountryBeforeEnglish(
   ];
 }
 
+/** Intercambia Email del candidato <-> Expectativa salarial. */
+function swapEmailAndSalary(fields: FormFieldConfig[]): FormFieldConfig[] {
+  const emailIndex = fields.findIndex(isCandidateEmailFieldCheck);
+  const salaryIndex = fields.findIndex(isSalaryFieldCheck);
+  if (emailIndex === -1 || salaryIndex === -1 || emailIndex === salaryIndex) {
+    return fields;
+  }
+
+  const swapped = [...fields];
+  [swapped[emailIndex], swapped[salaryIndex]] = [
+    swapped[salaryIndex],
+    swapped[emailIndex],
+  ];
+  return swapped;
+}
+
 /** Stack PM | Disponibilidad en una fila; CV al final. */
 function finalizeRestFieldOrder(
   config: FormFieldConfig[],
   fields: FormFieldConfig[]
 ): FormFieldConfig[] {
   let ordered = placeCountryBeforeEnglish(config, fields);
+  ordered = swapEmailAndSalary(ordered);
 
   const cvField = ordered.find(isCvFieldCheck);
   const stackField = ordered.find(isCandidateStackPmFieldCheck);
