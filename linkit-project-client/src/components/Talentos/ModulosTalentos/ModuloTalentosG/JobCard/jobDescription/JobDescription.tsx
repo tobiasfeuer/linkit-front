@@ -257,6 +257,14 @@ function JobDescription() {
     );
   };
 
+  const renderRichText = (text?: string) => {
+    if (!text) return null;
+    if (/<[a-z][\s\S]*>/i.test(text)) {
+      return HTMLReactParser(text);
+    }
+    return <span className="whitespace-pre-line">{text}</span>;
+  };
+
 
    // Si no hay datos cargados, mostrar skeleton
    if (!jobData || Object.keys(jobData).length === 0 || !translatedJobData.title) {
@@ -440,7 +448,7 @@ function JobDescription() {
                    {t("Descripción")}
                  </h3>
                  <p className="font-[600] text-size lg:max-w-[70%] dark:text-white">
-                   {translatedJobData.description && HTMLReactParser(translatedJobData.description)}
+                   {renderRichText(translatedJobData.description)}
                  </p>
                </section>
                {translatedJobData.aboutUs && (
@@ -449,7 +457,7 @@ function JobDescription() {
                      {t("Acerca de nosotros")}
                    </h3>
                    <p className="font-[600] text-size lg:max-w-[70%] dark:text-white">
-                     {translatedJobData.aboutUs && HTMLReactParser(translatedJobData.aboutUs)}
+                     {renderRichText(translatedJobData.aboutUs)}
                    </p>
                  </section>
                )}
@@ -459,8 +467,7 @@ function JobDescription() {
                      {t("Acerca de nuestro cliente")}
                    </h3>
                    <p className="font-[600] text-size lg:max-w-[70%] dark:text-white">
-                     {translatedJobData.aboutClient &&
-                       HTMLReactParser(translatedJobData.aboutClient)}
+                     {renderRichText(translatedJobData.aboutClient)}
                    </p>
                  </section>
                )}
