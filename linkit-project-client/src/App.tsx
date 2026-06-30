@@ -338,6 +338,8 @@ useEffect(() => {
           path="/soyTalento/Joboffer/:id/:slug"
           element={<JobDescription />}
         />
+        <Route path="/j/:id/:recruiterSlug" element={<JobDescription />} />
+        <Route path="/j/:id" element={<JobDescription />} />
         <Route
           path="/soyTalento/Joboffer/:id/:slug/application/"
           element={<JobForm />}

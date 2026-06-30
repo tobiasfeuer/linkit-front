@@ -52,6 +52,7 @@ const RECRUITER_OPTIONS: { value: string; label: string; slug: string }[] = [
   { value: "Ary", label: "Ary", slug: "Ary" },
   { value: "Magali", label: "Magali", slug: "Magali" },
   { value: "Belén", label: "Belén", slug: "Belén" },
+  { value: "Micaela", label: "Micaela", slug: "Micaela" },
 ];
 
 const KNOWN_RECRUITER_SLUGS = new Set(
