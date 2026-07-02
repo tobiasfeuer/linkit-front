@@ -18,12 +18,24 @@ import { Helmet } from "react-helmet-async";
 import BreadcrumbsWithSchema from "../../../../../../Utils/Breadcrumbs/Breadcrumbs";
 import JobDescriptionSkeleton from "./JobDescriptionSkeleton";
 import { Send, ArrowRight, Briefcase, Sparkles } from "lucide-react";
+import { generateJobTitleSlug } from "../../../../../../Utils/jobShareUrl";
+
+function hasValidEnglishVersion(job: JobDescriptionProps): boolean {
+  const en = job.en;
+  if (!en?.title?.trim() || !en?.description?.trim()) return false;
+  if (en.description === job.description) return false;
+  return true;
+}
 
 
 const SUPERADMN_ID = import.meta.env.VITE_SUPERADMN_ID;
 
 function JobDescription() {
-  const { id, slug } = useParams<{ id: string; slug: string }>();
+  const { id, slug, recruiterSlug: recruiterSlugFromPath } = useParams<{
+    id: string;
+    slug?: string;
+    recruiterSlug?: string;
+  }>();
 
   const { t } = useTranslation();
   const [jobData, setJobData] = useState<JobDescriptionProps>(
@@ -36,6 +48,10 @@ function JobDescription() {
   const location = useLocation();
   const isDarkMode = useSelector((state: RootState) => state.darkMode);
   const isSpanish = language === "es";
+  const showEnglishFallback =
+    !isSpanish &&
+    Object.keys(jobData).length > 0 &&
+    !hasValidEnglishVersion(jobData);
   const [translatedJobData, setTranslatedJobData] = useState<any>({});
   const [showFloatingButton, setShowFloatingButton] = useState(false);
 
@@ -66,21 +82,26 @@ function JobDescription() {
     window.scrollTo(0, 0);
   }, [i18n.language, id]);
 
+  const jobTitleSlug =
+    slug ||
+    (translatedJobData.title ? generateJobTitleSlug(translatedJobData.title) : "oferta");
+
   // Actualizar translatedJobData cuando jobData o isSpanish cambien
   useEffect(() => {
     if (jobData && Object.keys(jobData).length > 0) {
+      const useSpanish = isSpanish || !hasValidEnglishVersion(jobData);
       setTranslatedJobData({
-        title: isSpanish ? jobData.title : jobData.en?.title ?? jobData.title,
-        description: isSpanish ? jobData.description : jobData.en?.description ?? jobData.description,
-        location: isSpanish ? jobData.location : jobData.en?.location ?? jobData.location,
-        modality: isSpanish ? jobData.modality : jobData.en?.modality ?? jobData.modality,
-        stack: isSpanish ? jobData.stack ?? [] : jobData.en?.stack ?? [],
-        aboutUs: isSpanish ? jobData.aboutUs : jobData.en?.aboutUs || jobData.aboutUs,
-        aboutClient: isSpanish ? jobData.aboutClient : jobData.en?.aboutClient || jobData.aboutClient,
-        responsabilities: isSpanish ? jobData.responsabilities : jobData.en?.responsabilities ?? [],
-        requirements: isSpanish ? jobData.requirements : jobData.en?.requirements ?? [],
-        niceToHave: isSpanish ? jobData.niceToHave ?? [] : jobData.en?.niceToHave ?? [],
-        benefits: isSpanish ? jobData.benefits ?? [] : jobData.en?.benefits ?? [],
+        title: useSpanish ? jobData.title : jobData.en!.title,
+        description: useSpanish ? jobData.description : jobData.en!.description,
+        location: useSpanish ? jobData.location : jobData.en!.location ?? jobData.location,
+        modality: useSpanish ? jobData.modality : jobData.en!.modality ?? jobData.modality,
+        stack: useSpanish ? jobData.stack ?? [] : jobData.en!.stack ?? [],
+        aboutUs: useSpanish ? jobData.aboutUs : jobData.en!.aboutUs || jobData.aboutUs,
+        aboutClient: useSpanish ? jobData.aboutClient : jobData.en!.aboutClient || jobData.aboutClient,
+        responsabilities: useSpanish ? jobData.responsabilities : jobData.en!.responsabilities ?? [],
+        requirements: useSpanish ? jobData.requirements : jobData.en!.requirements ?? [],
+        niceToHave: useSpanish ? jobData.niceToHave ?? [] : jobData.en!.niceToHave ?? [],
+        benefits: useSpanish ? jobData.benefits ?? [] : jobData.en!.benefits ?? [],
       });
     }
   }, [jobData, isSpanish]);
@@ -109,6 +130,7 @@ function JobDescription() {
     // - /soyTalento/Joboffer/:id/:slug?campaign=linkedin
     const searchParams = new URLSearchParams(location.search);
     const recruiterSlugFromUrl =
+      recruiterSlugFromPath?.trim() ||
       searchParams.get("recruiterSlug")?.trim() ||
       searchParams.get("campaign")?.trim() ||
       "";
@@ -314,12 +336,21 @@ function JobDescription() {
                    label:
                      translatedJobData.title ||
                      (isSpanish ? "Oferta de trabajo" : "Job Offer"),
-                   path: `/soyTalento/Joboffer/${id}/${slug}`,
+                   path: `/soyTalento/Joboffer/${id}/${jobTitleSlug}`,
                    active: true,
                  },
               ]}
             />
           </div>
+
+          {showEnglishFallback && (
+            <div
+              role="status"
+              className="mb-6 rounded-lg border border-amber-400 bg-amber-50 px-4 py-3 text-sm font-medium text-amber-900 dark:border-amber-500 dark:bg-amber-900/20 dark:text-amber-100"
+            >
+              English version not available. Showing content in Spanish.
+            </div>
+          )}
 
           <div className="lg:flex grid relative mb-[10%] w-full">
             <div className="w-full">
