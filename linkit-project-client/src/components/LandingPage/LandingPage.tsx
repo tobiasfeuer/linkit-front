@@ -8,6 +8,7 @@ import CompaniesCarousel from "../../Utils/CompaniesCarousel/CopaniesCarousel"
 import { ArrowRight, CheckCircle, Zap, Clock } from "lucide-react"
 import { useTranslation } from "react-i18next"
 import { NavLink } from "react-router-dom"
+import AdvisorContactModal from "./AdvisorContactModal"
 
 const translations = {
   es: {
@@ -81,6 +82,7 @@ const LandingPage = () => {
 
   return (
     <div className="min-h-screen flex flex-col font-montserrat">
+      <AdvisorContactModal />
       <Navbar />
 
       <main className="flex-grow bg-gradient-to-br from-[#173951] via-[#1c4a6b] to-[#173951] text-white py-16 md:py-24">

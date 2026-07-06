@@ -37,12 +37,18 @@ export default function PhotosCarousel({arrayOfMembers, bgColor}: PhotosCarousel
         <div className="grid grid-cols-3 justify-items-center items-center dark:text-white">
             
             <img src={isDarkMode ? whiteArrow : blackArrow} alt="prev" onClick={prevSlide} className='w-[20px] rotate-90 cursor-pointer'/>
-                {arrayOfMembers.map((item, index) => {
+                {arrayOfMembers.map((item) => {
                     return (
-                        <div className={`justify-items-center mt-5 ${item.id === current ? "grid" : "hidden"}`} key={index}>
-                            <img src={item.img} alt={item.name} className={`${bgColor === "white" ? "bg-white" : "bg-linkIt-500"} rounded-xl w-1/1 h-1/1 aspect-square`} />
-                            <Link target='_blank' to={item.link} className='font-bold subtitles-size whitespace-nowrap mt-2 mb-1'>{item.name}</Link>
-                            <p className='text-size text-center'>{item.position}</p>{ item.rol &&
+                        <div className={`mt-5 justify-items-center ${item.id === current ? "grid" : "hidden"}`} key={item.id}>
+                            <img
+                              src={item.img}
+                              alt={item.name}
+                              className={`aspect-square w-full max-w-[220px] rounded-xl object-cover object-top ${bgColor === "white" ? "bg-white" : "bg-linkIt-500"}`}
+                            />
+                            <Link target="_blank" to={item.link} className="subtitles-size mb-1 mt-2 whitespace-normal text-center font-bold">
+                              {item.name}
+                            </Link>
+                            <p className="text-size px-4 text-center">{item.position}</p>{ item.rol &&
                             <p className='text-size text-center'>{item.rol}</p>}
                         </div>
                     )
