@@ -1,55 +1,65 @@
-[{
+[
+  {
     "id": 1,
     "link": "https://www.linkedin.com/in/tobias-feuer/",
     "img": "/people-LinkIt/Tobi.png",
     "name": "Tobias Feuer",
     "position": "COO & Co-Founder"
-}, {
+  },
+  {
     "id": 2,
     "link": "https://www.linkedin.com/in/arymolchadsky/",
-    "img":"/people-LinkIt/ary-perfil.png",
+    "img": "/people-LinkIt/ary-perfil.png",
     "name": "Ary Molchadsky",
     "position": "CEO & Co-Founder"
-},{
+  },
+  {
     "id": 3,
-    "link": "https://www.linkedin.com/in/belenbeccaria/",
-    "img": "/people-LinkIt/belulinkit.png",
-    "name": "Belén Beccaria",
-    "position": "Talent Sourcer"
-},
-{
-    "id": 4,
     "link": "https://www.linkedin.com/in/julieta-clara-26b207296/",
     "img": "/people-LinkIt/juli-perfil.png",
     "name": "Julieta Jasin",
     "position": "Sr. Talent Acquisition Specialist"
-},
-{
-    "id": 5,
+  },
+  {
+    "id": 4,
     "link": "https://www.linkedin.com/in/shayna-iskandarani-126270211/",
     "img": "/people-LinkIt/shay-perfil.png",
     "name": "Shayna Iskandarani",
     "position": "Sr. Talent Acquisition Specialist"
-}
-, {
-    "id": 6,
+  },
+  {
+    "id": 5,
     "link": "https://www.linkedin.com/in/magali-di-catarina/",
     "img": "/people-LinkIt/Magali.png",
     "name": "Magali Di Catarina",
     "position": "Talent Acquisition Specialist"
- }, {
-    "id": 7,
+  },
+  {
+    "id": 6,
+    "link": "https://www.linkedin.com/in/zoe-feuer-1a75261a2/",
     "img": "/people-LinkIt/Zoe.png",
     "name": "Zoe Feuer",
-    "position": "Content Creator",
-    "link": "https://www.linkedin.com/in/zoe-feuer-1a75261a2/"
-},
-{
-    "id": 8,
+    "position": "Growth Marketing Specialist"
+  },
+  {
+    "id": 7,
     "link": "https://www.linkedin.com/in/juan-meyer-9b34a5269/",
     "img": "/people-LinkIt/johnnobg.png",
     "name": "Juan Meyer",
     "position": "Automation Engineer"
-}
+  },
+  {
+    "id": 8,
+    "link": "https://www.linkedin.com/in/belenbeccaria/",
+    "img": "/people-LinkIt/belulinkit.png",
+    "name": "Belén Beccaria",
+    "position": "Talent Sourcer"
+  },
+  {
+    "id": 9,
+    "link": "https://www.linkedin.com/in/micaelafucci/",
+    "img": "/people-LinkIt/MicaelaFucci.png",
+    "name": "Micaela Fucci",
+    "position": "Talent Acquisition Specialist"
+  }
 ]
-

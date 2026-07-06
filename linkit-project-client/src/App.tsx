@@ -30,6 +30,7 @@ import JobDescription from "./components/Talentos/ModulosTalentos/ModuloTalentos
 import BlogView from "./components/recursos/Modulos-Recursos/blogs/blogs-view/BlogView.tsx";
 import TopButton from "./Utils/TopButton.tsx";
 import CookieConsentBar from "./Utils/CookieConsent/CookieConsentBar.tsx";
+import WhatsAppFloatingButton from "./Utils/WhatsAppFloatingButton.tsx";
 import { setAdmins } from "./redux/features/ApplicationSlice.ts";
 import JobForm from "./components/Talentos/ModulosTalentos/ModuloTalentosG/JobCard/jobDescription/job-form/JobForm.tsx";
 import Footer from "./Utils/Footer/Footer.tsx";
@@ -375,6 +376,7 @@ useEffect(() => {
       </Routes>
       {!isLandingPage && <TopButton />}
       {!isLandingPage && <Footer />}
+      <WhatsAppFloatingButton />
       <CookieConsentBar />
     </div>
   );

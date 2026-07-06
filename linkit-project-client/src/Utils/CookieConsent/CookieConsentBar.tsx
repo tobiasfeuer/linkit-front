@@ -39,6 +39,7 @@ export default function CookieConsentBar() {
       initReactGAIfAllowed(next.statistics)
       setBarOpen(false)
       setShowPreferences(false)
+      window.dispatchEvent(new Event("linkit:consent-updated"))
     },
     [initReactGAIfAllowed]
   )
