@@ -1039,7 +1039,7 @@ function CandidateApplicationFormBase({
 
     if (isRecruiterField) {
       const currentLang = lang.startsWith("es") ? "es" : "en";
-      const recruiterComesFromSlug = recruiterSlugParam && recruiterSlugParam !== "linkit";
+      const recruiterComesFromSlug = recruiterSlugParam && recruiterSlugParam !== "LinkitHR";
     
       // Si el recruiter viene del slug, mostrar como readonly
       if (recruiterComesFromSlug) {

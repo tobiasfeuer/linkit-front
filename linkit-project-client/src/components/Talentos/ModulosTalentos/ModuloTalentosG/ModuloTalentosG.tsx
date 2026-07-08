@@ -7,7 +7,7 @@ import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 
 // Slug y role code para "Súmate a nuestra base de datos" (campaña / base de datos)
-const BASE_DATOS_RECRUITER_SLUG = "linkit";
+const BASE_DATOS_RECRUITER_SLUG = "LinkitHR";
 const BASE_DATOS_ROLE_CODE = "880";
 
 export default function ModuloTalentosG() {
