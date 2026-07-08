@@ -113,18 +113,33 @@ function RecruiterApplicationForm() {
       try {
         setInitialLoading(true);
 
-        // Obtener datos del recruiter
-        const roleCodeQuery = roleCodeParam || undefined;
-        const recruiter = await getRecruiterBySlug(recruiterSlug, roleCodeQuery);
-        
-        if (!recruiter.active) {
-          Swal.fire({
-            icon: "warning",
-            title: "Formulario no disponible",
-            text: "Este formulario no está disponible actualmente",
-            confirmButtonColor: "#01A28B",
-          }).then(() => navigate("/"));
-          return;
+        // Flujo "Súmate a nuestra base de datos": slug "LinkitHR" + roleCode "880"
+        // No tiene recruiter real en Airtable — usar datos genéricos de LinkIT
+        const isBaseDatos =
+          recruiterSlug.toLowerCase() === "linkithr" && roleCodeParam === "880";
+
+        let recruiter: RecruiterData;
+        if (isBaseDatos) {
+          recruiter = {
+            id: "LinkitHR",
+            name: "LinkIT",
+            urlSlug: "LinkitHR",
+            active: true,
+            recruitmentRoleCode: "880",
+          };
+        } else {
+          const roleCodeQuery = roleCodeParam || undefined;
+          recruiter = await getRecruiterBySlug(recruiterSlug, roleCodeQuery);
+
+          if (!recruiter.active) {
+            Swal.fire({
+              icon: "warning",
+              title: "Formulario no disponible",
+              text: "Este formulario no está disponible actualmente",
+              confirmButtonColor: "#01A28B",
+            }).then(() => navigate("/"));
+            return;
+          }
         }
 
         setRecruiterData(recruiter);
@@ -482,7 +497,7 @@ function RecruiterApplicationForm() {
 
   // Flujo "Súmate a nuestra base de datos": linkit + role 880
   const isBaseDatosFlow = Boolean(
-    recruiterSlug?.toLowerCase() === "linkit" && normalizedRoleCode === "880"
+    recruiterSlug?.toLowerCase() === "linkithr" && normalizedRoleCode === "880"
   );
 
   const formFieldsForGrid = useMemo(
