@@ -407,10 +407,22 @@ function CandidateApplicationFormBase({
       lowerAirtableField.includes("linkedin");
 
     if (isLinkedInField && typeof value === "string") {
+      if (/\s/.test(value)) {
+        return t("El link de LinkedIn no puede contener espacios. Copiá el link directamente desde tu perfil sin espacios.");
+      }
+      if (value.includes("@")) {
+        return t("El link de LinkedIn no es un email. Debe ser una URL del tipo: linkedin.com/in/tu-perfil");
+      }
+      if (/linkedin\.com\/pub\//i.test(value)) {
+        return t("Ese formato de LinkedIn está desactualizado. Usá el nuevo: linkedin.com/in/tu-perfil");
+      }
+      if (/linkedin\.com(?!\/(in|pub)\/)/.test(value) && /linkedin\.com/.test(value)) {
+        return t("El link debe apuntar a tu perfil personal: linkedin.com/in/tu-nombre");
+      }
       const linkedInRegex =
         /^(https?:\/\/)?(www\.)?linkedin\.com\/in\/[\p{L}\p{N}\w\-]+\/?$/iu;
       if (!linkedInRegex.test(value.trim())) {
-        return `${translateLabel(field.label)} ${t("debe tener el formato: www.linkedin.com/in/tu-perfil")}`;
+        return t("Formato incorrecto. El link de LinkedIn debe verse así: linkedin.com/in/tu-nombre (solo letras, números, guiones y guiones bajos, sin espacios)");
       }
     }
 
