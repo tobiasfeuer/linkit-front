@@ -255,11 +255,10 @@ useEffect(() => {
 
   const location = useLocation();
   const isLandingPage = location.pathname === "/landing";
-  const isTalentApplicationForm =
-    location.pathname.startsWith("/apply/") ||
-    /\/soyTalento\/Joboffer\/[^/]+\/[^/]+\/application\/?$/.test(
-      location.pathname
-    );
+  const showWhatsAppFloatingButton =
+    location.pathname === "/soyEmpresa" ||
+    location.pathname === "/contrata-talento-it" ||
+    location.pathname === "/hire-it-talent";
 
   return (
     <div className="w-screen h-full">
@@ -381,7 +380,7 @@ useEffect(() => {
       </Routes>
       {!isLandingPage && <TopButton />}
       {!isLandingPage && <Footer />}
-      {!isTalentApplicationForm && <WhatsAppFloatingButton />}
+      {showWhatsAppFloatingButton && <WhatsAppFloatingButton />}
       <CookieConsentBar />
     </div>
   );
