@@ -3,18 +3,20 @@ import { useParams } from "react-router-dom";
 import axios from "axios";
 
 type AtsFilterType = "roleCode" | "company";
+type SortKey = "stage" | "country" | "name";
 
 interface AtsCandidate {
   name: string;
   candidateId: string;
-  roleAndCompany: string;
-  salaryExpectationUsd: string;
-  pipelinesCount: string;
+  roleName: string;
   seniority: string;
-  email: string;
   linkedin: string;
   pipelineStage: string;
   roleCode: string;
+  country: string;
+  cvUrl: string;
+  cvFilename: string;
+  endorsement: string;
 }
 
 interface AtsResponse {
@@ -46,6 +48,10 @@ export default function ApplicationsStatusView({
   const [data, setData] = useState<AtsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey>("stage");
+  const [cvModal, setCvModal] = useState<AtsCandidate | null>(null);
+  const [endorsementModal, setEndorsementModal] =
+    useState<AtsCandidate | null>(null);
 
   useEffect(() => {
     if (!filterValue) {
@@ -89,13 +95,45 @@ export default function ApplicationsStatusView({
     };
   }, [filterType, filterValue]);
 
+  useEffect(() => {
+    if (!cvModal && !endorsementModal) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setCvModal(null);
+        setEndorsementModal(null);
+      }
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [cvModal, endorsementModal]);
+
+  const sortedCandidates = useMemo(() => {
+    const list = [...(data?.candidates ?? [])];
+    list.sort((a, b) => {
+      const left =
+        sortKey === "stage"
+          ? a.pipelineStage
+          : sortKey === "country"
+            ? a.country
+            : a.name;
+      const right =
+        sortKey === "stage"
+          ? b.pipelineStage
+          : sortKey === "country"
+            ? b.country
+            : b.name;
+      return left.localeCompare(right, "es", { sensitivity: "base", numeric: true });
+    });
+    return list;
+  }, [data?.candidates, sortKey]);
+
   const title =
     filterType === "roleCode"
       ? `ATS · Role Code ${filterValue}`
       : `ATS · ${filterValue}`;
 
   const subtitle =
-    data?.candidates?.[0]?.roleAndCompany ||
+    data?.candidates?.[0]?.roleName ||
     (filterType === "roleCode"
       ? "Candidatos filtrados por Role Code"
       : "Candidatos filtrados por empresa");
@@ -112,9 +150,23 @@ export default function ApplicationsStatusView({
           </h1>
           <p className="mt-2 text-base text-slate-600">{subtitle}</p>
           {!loading && !error && data && (
-            <p className="mt-3 text-sm text-slate-500">
-              {data.count} candidato{data.count === 1 ? "" : "s"}
-            </p>
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <p className="text-sm text-slate-500">
+                {data.count} candidato{data.count === 1 ? "" : "s"}
+              </p>
+              <label className="ml-auto flex items-center gap-2 text-sm text-slate-600">
+                Ordenar por
+                <select
+                  value={sortKey}
+                  onChange={(e) => setSortKey(e.target.value as SortKey)}
+                  className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-slate-800"
+                >
+                  <option value="stage">Stage</option>
+                  <option value="country">País</option>
+                  <option value="name">Nombre</option>
+                </select>
+              </label>
+            </div>
           )}
         </header>
 
@@ -143,17 +195,17 @@ export default function ApplicationsStatusView({
                 <tr>
                   <th className="px-4 py-3 font-medium">Candidato</th>
                   <th className="px-4 py-3 font-medium">ID</th>
-                  <th className="px-4 py-3 font-medium">Rol + Empresa</th>
+                  <th className="px-4 py-3 font-medium">Rol</th>
                   <th className="px-4 py-3 font-medium">Stage</th>
+                  <th className="px-4 py-3 font-medium">País</th>
                   <th className="px-4 py-3 font-medium">Seniority</th>
-                  <th className="px-4 py-3 font-medium">Salario</th>
-                  <th className="px-4 py-3 font-medium">Pipelines</th>
-                  <th className="px-4 py-3 font-medium">Email</th>
                   <th className="px-4 py-3 font-medium">LinkedIn</th>
+                  <th className="px-4 py-3 font-medium">CV</th>
+                  <th className="px-4 py-3 font-medium">Endorsement</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {data.candidates.map((candidate, index) => (
+                {sortedCandidates.map((candidate, index) => (
                   <tr
                     key={`${candidate.candidateId}-${index}`}
                     className="hover:bg-slate-50/80"
@@ -165,31 +217,16 @@ export default function ApplicationsStatusView({
                       {candidate.candidateId || "—"}
                     </td>
                     <td className="px-4 py-3 text-slate-600">
-                      {candidate.roleAndCompany || "—"}
+                      {candidate.roleName || "—"}
                     </td>
                     <td className="px-4 py-3 text-slate-600">
                       {candidate.pipelineStage || "—"}
                     </td>
                     <td className="px-4 py-3 text-slate-600">
+                      {candidate.country || "—"}
+                    </td>
+                    <td className="px-4 py-3 text-slate-600">
                       {candidate.seniority || "—"}
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">
-                      {candidate.salaryExpectationUsd || "—"}
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">
-                      {candidate.pipelinesCount || "—"}
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">
-                      {candidate.email ? (
-                        <a
-                          href={`mailto:${candidate.email}`}
-                          className="text-sky-700 hover:underline"
-                        >
-                          {candidate.email}
-                        </a>
-                      ) : (
-                        "—"
-                      )}
                     </td>
                     <td className="px-4 py-3">
                       {candidate.linkedin ? (
@@ -205,6 +242,32 @@ export default function ApplicationsStatusView({
                         <span className="text-slate-400">—</span>
                       )}
                     </td>
+                    <td className="px-4 py-3">
+                      {candidate.cvUrl ? (
+                        <button
+                          type="button"
+                          onClick={() => setCvModal(candidate)}
+                          className="font-medium text-sky-700 hover:underline"
+                        >
+                          Ver PDF
+                        </button>
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
+                      {candidate.endorsement ? (
+                        <button
+                          type="button"
+                          onClick={() => setEndorsementModal(candidate)}
+                          className="font-medium text-sky-700 hover:underline"
+                        >
+                          Ver
+                        </button>
+                      ) : (
+                        <span className="text-slate-400">—</span>
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -212,6 +275,81 @@ export default function ApplicationsStatusView({
           </div>
         )}
       </div>
+
+      {cvModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
+          onClick={() => setCvModal(null)}
+        >
+          <div
+            className="flex h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-white shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+              <div>
+                <h2 className="text-lg font-semibold text-slate-900">
+                  CV · {cvModal.name || "Candidato"}
+                </h2>
+                <p className="text-sm text-slate-500">
+                  {cvModal.cvFilename || "Documento PDF"}
+                </p>
+              </div>
+              <div className="flex items-center gap-3">
+                <a
+                  href={cvModal.cvUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-sm font-medium text-sky-700 hover:underline"
+                >
+                  Abrir en pestaña
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setCvModal(null)}
+                  className="rounded-md px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100"
+                >
+                  Cerrar
+                </button>
+              </div>
+            </div>
+            <iframe
+              title={`CV ${cvModal.name}`}
+              src={cvModal.cvUrl}
+              className="h-full w-full flex-1 bg-slate-100"
+            />
+          </div>
+        </div>
+      )}
+
+      {endorsementModal && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
+          onClick={() => setEndorsementModal(null)}
+        >
+          <div
+            className="max-h-[85vh] w-full max-w-2xl overflow-hidden rounded-xl bg-white shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+              <h2 className="text-lg font-semibold text-slate-900">
+                Endorsement · {endorsementModal.name || "Candidato"}
+              </h2>
+              <button
+                type="button"
+                onClick={() => setEndorsementModal(null)}
+                className="rounded-md px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100"
+              >
+                Cerrar
+              </button>
+            </div>
+            <div className="max-h-[70vh] overflow-y-auto px-5 py-4">
+              <pre className="whitespace-pre-wrap font-sans text-sm leading-6 text-slate-700">
+                {endorsementModal.endorsement}
+              </pre>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
