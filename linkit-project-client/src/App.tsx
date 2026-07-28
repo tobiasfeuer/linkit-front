@@ -45,6 +45,7 @@ import darkIcon from "/Vectores/FaviconDark.svg";
 import EbookView from "./components/recursos/Modulos-Recursos/ebooks/ebooksCards/EbooksView.tsx";
 import EventsView from "./components/recursos/Modulos-Recursos/eventos/Events-cards/EventsView.tsx";
 import LandingPage from "./components/LandingPage/LandingPage.tsx";
+import ApplicationsStatusView from "./components/Ats/ApplicationsStatusView.tsx";
 import { Helmet } from "react-helmet-async";
 import MainNavigation from "./Navigation/mainNavigation.tsx";
 import i18n from "./i18";
@@ -375,6 +376,8 @@ useEffect(() => {
         <Route path="/Gracias" element={<SuccesfullForm />} />
         <Route path="/contrata-talento-it" element={<LandingPage />} />
         <Route path="/hire-it-talent" element={<LandingPage />} />
+        <Route path="/ats/job/:roleCode" element={<ApplicationsStatusView filterType="roleCode" />} />
+        <Route path="/ats/company/:company" element={<ApplicationsStatusView filterType="company" />} />
         <Route path="/apply/candidate" element={<CandidateApplicationForm />} />
         <Route path="/apply/:recruiterSlug" element={<RecruiterApplicationForm />} />
       </Routes>
