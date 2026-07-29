@@ -56,11 +56,11 @@ interface AtsCandidate {
   linkedin: string;
   pipelineStage: string;
   roleCode: string;
-  country: string;
+  country?: string;
   hasCv: boolean;
   cvFilename: string;
   endorsement: string;
-  clientComment: string;
+  clientComment?: string;
 }
 
 interface AtsResponse {
@@ -148,17 +148,18 @@ function safeLinkedInUrl(url: string): string {
 }
 
 function candidateMatchesCountries(
-  candidateCountry: string,
+  candidateCountry: string | undefined | null,
   selectedCountries: string[],
   allSelected: boolean
 ): boolean {
   if (allSelected) return true;
   if (selectedCountries.length === 0) return false;
-  if (!candidateCountry.trim()) return false;
+  const country = (candidateCountry ?? "").trim();
+  if (!country) return false;
   const selectedSet = new Set(
     selectedCountries.map((item) => item.toLowerCase())
   );
-  return candidateCountry
+  return country
     .split(",")
     .map((item) => item.trim().toLowerCase())
     .filter(Boolean)
@@ -168,7 +169,9 @@ function candidateMatchesCountries(
 function extractCandidateCountries(candidates: AtsCandidate[]): string[] {
   const countries = new Set<string>();
   for (const candidate of candidates) {
-    candidate.country
+    const country = candidate.country ?? "";
+    if (!country) continue;
+    country
       .split(",")
       .map((item) => item.trim())
       .filter(Boolean)
@@ -221,6 +224,7 @@ function ApplicationsStatusViewBase({
   const [commentDraft, setCommentDraft] = useState("");
   const [commentSaving, setCommentSaving] = useState(false);
   const [commentError, setCommentError] = useState<string | null>(null);
+  const [commentSuccessOpen, setCommentSuccessOpen] = useState(false);
   const [selectedJobKey, setSelectedJobKey] = useState<string | null>(null);
 
   useEffect(() => {
@@ -303,7 +307,23 @@ function ApplicationsStatusViewBase({
             withCredentials: true,
           }
         );
-        objectUrl = URL.createObjectURL(response.data);
+
+        // Si el backend devolvió JSON de error con status 2xx raro, o blob sin type PDF
+        const contentType = String(
+          response.headers["content-type"] || response.data?.type || ""
+        ).toLowerCase();
+        if (contentType.includes("application/json")) {
+          throw new Error("CV_UNAVAILABLE");
+        }
+
+        const pdfBlob =
+          response.data instanceof Blob &&
+          response.data.type &&
+          response.data.type.includes("pdf")
+            ? response.data
+            : new Blob([response.data], { type: "application/pdf" });
+
+        objectUrl = URL.createObjectURL(pdfBlob);
         if (!cancelled) setCvBlobUrl(objectUrl);
       } catch {
         if (!cancelled) {
@@ -363,6 +383,7 @@ function ApplicationsStatusViewBase({
       !cvModal &&
       !endorsementModal &&
       !commentModal &&
+      !commentSuccessOpen &&
       !stageMenuOpen &&
       !countryMenuOpen
     ) {
@@ -373,13 +394,21 @@ function ApplicationsStatusViewBase({
         setCvModal(null);
         setEndorsementModal(null);
         setCommentModal(null);
+        setCommentSuccessOpen(false);
         setStageMenuOpen(false);
         setCountryMenuOpen(false);
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [cvModal, endorsementModal, commentModal, stageMenuOpen, countryMenuOpen]);
+  }, [
+    cvModal,
+    endorsementModal,
+    commentModal,
+    commentSuccessOpen,
+    stageMenuOpen,
+    countryMenuOpen,
+  ]);
 
   const openCommentModal = (candidate: AtsCandidate) => {
     setCommentModal(candidate);
@@ -407,21 +436,21 @@ function ApplicationsStatusViewBase({
       );
 
       const saved = response.data.clientComment ?? "";
+      const savedCandidateId = commentModal.candidateId;
       setData((prev) => {
         if (!prev) return prev;
         return {
           ...prev,
           candidates: prev.candidates.map((item) =>
-            item.candidateId === commentModal.candidateId
+            item.candidateId === savedCandidateId
               ? { ...item, clientComment: saved }
               : item
           ),
         };
       });
-      setCommentModal((prev) =>
-        prev ? { ...prev, clientComment: saved } : prev
-      );
-      setCommentDraft(saved);
+      setCommentModal(null);
+      setCommentDraft("");
+      setCommentSuccessOpen(true);
     } catch {
       setCommentError("No se pudo guardar el comentario. Intentá de nuevo.");
     } finally {
@@ -1274,14 +1303,58 @@ function ApplicationsStatusViewBase({
                 </div>
               )}
               {!cvLoading && !cvError && cvBlobUrl && (
-                <iframe
+                <object
+                  data={cvBlobUrl}
+                  type="application/pdf"
                   title={`CV ${cvModal.name}`}
-                  src={cvBlobUrl}
-                  sandbox="allow-same-origin allow-scripts allow-popups allow-downloads"
-                  referrerPolicy="no-referrer"
                   className="h-full w-full flex-1 bg-linkIt-500"
-                />
+                >
+                  <iframe
+                    title={`CV ${cvModal.name}`}
+                    src={cvBlobUrl}
+                    className="h-full w-full flex-1 bg-linkIt-500"
+                  />
+                </object>
               )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {commentSuccessOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-[#173951]/55 p-4 backdrop-blur-sm"
+            onClick={() => setCommentSuccessOpen(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 18, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.98 }}
+              className="w-full max-w-md overflow-hidden rounded-2xl bg-white shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="border-b border-linkIt-50 bg-gradient-to-r from-[#173951] to-[#1c4a6b] px-5 py-4 text-white">
+                <h2 className="font-montserrat text-lg font-bold">
+                  Comentario guardado
+                </h2>
+              </div>
+              <div className="px-5 py-6 text-center">
+                <p className="text-sm leading-relaxed text-linkIt-700">
+                  El comentario se agregó correctamente y ya quedó disponible
+                  para el equipo de LinkIT.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setCommentSuccessOpen(false)}
+                  className="mt-5 rounded-lg bg-linkIt-300 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#01967f]"
+                >
+                  Entendido
+                </button>
+              </div>
             </motion.div>
           </motion.div>
         )}
