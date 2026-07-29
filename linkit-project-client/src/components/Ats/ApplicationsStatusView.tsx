@@ -1,91 +1,275 @@
-import { useEffect, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import axios from "axios";
+import { motion, AnimatePresence } from "framer-motion";
+import { useGoogleReCaptcha } from "react-google-recaptcha-hook";
 
-type AtsFilterType = "roleCode" | "company";
-type SortKey = "stage" | "country" | "name";
+type StageSortDirection = "asc" | "desc";
+
+const PAGE_SIZE_OPTIONS = [10, 25, 50, 100] as const;
+type PageSize = (typeof PAGE_SIZE_OPTIONS)[number];
+
+const PIPELINE_STAGES = [
+  "0. Applied",
+  "1. Listo para entrevistar",
+  "2. Listo para presentar",
+  "3. Rechazado por LinkIT",
+  "4. Enviado a cliente",
+  "5. Entrevistado por cliente",
+  "6. Rechazado por cliente",
+  "7. Ofertado",
+  "8. Oferta rechazada",
+  "9. Candidato desistió",
+  "10. Contratado",
+  "11. Blacklist",
+] as const;
+
+type PipelineStage = (typeof PIPELINE_STAGES)[number];
+
+/** Solo stages visibles para el cliente (4 → 10). */
+const CLIENT_VISIBLE_STAGES = [
+  "4. Enviado a cliente",
+  "5. Entrevistado por cliente",
+  "6. Rechazado por cliente",
+  "7. Ofertado",
+  "8. Oferta rechazada",
+  "9. Candidato desistió",
+  "10. Contratado",
+] as const satisfies readonly PipelineStage[];
+
+type ClientVisibleStage = (typeof CLIENT_VISIBLE_STAGES)[number];
+
+const CLIENT_VISIBLE_STAGE_SET = new Set<string>(CLIENT_VISIBLE_STAGES);
+
+const STAGE_ORDER = PIPELINE_STAGES.reduce<Record<string, number>>(
+  (acc, stage, index) => {
+    acc[stage] = index;
+    return acc;
+  },
+  {}
+);
 
 interface AtsCandidate {
   name: string;
   candidateId: string;
   roleName: string;
-  seniority: string;
   linkedin: string;
   pipelineStage: string;
   roleCode: string;
   country: string;
-  cvUrl: string;
+  hasCv: boolean;
   cvFilename: string;
   endorsement: string;
+  clientComment: string;
 }
 
 interface AtsResponse {
-  filter: { type: AtsFilterType; value: string };
+  filter: { type: "roleCode" | "clientSlug"; value: string };
   count: number;
   candidates: AtsCandidate[];
 }
 
-function normalizeLinkedIn(url: string): string {
-  if (!url) return "";
-  if (url.startsWith("http://") || url.startsWith("https://")) return url;
-  return `https://${url}`;
+const ATS_API_BASE = `${import.meta.env.VITE_ENDPOINT_URL}/resources/applications-status`;
+const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+
+/** Desactivado en localhost para tests locales (reCAPTCHA vuelve en deploy). */
+const IS_LOCALHOST =
+  typeof window !== "undefined" &&
+  (window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1");
+const RECAPTCHA_ENABLED = Boolean(RECAPTCHA_SITE_KEY) && !IS_LOCALHOST;
+
+interface JobCardSummary {
+  key: string;
+  roleCode: string;
+  roleName: string;
+  count: number;
 }
 
-interface ApplicationsStatusViewProps {
-  filterType: AtsFilterType;
+/** Solo jobs con Role Code (como en Clients Follow Up). Sin code = no card. */
+function jobKeyOf(candidate: AtsCandidate): string | null {
+  const code = candidate.roleCode?.trim();
+  if (!code) return null;
+  return `code:${code}`;
 }
 
-export default function ApplicationsStatusView({
-  filterType,
-}: ApplicationsStatusViewProps) {
-  const params = useParams<{ roleCode?: string; company?: string }>();
+function buildJobCards(candidates: AtsCandidate[]): JobCardSummary[] {
+  const map = new Map<string, JobCardSummary>();
+  for (const candidate of candidates) {
+    if (!CLIENT_VISIBLE_STAGE_SET.has(candidate.pipelineStage)) continue;
+
+    const key = jobKeyOf(candidate);
+    if (!key) continue;
+
+    const existing = map.get(key);
+    if (existing) {
+      existing.count += 1;
+      if (!existing.roleName && candidate.roleName) {
+        existing.roleName = candidate.roleName;
+      }
+      continue;
+    }
+    map.set(key, {
+      key,
+      roleCode: candidate.roleCode.trim(),
+      roleName: candidate.roleName?.trim() || "Rol sin nombre",
+      count: 1,
+    });
+  }
+  return Array.from(map.values()).sort((a, b) =>
+    a.roleName.localeCompare(b.roleName, "es", { sensitivity: "base" })
+  );
+}
+
+function isAllowedHttpUrl(
+  value: string,
+  allowedHost: (host: string) => boolean
+): string {
+  const raw = value.trim();
+  if (!raw) return "";
+  try {
+    const parsed = new URL(raw);
+    if (parsed.protocol !== "http:" && parsed.protocol !== "https:") return "";
+    const host = parsed.hostname.toLowerCase();
+    return allowedHost(host) ? parsed.toString() : "";
+  } catch {
+    return "";
+  }
+}
+
+function safeLinkedInUrl(url: string): string {
+  const raw = url.trim();
+  if (!raw) return "";
+  const withProtocol = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+  return isAllowedHttpUrl(
+    withProtocol,
+    (host) => host === "linkedin.com" || host.endsWith(".linkedin.com")
+  );
+}
+
+function candidateMatchesCountries(
+  candidateCountry: string,
+  selectedCountries: string[],
+  allSelected: boolean
+): boolean {
+  if (allSelected) return true;
+  if (selectedCountries.length === 0) return false;
+  if (!candidateCountry.trim()) return false;
+  const selectedSet = new Set(
+    selectedCountries.map((item) => item.toLowerCase())
+  );
+  return candidateCountry
+    .split(",")
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean)
+    .some((item) => selectedSet.has(item));
+}
+
+function extractCandidateCountries(candidates: AtsCandidate[]): string[] {
+  const countries = new Set<string>();
+  for (const candidate of candidates) {
+    candidate.country
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .forEach((item) => countries.add(item));
+  }
+  return Array.from(countries).sort((a, b) =>
+    a.localeCompare(b, "es", { sensitivity: "base" })
+  );
+}
+
+function ApplicationsStatusViewBase({
+  executeRecaptcha,
+}: {
+  executeRecaptcha?: (action: string) => Promise<string>;
+} = {}) {
+  const params = useParams<{
+    clientSlug?: string;
+    company?: string;
+  }>();
   const filterValue = useMemo(() => {
-    const raw =
-      filterType === "roleCode" ? params.roleCode : params.company;
+    const raw = params.clientSlug || params.company;
     return decodeURIComponent(raw ?? "").trim();
-  }, [filterType, params.company, params.roleCode]);
+  }, [params.clientSlug, params.company]);
+
+  const [accessInput, setAccessInput] = useState("");
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authChecked, setAuthChecked] = useState(false);
+  const [sessionEpoch, setSessionEpoch] = useState(0);
+  const [loginLoading, setLoginLoading] = useState(false);
 
   const [data, setData] = useState<AtsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [sortKey, setSortKey] = useState<SortKey>("stage");
+  const [selectedStages, setSelectedStages] = useState<ClientVisibleStage[]>([
+    ...CLIENT_VISIBLE_STAGES,
+  ]);
+  const [stageSort, setStageSort] = useState<StageSortDirection>("asc");
+  const [stageMenuOpen, setStageMenuOpen] = useState(false);
+  const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
+  const [countryMenuOpen, setCountryMenuOpen] = useState(false);
+  const [pageSize, setPageSize] = useState<PageSize>(25);
+  const [currentPage, setCurrentPage] = useState(1);
   const [cvModal, setCvModal] = useState<AtsCandidate | null>(null);
+  const [cvBlobUrl, setCvBlobUrl] = useState<string | null>(null);
+  const [cvLoading, setCvLoading] = useState(false);
+  const [cvError, setCvError] = useState<string | null>(null);
   const [endorsementModal, setEndorsementModal] =
     useState<AtsCandidate | null>(null);
+  const [commentModal, setCommentModal] = useState<AtsCandidate | null>(null);
+  const [commentDraft, setCommentDraft] = useState("");
+  const [commentSaving, setCommentSaving] = useState(false);
+  const [commentError, setCommentError] = useState<string | null>(null);
+  const [selectedJobKey, setSelectedJobKey] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!filterValue) {
-      setLoading(false);
-      setError("Falta el identificador en la URL.");
-      return;
-    }
+    setSelectedJobKey(null);
+  }, [filterValue, sessionEpoch]);
 
+  useEffect(() => {
     let cancelled = false;
 
     const load = async () => {
+      if (!filterValue) {
+        setLoading(false);
+        setAuthChecked(true);
+        setIsAuthenticated(false);
+        setError("Falta el identificador en la URL.");
+        return;
+      }
+
       setLoading(true);
-      setError(null);
       try {
-        const queryKey = filterType === "roleCode" ? "roleCode" : "company";
-        const response = await axios.get<AtsResponse>(
-          `${import.meta.env.VITE_ENDPOINT_URL}/resources/applications-status`,
-          {
-            params: { [queryKey]: filterValue },
-          }
-        );
-        if (!cancelled) setData(response.data);
+        const response = await axios.get<AtsResponse>(ATS_API_BASE, {
+          params: { clientSlug: filterValue },
+          withCredentials: true,
+        });
+        if (!cancelled) {
+          setData(response.data);
+          setIsAuthenticated(true);
+          setError(null);
+        }
       } catch (err: any) {
         if (!cancelled) {
-          setError(
-            err?.response?.data?.error ||
-              err?.response?.data ||
-              err?.message ||
-              "No se pudo cargar la vista ATS."
-          );
+          const status = err?.response?.status;
           setData(null);
+          if (status === 429) {
+            setIsAuthenticated(false);
+            setError("Demasiados intentos. Probá de nuevo en unos minutos.");
+          } else if (status === 401) {
+            setIsAuthenticated(false);
+            setError(null);
+          } else {
+            setIsAuthenticated(false);
+            setError("No se pudo cargar la vista ATS. Intentá de nuevo.");
+          }
         }
       } finally {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+          setAuthChecked(true);
+        }
       }
     };
 
@@ -93,263 +277,1143 @@ export default function ApplicationsStatusView({
     return () => {
       cancelled = true;
     };
-  }, [filterType, filterValue]);
+  }, [filterValue, sessionEpoch]);
 
   useEffect(() => {
-    if (!cvModal && !endorsementModal) return;
+    if (!cvModal || !filterValue || !cvModal.candidateId) {
+      setCvBlobUrl(null);
+      setCvError(null);
+      setCvLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    let objectUrl: string | null = null;
+
+    const loadCv = async () => {
+      setCvLoading(true);
+      setCvError(null);
+      setCvBlobUrl(null);
+      try {
+        const response = await axios.get(
+          `${ATS_API_BASE}/cv/${encodeURIComponent(cvModal.candidateId)}`,
+          {
+            params: { clientSlug: filterValue },
+            responseType: "blob",
+            withCredentials: true,
+          }
+        );
+        objectUrl = URL.createObjectURL(response.data);
+        if (!cancelled) setCvBlobUrl(objectUrl);
+      } catch {
+        if (!cancelled) {
+          setCvError("No se pudo cargar el CV. Intentá de nuevo.");
+          setCvBlobUrl(null);
+        }
+      } finally {
+        if (!cancelled) setCvLoading(false);
+      }
+    };
+
+    void loadCv();
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [cvModal, filterValue]);
+
+  const jobCards = useMemo(
+    () => buildJobCards(data?.candidates ?? []),
+    [data?.candidates]
+  );
+
+  const jobCardsCandidateTotal = useMemo(
+    () => jobCards.reduce((sum, job) => sum + job.count, 0),
+    [jobCards]
+  );
+
+  const selectedJob = useMemo(
+    () => jobCards.find((job) => job.key === selectedJobKey) ?? null,
+    [jobCards, selectedJobKey]
+  );
+
+  const jobScopedCandidates = useMemo(() => {
+    const all = data?.candidates ?? [];
+    if (!selectedJobKey) return all;
+    return all.filter((candidate) => jobKeyOf(candidate) === selectedJobKey);
+  }, [data?.candidates, selectedJobKey]);
+
+  const suggestedCountries = useMemo(
+    () => extractCandidateCountries(jobScopedCandidates),
+    [jobScopedCandidates]
+  );
+
+  useEffect(() => {
+    setSelectedCountries(suggestedCountries);
+  }, [suggestedCountries]);
+
+  useEffect(() => {
+    if (!selectedJobKey) return;
+    setSelectedStages([...CLIENT_VISIBLE_STAGES]);
+    setCurrentPage(1);
+  }, [selectedJobKey]);
+
+  useEffect(() => {
+    if (
+      !cvModal &&
+      !endorsementModal &&
+      !commentModal &&
+      !stageMenuOpen &&
+      !countryMenuOpen
+    ) {
+      return;
+    }
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         setCvModal(null);
         setEndorsementModal(null);
+        setCommentModal(null);
+        setStageMenuOpen(false);
+        setCountryMenuOpen(false);
       }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [cvModal, endorsementModal]);
+  }, [cvModal, endorsementModal, commentModal, stageMenuOpen, countryMenuOpen]);
 
-  const sortedCandidates = useMemo(() => {
-    const list = [...(data?.candidates ?? [])];
-    list.sort((a, b) => {
-      const left =
-        sortKey === "stage"
-          ? a.pipelineStage
-          : sortKey === "country"
-            ? a.country
-            : a.name;
-      const right =
-        sortKey === "stage"
-          ? b.pipelineStage
-          : sortKey === "country"
-            ? b.country
-            : b.name;
-      return left.localeCompare(right, "es", { sensitivity: "base", numeric: true });
+  const openCommentModal = (candidate: AtsCandidate) => {
+    setCommentModal(candidate);
+    setCommentDraft(candidate.clientComment || "");
+    setCommentError(null);
+  };
+
+  const handleSaveComment = async () => {
+    if (!commentModal?.candidateId || !filterValue || commentSaving) return;
+    setCommentSaving(true);
+    setCommentError(null);
+    try {
+      const response = await axios.patch<{
+        ok: boolean;
+        candidateId: string;
+        clientComment: string;
+      }>(
+        `${ATS_API_BASE}/comment`,
+        {
+          clientSlug: filterValue,
+          candidateId: commentModal.candidateId,
+          comment: commentDraft,
+        },
+        { withCredentials: true }
+      );
+
+      const saved = response.data.clientComment ?? "";
+      setData((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          candidates: prev.candidates.map((item) =>
+            item.candidateId === commentModal.candidateId
+              ? { ...item, clientComment: saved }
+              : item
+          ),
+        };
+      });
+      setCommentModal((prev) =>
+        prev ? { ...prev, clientComment: saved } : prev
+      );
+      setCommentDraft(saved);
+    } catch {
+      setCommentError("No se pudo guardar el comentario. Intentá de nuevo.");
+    } finally {
+      setCommentSaving(false);
+    }
+  };
+
+  const allStagesSelected =
+    selectedStages.length === CLIENT_VISIBLE_STAGES.length;
+  const allCountriesSelected =
+    suggestedCountries.length > 0 &&
+    selectedCountries.length === suggestedCountries.length;
+
+  const filteredCandidates = useMemo(() => {
+    const selectedStageSet = new Set(selectedStages);
+    const list = jobScopedCandidates.filter((candidate) => {
+      if (!CLIENT_VISIBLE_STAGE_SET.has(candidate.pipelineStage)) {
+        return false;
+      }
+      if (!selectedStageSet.has(candidate.pipelineStage as ClientVisibleStage)) {
+        return false;
+      }
+      return candidateMatchesCountries(
+        candidate.country,
+        selectedCountries,
+        allCountriesSelected || suggestedCountries.length === 0
+      );
     });
-    return list;
-  }, [data?.candidates, sortKey]);
 
-  const title =
-    filterType === "roleCode"
-      ? `ATS · Role Code ${filterValue}`
-      : `ATS · ${filterValue}`;
+    return [...list].sort((a, b) => {
+      const left = STAGE_ORDER[a.pipelineStage] ?? Number.MAX_SAFE_INTEGER;
+      const right = STAGE_ORDER[b.pipelineStage] ?? Number.MAX_SAFE_INTEGER;
+      return stageSort === "asc" ? left - right : right - left;
+    });
+  }, [
+    allCountriesSelected,
+    jobScopedCandidates,
+    selectedCountries,
+    selectedStages,
+    stageSort,
+    suggestedCountries.length,
+  ]);
 
-  const subtitle =
-    data?.candidates?.[0]?.roleName ||
-    (filterType === "roleCode"
-      ? "Candidatos filtrados por Role Code"
-      : "Candidatos filtrados por empresa");
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedStages, selectedCountries, stageSort, pageSize, filterValue, selectedJobKey]);
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredCandidates.length / pageSize)
+  );
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  const paginatedCandidates = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredCandidates.slice(start, start + pageSize);
+  }, [currentPage, filteredCandidates, pageSize]);
+
+  const pageStart =
+    filteredCandidates.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const pageEnd = Math.min(currentPage * pageSize, filteredCandidates.length);
+
+  const toggleStage = (stage: ClientVisibleStage) => {
+    setSelectedStages((prev) => {
+      if (prev.includes(stage)) {
+        return prev.filter((item) => item !== stage);
+      }
+      return [...prev, stage];
+    });
+  };
+
+  const selectAllStages = () => setSelectedStages([...CLIENT_VISIBLE_STAGES]);
+  const clearStages = () => setSelectedStages([]);
+
+  const toggleCountry = (country: string) => {
+    setSelectedCountries((prev) => {
+      if (prev.includes(country)) {
+        return prev.filter((item) => item !== country);
+      }
+      return [...prev, country];
+    });
+  };
+
+  const selectAllCountries = () =>
+    setSelectedCountries([...suggestedCountries]);
+  const clearCountries = () => setSelectedCountries([]);
+
+  const stageButtonLabel = allStagesSelected
+    ? "Todos"
+    : selectedStages.length === 0
+      ? "Ninguno"
+      : `${selectedStages.length} seleccionados`;
+
+  const countryButtonLabel = allCountriesSelected
+    ? "Todos"
+    : selectedCountries.length === 0
+      ? "Ninguno"
+      : `${selectedCountries.length} seleccionados`;
+
+  const handleLogin = async (event: FormEvent) => {
+    event.preventDefault();
+    const value = accessInput.trim();
+    if (!value || !filterValue || loginLoading) return;
+
+    setLoginLoading(true);
+    setError(null);
+    try {
+      let recaptchaToken = "";
+      if (executeRecaptcha && RECAPTCHA_ENABLED) {
+        try {
+          recaptchaToken = await executeRecaptcha("ats_login");
+        } catch {
+          setError("No pudimos verificar que no sos un robot. Probá de nuevo.");
+          return;
+        }
+      }
+
+      await axios.post(
+        `${ATS_API_BASE}/login`,
+        {
+          clientSlug: filterValue,
+          clientAccess: value,
+          recaptchaToken,
+        },
+        { withCredentials: true }
+      );
+
+      setAccessInput("");
+      setIsAuthenticated(true);
+      setSessionEpoch((epoch) => epoch + 1);
+    } catch (err: any) {
+      const status = err?.response?.status;
+      const code = err?.response?.data?.code;
+      if (status === 429) {
+        setError("Demasiados intentos. Probá de nuevo en unos minutos.");
+      } else if (code === "RECAPTCHA_FAILED") {
+        setError("No pudimos verificar que no sos un robot. Probá de nuevo.");
+      } else if (status === 401 || code === "CLIENT_ACCESS_INVALID") {
+        setError("Usuario incorrecto. Probá de nuevo.");
+      } else {
+        setError("No se pudo iniciar sesión. Intentá de nuevo.");
+      }
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await axios.post(`${ATS_API_BASE}/logout`, {}, { withCredentials: true });
+    } catch {
+      // ignore network errors on logout
+    }
+    setAccessInput("");
+    setIsAuthenticated(false);
+    setData(null);
+    setError(null);
+    setSessionEpoch((epoch) => epoch + 1);
+  };
+
+  const workspaceLabel = filterValue;
+
+  const roleSubtitle = selectedJob
+    ? selectedJob.roleName
+    : "Elegí una búsqueda para ver candidatos";
+
+  const showLogin = authChecked && !isAuthenticated && !loading;
+  const showJobCards =
+    !showLogin && !loading && !!data && data.count > 0 && !selectedJobKey;
+  const showJobDetail = !showLogin && !loading && !!data && !!selectedJobKey;
+
+  const filterButtonClass =
+    "flex min-w-[210px] items-center justify-between rounded-lg border border-linkIt-50 bg-white px-3 py-2 text-left font-manrope text-sm text-linkIt-200 shadow-sm transition hover:border-linkIt-300";
 
   return (
-    <main className="min-h-screen bg-[#f7f8fa] px-4 py-10 text-slate-900 md:px-8">
-      <div className="mx-auto max-w-6xl">
-        <header className="mb-8 border-b border-slate-200 pb-6">
-          <p className="mb-2 text-sm font-medium uppercase tracking-[0.14em] text-slate-500">
-            LinkIT · Applications Status
-          </p>
-          <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">
-            {title}
-          </h1>
-          <p className="mt-2 text-base text-slate-600">{subtitle}</p>
-          {!loading && !error && data && (
-            <div className="mt-4 flex flex-wrap items-center gap-3">
-              <p className="text-sm text-slate-500">
-                {data.count} candidato{data.count === 1 ? "" : "s"}
-              </p>
-              <label className="ml-auto flex items-center gap-2 text-sm text-slate-600">
-                Ordenar por
-                <select
-                  value={sortKey}
-                  onChange={(e) => setSortKey(e.target.value as SortKey)}
-                  className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-slate-800"
-                >
-                  <option value="stage">Stage</option>
-                  <option value="country">País</option>
-                  <option value="name">Nombre</option>
-                </select>
-              </label>
-            </div>
-          )}
-        </header>
+    <main className="relative min-h-screen overflow-hidden bg-linkIt-500 font-manrope text-linkIt-200">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(1,162,139,0.18),_transparent_42%),radial-gradient(circle_at_80%_20%,_rgba(23,57,81,0.12),_transparent_35%)]" />
 
-        {loading && (
-          <p className="rounded-lg bg-white px-4 py-6 text-slate-600 shadow-sm">
-            Cargando candidatos…
-          </p>
+      <section className="relative overflow-hidden bg-gradient-to-br from-[#173951] via-[#1c4a6b] to-[#0f2a3d] text-white">
+        <div className="absolute -right-16 top-0 h-56 w-56 rounded-full bg-linkIt-300/20 blur-3xl" />
+        <div className="absolute -left-10 bottom-0 h-40 w-40 rounded-full bg-linkIt-50/10 blur-2xl" />
+
+        <div className="relative mx-auto max-w-6xl px-4 py-12 md:px-8 md:py-16">
+          <motion.div
+            initial={{ opacity: 0, y: 18 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55 }}
+            className="flex flex-col gap-8 lg:flex-row lg:items-start lg:justify-between"
+          >
+            <div className="min-w-0 flex-1">
+              <p className="mb-3 font-montserrat text-xs font-semibold uppercase tracking-[0.22em] text-linkIt-50">
+                LinkIT · Client Portal
+              </p>
+              <h1 className="max-w-3xl font-montserrat text-3xl font-bold leading-tight md:text-5xl">
+                Application Tracking System
+              </h1>
+              <p className="mt-2 font-montserrat text-lg font-medium text-linkIt-300 md:text-xl">
+                Client Side by LinkIT
+              </p>
+              <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/80 md:text-base">
+                Visualizá el avance de tus candidatos, filtrá por etapa y país, y
+                revisá CVs y endorsements en un solo lugar.
+              </p>
+
+              <div className="mt-6 flex flex-wrap items-center gap-3">
+                <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium backdrop-blur-sm">
+                  Workspace · {workspaceLabel}
+                </span>
+                {!showLogin && !loading && data && (
+                  <span className="rounded-full border border-linkIt-300/40 bg-linkIt-300/20 px-3 py-1 text-xs font-semibold text-linkIt-50">
+                    {filteredCandidates.length} candidato
+                    {filteredCandidates.length === 1 ? "" : "s"} visibles
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <motion.a
+              href="https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3qmMK1h4c08Aw_b5gFiF-vLjHYunVGIWvt6RyOJvaaQOVd8qQm9syzfgwV03LXDEnL7R_CHXbi"
+              target="_blank"
+              rel="noreferrer"
+              initial={{ opacity: 0, x: 16 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+              className="group relative w-full shrink-0 overflow-hidden rounded-2xl border border-white/15 bg-white/10 p-4 shadow-[0_12px_40px_rgba(0,0,0,0.2)] backdrop-blur-md transition hover:border-linkIt-300/50 hover:bg-white/15 lg:mt-2 lg:w-[280px]"
+            >
+              <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-linkIt-300/30 blur-2xl transition group-hover:bg-linkIt-300/45" />
+              <p className="relative font-montserrat text-[10px] font-semibold uppercase tracking-[0.18em] text-linkIt-300">
+                LinkIT Talent
+              </p>
+              <p className="relative mt-2 font-montserrat text-sm font-semibold leading-snug text-white">
+                Contrata y gestiona talentos de forma global
+              </p>
+              <span className="relative mt-3 inline-flex items-center rounded-lg bg-linkIt-300 px-3 py-1.5 font-montserrat text-xs font-bold text-white transition group-hover:bg-[#01967f]">
+                Comienza ahora! →
+              </span>
+            </motion.a>
+          </motion.div>
+        </div>
+      </section>
+
+      <div className="relative mx-auto max-w-6xl px-4 py-8 md:px-8 md:py-10">
+        {showLogin && (
+          <motion.form
+            onSubmit={handleLogin}
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, delay: 0.1 }}
+            className="mx-auto max-w-md rounded-2xl border border-linkIt-50 bg-white p-7 shadow-[0_18px_50px_rgba(23,57,81,0.12)]"
+          >
+            <p className="mb-1 font-montserrat text-xs font-semibold uppercase tracking-[0.16em] text-linkIt-300">
+              Acceso seguro
+            </p>
+            <h2 className="mb-2 font-montserrat text-2xl font-bold text-linkIt-200">
+              Bienvenido a tu portal
+            </h2>
+            <p className="mb-6 text-sm leading-relaxed text-linkIt-700">
+              Ingresá tu usuario para ver el seguimiento de candidatos
+              preseleccionados por LinkIT.
+            </p>
+
+            <label className="mb-2 block text-sm font-semibold text-linkIt-200">
+              Usuario
+            </label>
+            <input
+              type="password"
+              value={accessInput}
+              onChange={(e) => setAccessInput(e.target.value)}
+              className="mb-4 w-full rounded-lg border border-linkIt-50 px-3 py-2.5 text-linkIt-200 outline-none transition focus:border-linkIt-300 focus:ring-2 focus:ring-linkIt-300/20"
+              placeholder="Tu usuario de acceso"
+              autoComplete="current-password"
+              required
+            />
+            {error && (
+              <p className="mb-3 text-sm text-red-600">{error}</p>
+            )}
+            <button
+              type="submit"
+              disabled={loginLoading}
+              className="w-full rounded-lg bg-linkIt-300 px-4 py-3 font-montserrat text-sm font-bold text-white transition hover:bg-[#01967f] disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {loginLoading ? "Verificando…" : "Entrar al portal"}
+            </button>
+            {RECAPTCHA_ENABLED && (
+              <p className="mt-3 text-center text-[11px] text-linkIt-700">
+                Protegido con reCAPTCHA
+              </p>
+            )}
+            {IS_LOCALHOST && (
+              <p className="mt-2 text-center text-[11px] text-amber-700">
+                reCAPTCHA desactivado en localhost (solo test)
+              </p>
+            )}
+          </motion.form>
         )}
 
-        {!loading && error && (
-          <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-6 text-red-700">
+        {!showLogin && !loading && data && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4 }}
+            className="mb-6 rounded-2xl border border-linkIt-50 bg-white/90 p-4 shadow-sm backdrop-blur md:p-5"
+          >
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                {showJobDetail && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedJobKey(null)}
+                    className="mb-2 text-sm font-semibold text-linkIt-300 hover:underline"
+                  >
+                    ← Volver a búsquedas
+                  </button>
+                )}
+                <h2 className="font-montserrat text-xl font-bold text-linkIt-200 md:text-2xl">
+                  {showJobCards ? "Tus búsquedas abiertas" : roleSubtitle}
+                </h2>
+                <p className="mt-1 text-sm text-linkIt-700">
+                  {showJobCards
+                    ? `${jobCards.length} búsqueda${jobCards.length === 1 ? "" : "s"} · ${jobCardsCandidateTotal} candidato${jobCardsCandidateTotal === 1 ? "" : "s"}`
+                    : `${filteredCandidates.length} candidato${filteredCandidates.length === 1 ? "" : "s"}${
+                        !allStagesSelected || !allCountriesSelected
+                          ? ` · ${jobScopedCandidates.length} en este rol`
+                          : ""
+                      }`}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => void handleLogout()}
+                className="rounded-lg border border-linkIt-50 px-3 py-1.5 text-sm font-medium text-linkIt-700 transition hover:border-linkIt-300 hover:text-linkIt-200"
+              >
+                Cerrar sesión
+              </button>
+            </div>
+
+            {showJobDetail && (
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setCountryMenuOpen(false);
+                    setStageMenuOpen((open) => !open);
+                  }}
+                  className={filterButtonClass}
+                >
+                  <span>Stage · {stageButtonLabel}</span>
+                  <span className="ml-2 text-linkIt-700">▾</span>
+                </button>
+                {stageMenuOpen && (
+                  <>
+                    <button
+                      type="button"
+                      aria-label="Cerrar menú de stages"
+                      className="fixed inset-0 z-10 cursor-default"
+                      onClick={() => setStageMenuOpen(false)}
+                    />
+                    <div className="absolute left-0 z-20 mt-2 w-[320px] rounded-xl border border-linkIt-50 bg-white p-3 shadow-xl">
+                      <div className="mb-2 flex items-center justify-between gap-2">
+                        <p className="font-montserrat text-xs font-semibold uppercase tracking-wide text-linkIt-700">
+                          Stages
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={selectAllStages}
+                            className="text-xs font-semibold text-linkIt-300 hover:underline"
+                          >
+                            Todos
+                          </button>
+                          <button
+                            type="button"
+                            onClick={clearStages}
+                            className="text-xs font-medium text-linkIt-700 hover:underline"
+                          >
+                            Ninguno
+                          </button>
+                        </div>
+                      </div>
+                      <div className="max-h-64 space-y-1 overflow-y-auto">
+                        {CLIENT_VISIBLE_STAGES.map((stage) => (
+                          <label
+                            key={stage}
+                            className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-linkIt-500"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedStages.includes(stage)}
+                              onChange={() => toggleStage(stage)}
+                              className="h-4 w-4 rounded border-linkIt-50 text-linkIt-300 focus:ring-linkIt-300"
+                            />
+                            <span className="text-sm text-linkIt-200">
+                              {stage}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <div className="relative">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStageMenuOpen(false);
+                    setCountryMenuOpen((open) => !open);
+                  }}
+                  className={filterButtonClass}
+                >
+                  <span>País · {countryButtonLabel}</span>
+                  <span className="ml-2 text-linkIt-700">▾</span>
+                </button>
+                {countryMenuOpen && (
+                  <>
+                    <button
+                      type="button"
+                      aria-label="Cerrar menú de países"
+                      className="fixed inset-0 z-10 cursor-default"
+                      onClick={() => setCountryMenuOpen(false)}
+                    />
+                    <div className="absolute left-0 z-20 mt-2 w-[320px] rounded-xl border border-linkIt-50 bg-white p-3 shadow-xl md:left-auto md:right-0">
+                      <div className="mb-2 flex items-center justify-between gap-2">
+                        <p className="font-montserrat text-xs font-semibold uppercase tracking-wide text-linkIt-700">
+                          Países en esta vista
+                        </p>
+                        <div className="flex gap-2">
+                          <button
+                            type="button"
+                            onClick={selectAllCountries}
+                            className="text-xs font-semibold text-linkIt-300 hover:underline"
+                          >
+                            Todos
+                          </button>
+                          <button
+                            type="button"
+                            onClick={clearCountries}
+                            className="text-xs font-medium text-linkIt-700 hover:underline"
+                          >
+                            Ninguno
+                          </button>
+                        </div>
+                      </div>
+                      <div className="max-h-64 space-y-1 overflow-y-auto">
+                        {suggestedCountries.length === 0 && (
+                          <p className="px-2 py-1.5 text-sm text-linkIt-700">
+                            No hay países en estos candidatos.
+                          </p>
+                        )}
+                        {suggestedCountries.map((country) => (
+                          <label
+                            key={country}
+                            className="flex cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-linkIt-500"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedCountries.includes(country)}
+                              onChange={() => toggleCountry(country)}
+                              className="h-4 w-4 rounded border-linkIt-50 text-linkIt-300 focus:ring-linkIt-300"
+                            />
+                            <span className="text-sm text-linkIt-200">
+                              {country}
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              <label className="flex items-center gap-2 text-sm text-linkIt-700">
+                Orden
+                <select
+                  value={stageSort}
+                  onChange={(e) =>
+                    setStageSort(e.target.value as StageSortDirection)
+                  }
+                  className="rounded-lg border border-linkIt-50 bg-white px-2 py-2 text-linkIt-200 outline-none focus:border-linkIt-300"
+                >
+                  <option value="asc">Ascendente</option>
+                  <option value="desc">Descendente</option>
+                </select>
+              </label>
+
+              <div className="ml-auto flex flex-wrap items-center gap-2 rounded-full bg-linkIt-500/80 px-2 py-1.5">
+                <label className="flex items-center gap-2 px-1 text-sm text-linkIt-700">
+                  Ver
+                  <select
+                    value={pageSize}
+                    onChange={(e) =>
+                      setPageSize(Number(e.target.value) as PageSize)
+                    }
+                    className="rounded-md border-0 bg-white px-2 py-1.5 text-sm font-semibold text-linkIt-200 outline-none ring-1 ring-linkIt-50 focus:ring-linkIt-300"
+                  >
+                    {PAGE_SIZE_OPTIONS.map((size) => (
+                      <option key={size} value={size}>
+                        {size}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                    disabled={currentPage <= 1}
+                    className="rounded-md px-2.5 py-1.5 text-sm font-semibold text-linkIt-200 transition enabled:hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
+                    aria-label="Página anterior"
+                  >
+                    ←
+                  </button>
+                  <span className="min-w-[4.5rem] text-center text-xs font-semibold text-linkIt-200">
+                    {currentPage} / {totalPages}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCurrentPage((page) => Math.min(totalPages, page + 1))
+                    }
+                    disabled={currentPage >= totalPages}
+                    className="rounded-md px-2.5 py-1.5 text-sm font-semibold text-linkIt-200 transition enabled:hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
+                    aria-label="Página siguiente"
+                  >
+                    →
+                  </button>
+                </div>
+              </div>
+            </div>
+            )}
+          </motion.div>
+        )}
+
+        {showJobCards && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+          >
+            {jobCards.map((job, index) => (
+              <motion.button
+                key={job.key}
+                type="button"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: Math.min(index * 0.05, 0.35) }}
+                onClick={() => setSelectedJobKey(job.key)}
+                className="group rounded-2xl border border-linkIt-50 bg-white p-5 text-left shadow-[0_10px_30px_rgba(23,57,81,0.06)] transition hover:-translate-y-0.5 hover:border-linkIt-300 hover:shadow-[0_14px_36px_rgba(23,57,81,0.12)]"
+              >
+                <p className="font-montserrat text-[11px] font-semibold uppercase tracking-[0.14em] text-linkIt-300">
+                  Búsqueda
+                </p>
+                <h3 className="mt-2 font-montserrat text-lg font-bold text-linkIt-200">
+                  {job.roleName}
+                </h3>
+                {job.roleCode && (
+                  <p className="mt-1 text-xs text-linkIt-700">
+                    Código · {job.roleCode}
+                  </p>
+                )}
+                <div className="mt-4 flex items-center justify-between gap-3">
+                  <span className="rounded-full bg-linkIt-500 px-3 py-1 text-xs font-semibold text-linkIt-200">
+                    {job.count} candidato{job.count === 1 ? "" : "s"}
+                  </span>
+                  <span className="text-sm font-semibold text-linkIt-300 transition group-hover:translate-x-0.5">
+                    Ver pipeline →
+                  </span>
+                </div>
+              </motion.button>
+            ))}
+          </motion.div>
+        )}
+
+        {!showLogin && loading && (
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="rounded-2xl border border-linkIt-50 bg-white px-5 py-8 text-linkIt-700 shadow-sm"
+          >
+            Preparando tu pipeline de candidatos…
+          </motion.p>
+        )}
+
+        {!showLogin && !loading && error && (
+          <p className="rounded-2xl border border-red-200 bg-red-50 px-5 py-6 text-red-700">
             {typeof error === "string" ? error : "Error al cargar datos."}
           </p>
         )}
 
-        {!loading && !error && data && data.count === 0 && (
-          <p className="rounded-lg bg-white px-4 py-6 text-slate-600 shadow-sm">
-            No hay candidatos para este filtro.
+        {!showLogin && !loading && !error && data && data.count === 0 && (
+          <p className="rounded-2xl border border-linkIt-50 bg-white px-5 py-8 text-linkIt-700 shadow-sm">
+            Todavía no hay candidatos para este workspace.
           </p>
         )}
 
-        {!loading && !error && data && data.count > 0 && (
-          <div className="overflow-x-auto rounded-xl bg-white shadow-sm ring-1 ring-slate-200">
-            <table className="min-w-full divide-y divide-slate-200 text-left text-sm">
-              <thead className="bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Candidato</th>
-                  <th className="px-4 py-3 font-medium">ID</th>
-                  <th className="px-4 py-3 font-medium">Rol</th>
-                  <th className="px-4 py-3 font-medium">Stage</th>
-                  <th className="px-4 py-3 font-medium">País</th>
-                  <th className="px-4 py-3 font-medium">Seniority</th>
-                  <th className="px-4 py-3 font-medium">LinkedIn</th>
-                  <th className="px-4 py-3 font-medium">CV</th>
-                  <th className="px-4 py-3 font-medium">Endorsement</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {sortedCandidates.map((candidate, index) => (
-                  <tr
-                    key={`${candidate.candidateId}-${index}`}
-                    className="hover:bg-slate-50/80"
+        {!showLogin &&
+          !loading &&
+          !error &&
+          data &&
+          data.count > 0 &&
+          showJobDetail &&
+          filteredCandidates.length === 0 && (
+            <p className="rounded-2xl border border-linkIt-50 bg-white px-5 py-8 text-linkIt-700 shadow-sm">
+              No hay candidatos con los filtros seleccionados.
+            </p>
+          )}
+
+        {!showLogin &&
+          !loading &&
+          !error &&
+          data &&
+          showJobDetail &&
+          filteredCandidates.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35 }}
+              className="overflow-hidden rounded-2xl border border-linkIt-50 bg-white shadow-[0_14px_40px_rgba(23,57,81,0.08)]"
+            >
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-linkIt-50 text-center text-sm">
+                  <thead className="bg-[#f3f7fa]">
+                    <tr className="font-montserrat text-[11px] uppercase tracking-[0.12em] text-linkIt-700">
+                      <th className="px-4 py-3.5 font-semibold">ID</th>
+                      <th className="px-4 py-3.5 font-semibold">Candidato</th>
+                      <th className="px-4 py-3.5 font-semibold">Rol</th>
+                      <th className="px-4 py-3.5 font-semibold">Stage</th>
+                      <th className="px-4 py-3.5 font-semibold">País</th>
+                      <th className="px-4 py-3.5 font-semibold">LinkedIn</th>
+                      <th className="px-4 py-3.5 font-semibold">CV</th>
+                      <th className="px-4 py-3.5 font-semibold">Endorsement</th>
+                      <th className="px-4 py-3.5 font-semibold">Comentario</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-linkIt-50/80">
+                    {paginatedCandidates.map((candidate, index) => {
+                      const linkedInHref = safeLinkedInUrl(candidate.linkedin);
+                      return (
+                      <motion.tr
+                        key={`${candidate.candidateId}-${index}`}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.2, delay: Math.min(index * 0.02, 0.3) }}
+                        className="transition hover:bg-linkIt-500/70"
+                      >
+                        <td className="px-4 py-3.5 text-linkIt-700">
+                          {candidate.candidateId || "—"}
+                        </td>
+                        <td className="px-4 py-3.5 font-montserrat font-semibold text-linkIt-200">
+                          {candidate.name || "—"}
+                        </td>
+                        <td className="px-4 py-3.5 text-linkIt-700">
+                          {candidate.roleName || "—"}
+                        </td>
+                        <td className="px-4 py-3.5">
+                          <span className="inline-flex rounded-full bg-linkIt-50/60 px-2.5 py-1 text-xs font-medium text-linkIt-200">
+                            {candidate.pipelineStage || "—"}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3.5 text-linkIt-700">
+                          {candidate.country || "—"}
+                        </td>
+                        <td className="px-4 py-3.5">
+                          {linkedInHref ? (
+                            <a
+                              href={linkedInHref}
+                              target="_blank"
+                              rel="noreferrer noopener"
+                              className="font-semibold text-linkIt-300 hover:underline"
+                            >
+                              Perfil
+                            </a>
+                          ) : (
+                            <span className="text-linkIt-700/50">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3.5">
+                          {candidate.hasCv && candidate.candidateId ? (
+                            <button
+                              type="button"
+                              onClick={() => setCvModal(candidate)}
+                              className="font-semibold text-linkIt-300 hover:underline"
+                            >
+                              Ver PDF
+                            </button>
+                          ) : (
+                            <span className="text-linkIt-700/50">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3.5">
+                          {candidate.endorsement ? (
+                            <button
+                              type="button"
+                              onClick={() => setEndorsementModal(candidate)}
+                              className="font-semibold text-linkIt-300 hover:underline"
+                            >
+                              Ver
+                            </button>
+                          ) : (
+                            <span className="text-linkIt-700/50">—</span>
+                          )}
+                        </td>
+                        <td className="px-4 py-3.5">
+                          {candidate.candidateId ? (
+                            <button
+                              type="button"
+                              onClick={() => openCommentModal(candidate)}
+                              className="font-semibold text-linkIt-300 hover:underline"
+                            >
+                              {candidate.clientComment?.trim() ? "Ver / Editar" : "Agregar"}
+                            </button>
+                          ) : (
+                            <span className="text-linkIt-700/50">—</span>
+                          )}
+                        </td>
+                      </motion.tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-linkIt-50 bg-[#f8fafb] px-4 py-3 text-sm text-linkIt-700">
+                <p>
+                  Mostrando{" "}
+                  <span className="font-semibold text-linkIt-200">
+                    {pageStart}-{pageEnd}
+                  </span>{" "}
+                  de{" "}
+                  <span className="font-semibold text-linkIt-200">
+                    {filteredCandidates.length}
+                  </span>
+                </p>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
+                    disabled={currentPage <= 1}
+                    className="rounded-lg border border-linkIt-50 bg-white px-3 py-1.5 font-semibold text-linkIt-200 transition enabled:hover:border-linkIt-300 disabled:cursor-not-allowed disabled:opacity-40"
                   >
-                    <td className="px-4 py-3 font-medium text-slate-900">
-                      {candidate.name || "—"}
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">
-                      {candidate.candidateId || "—"}
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">
-                      {candidate.roleName || "—"}
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">
-                      {candidate.pipelineStage || "—"}
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">
-                      {candidate.country || "—"}
-                    </td>
-                    <td className="px-4 py-3 text-slate-600">
-                      {candidate.seniority || "—"}
-                    </td>
-                    <td className="px-4 py-3">
-                      {candidate.linkedin ? (
-                        <a
-                          href={normalizeLinkedIn(candidate.linkedin)}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="font-medium text-sky-700 hover:underline"
-                        >
-                          Perfil
-                        </a>
-                      ) : (
-                        <span className="text-slate-400">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      {candidate.cvUrl ? (
-                        <button
-                          type="button"
-                          onClick={() => setCvModal(candidate)}
-                          className="font-medium text-sky-700 hover:underline"
-                        >
-                          Ver PDF
-                        </button>
-                      ) : (
-                        <span className="text-slate-400">—</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3">
-                      {candidate.endorsement ? (
-                        <button
-                          type="button"
-                          onClick={() => setEndorsementModal(candidate)}
-                          className="font-medium text-sky-700 hover:underline"
-                        >
-                          Ver
-                        </button>
-                      ) : (
-                        <span className="text-slate-400">—</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    Anterior
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setCurrentPage((page) => Math.min(totalPages, page + 1))
+                    }
+                    disabled={currentPage >= totalPages}
+                    className="rounded-lg bg-linkIt-300 px-3 py-1.5 font-semibold text-white transition enabled:hover:bg-[#01967f] disabled:cursor-not-allowed disabled:opacity-40"
+                  >
+                    Siguiente
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.15 }}
+          className="mt-10 overflow-hidden rounded-2xl bg-gradient-to-r from-[#173951] via-[#1c4a6b] to-[#01A28B] p-[1px] shadow-[0_14px_40px_rgba(23,57,81,0.14)]"
+        >
+          <div className="flex flex-col items-start justify-between gap-4 rounded-[15px] bg-[#122f43] px-5 py-5 text-white sm:flex-row sm:items-center md:px-7">
+            <div>
+              <p className="font-montserrat text-xs font-semibold uppercase tracking-[0.16em] text-linkIt-300">
+                LinkIT Talent
+              </p>
+              <p className="mt-1 max-w-2xl font-montserrat text-base font-semibold leading-snug md:text-lg">
+                Contrata y gestiona talentos de forma global con LinkIT
+              </p>
+            </div>
+            <a
+              href="https://calendar.google.com/calendar/u/0/appointments/schedules/AcZssZ3qmMK1h4c08Aw_b5gFiF-vLjHYunVGIWvt6RyOJvaaQOVd8qQm9syzfgwV03LXDEnL7R_CHXbi"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex shrink-0 items-center rounded-lg bg-linkIt-300 px-4 py-2.5 font-montserrat text-sm font-bold text-white transition hover:bg-[#01967f]"
+            >
+              Comienza ahora! →
+            </a>
           </div>
-        )}
+        </motion.div>
+
+        <p className="mt-6 text-center text-xs text-linkIt-700">
+          Powered by LinkIT · Talento con seguimiento transparente
+        </p>
       </div>
 
-      {cvModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
-          onClick={() => setCvModal(null)}
-        >
-          <div
-            className="flex h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-xl bg-white shadow-xl"
-            onClick={(e) => e.stopPropagation()}
+      <AnimatePresence>
+        {cvModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-[#173951]/55 p-4 backdrop-blur-sm"
+            onClick={() => setCvModal(null)}
           >
-            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-              <div>
-                <h2 className="text-lg font-semibold text-slate-900">
-                  CV · {cvModal.name || "Candidato"}
-                </h2>
-                <p className="text-sm text-slate-500">
-                  {cvModal.cvFilename || "Documento PDF"}
-                </p>
+            <motion.div
+              initial={{ opacity: 0, y: 18, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.98 }}
+              className="flex h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between border-b border-linkIt-50 bg-gradient-to-r from-[#173951] to-[#1c4a6b] px-5 py-4 text-white">
+                <div>
+                  <h2 className="font-montserrat text-lg font-bold">
+                    CV · {cvModal.name || "Candidato"}
+                  </h2>
+                  <p className="text-sm text-white/70">
+                    {cvModal.cvFilename || "Documento PDF"}
+                  </p>
+                </div>
+                <div className="flex items-center gap-3">
+                  {cvBlobUrl && (
+                    <a
+                      href={cvBlobUrl}
+                      target="_blank"
+                      rel="noreferrer noopener"
+                      className="text-sm font-semibold text-linkIt-300 hover:underline"
+                    >
+                      Abrir en pestaña
+                    </a>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setCvModal(null)}
+                    className="rounded-lg bg-white/10 px-3 py-1.5 text-sm hover:bg-white/20"
+                  >
+                    Cerrar
+                  </button>
+                </div>
               </div>
-              <div className="flex items-center gap-3">
-                <a
-                  href={cvModal.cvUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-sm font-medium text-sky-700 hover:underline"
-                >
-                  Abrir en pestaña
-                </a>
+              {cvLoading && (
+                <div className="flex flex-1 items-center justify-center bg-linkIt-500 text-sm text-linkIt-700">
+                  Cargando CV…
+                </div>
+              )}
+              {!cvLoading && cvError && (
+                <div className="flex flex-1 items-center justify-center bg-linkIt-500 px-6 text-center text-sm text-red-600">
+                  {cvError}
+                </div>
+              )}
+              {!cvLoading && !cvError && cvBlobUrl && (
+                <iframe
+                  title={`CV ${cvModal.name}`}
+                  src={cvBlobUrl}
+                  sandbox="allow-same-origin allow-scripts allow-popups allow-downloads"
+                  referrerPolicy="no-referrer"
+                  className="h-full w-full flex-1 bg-linkIt-500"
+                />
+              )}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {commentModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-[#173951]/55 p-4 backdrop-blur-sm"
+            onClick={() => !commentSaving && setCommentModal(null)}
+          >
+            <motion.div
+              initial={{ opacity: 0, y: 18, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.98 }}
+              className="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between border-b border-linkIt-50 bg-gradient-to-r from-[#173951] to-[#1c4a6b] px-5 py-4 text-white">
+                <div>
+                  <h2 className="font-montserrat text-lg font-bold">
+                    Comentario · {commentModal.name || "Candidato"}
+                  </h2>
+                  <p className="text-sm text-white/70">
+                    Visible para el equipo LinkIT en Airtable
+                  </p>
+                </div>
                 <button
                   type="button"
-                  onClick={() => setCvModal(null)}
-                  className="rounded-md px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100"
+                  disabled={commentSaving}
+                  onClick={() => setCommentModal(null)}
+                  className="rounded-lg bg-white/10 px-3 py-1.5 text-sm hover:bg-white/20 disabled:opacity-50"
                 >
                   Cerrar
                 </button>
               </div>
-            </div>
-            <iframe
-              title={`CV ${cvModal.name}`}
-              src={cvModal.cvUrl}
-              className="h-full w-full flex-1 bg-slate-100"
-            />
-          </div>
-        </div>
-      )}
+              <div className="px-5 py-5">
+                <label className="mb-2 block text-sm font-semibold text-linkIt-200">
+                  Client Comments (ATS)
+                </label>
+                <textarea
+                  value={commentDraft}
+                  onChange={(e) => setCommentDraft(e.target.value)}
+                  rows={8}
+                  maxLength={5000}
+                  placeholder="Escribí tu comentario sobre este candidato…"
+                  className="w-full rounded-xl border border-linkIt-50 px-3 py-3 text-sm text-linkIt-200 outline-none transition focus:border-linkIt-300 focus:ring-2 focus:ring-linkIt-300/20"
+                />
+                <div className="mt-2 flex items-center justify-between gap-3 text-xs text-linkIt-700">
+                  <span>{commentDraft.length}/5000</span>
+                  {commentError && (
+                    <span className="text-red-600">{commentError}</span>
+                  )}
+                </div>
+                <div className="mt-4 flex flex-wrap justify-end gap-2">
+                  <button
+                    type="button"
+                    disabled={commentSaving}
+                    onClick={() => setCommentModal(null)}
+                    className="rounded-lg border border-linkIt-50 px-4 py-2 text-sm font-semibold text-linkIt-700 transition hover:border-linkIt-300 disabled:opacity-50"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    disabled={commentSaving}
+                    onClick={() => void handleSaveComment()}
+                    className="rounded-lg bg-linkIt-300 px-4 py-2 text-sm font-bold text-white transition hover:bg-[#01967f] disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {commentSaving ? "Guardando…" : "Guardar comentario"}
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {endorsementModal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4"
-          onClick={() => setEndorsementModal(null)}
-        >
-          <div
-            className="max-h-[85vh] w-full max-w-2xl overflow-hidden rounded-xl bg-white shadow-xl"
-            onClick={(e) => e.stopPropagation()}
+      <AnimatePresence>
+        {endorsementModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center bg-[#173951]/55 p-4 backdrop-blur-sm"
+            onClick={() => setEndorsementModal(null)}
           >
-            <div className="flex items-center justify-between border-b border-slate-200 px-4 py-3">
-              <h2 className="text-lg font-semibold text-slate-900">
-                Endorsement · {endorsementModal.name || "Candidato"}
-              </h2>
-              <button
-                type="button"
-                onClick={() => setEndorsementModal(null)}
-                className="rounded-md px-3 py-1.5 text-sm text-slate-600 hover:bg-slate-100"
-              >
-                Cerrar
-              </button>
-            </div>
-            <div className="max-h-[70vh] overflow-y-auto px-5 py-4">
-              <pre className="whitespace-pre-wrap font-sans text-sm leading-6 text-slate-700">
-                {endorsementModal.endorsement}
-              </pre>
-            </div>
-          </div>
-        </div>
-      )}
+            <motion.div
+              initial={{ opacity: 0, y: 18, scale: 0.98 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.98 }}
+              className="max-h-[85vh] w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-2xl"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between border-b border-linkIt-50 bg-gradient-to-r from-[#173951] to-[#1c4a6b] px-5 py-4 text-white">
+                <h2 className="font-montserrat text-lg font-bold">
+                  Endorsement · {endorsementModal.name || "Candidato"}
+                </h2>
+                <button
+                  type="button"
+                  onClick={() => setEndorsementModal(null)}
+                  className="rounded-lg bg-white/10 px-3 py-1.5 text-sm hover:bg-white/20"
+                >
+                  Cerrar
+                </button>
+              </div>
+              <div className="max-h-[70vh] overflow-y-auto px-5 py-5">
+                <pre className="whitespace-pre-wrap font-manrope text-sm leading-7 text-linkIt-200">
+                  {endorsementModal.endorsement}
+                </pre>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </main>
   );
+}
+
+function ApplicationsStatusViewWithRecaptcha() {
+  const { executeGoogleReCaptcha } = useGoogleReCaptcha(RECAPTCHA_SITE_KEY!);
+  return (
+    <ApplicationsStatusViewBase executeRecaptcha={executeGoogleReCaptcha} />
+  );
+}
+
+export default function ApplicationsStatusView() {
+  if (RECAPTCHA_ENABLED) {
+    return <ApplicationsStatusViewWithRecaptcha />;
+  }
+  return <ApplicationsStatusViewBase />;
 }

@@ -256,6 +256,8 @@ useEffect(() => {
 
   const location = useLocation();
   const isLandingPage = location.pathname === "/landing";
+  const isAtsPage = location.pathname.startsWith("/ats/");
+  const hideSiteChrome = isLandingPage || isAtsPage;
   const showWhatsAppFloatingButton =
     location.pathname === "/soyEmpresa" ||
     location.pathname === "/contrata-talento-it" ||
@@ -284,7 +286,7 @@ useEffect(() => {
       </Helmet>
 
       <MainNavigation />
-      {!isLandingPage && <NavBar />}
+      {!hideSiteChrome && <NavBar />}
       <motion.div
         variants={loginVariants}
         initial="hidden"
@@ -376,13 +378,12 @@ useEffect(() => {
         <Route path="/Gracias" element={<SuccesfullForm />} />
         <Route path="/contrata-talento-it" element={<LandingPage />} />
         <Route path="/hire-it-talent" element={<LandingPage />} />
-        <Route path="/ats/job/:roleCode" element={<ApplicationsStatusView filterType="roleCode" />} />
-        <Route path="/ats/company/:company" element={<ApplicationsStatusView filterType="company" />} />
+        <Route path="/ats/company/:clientSlug" element={<ApplicationsStatusView />} />
         <Route path="/apply/candidate" element={<CandidateApplicationForm />} />
         <Route path="/apply/:recruiterSlug" element={<RecruiterApplicationForm />} />
       </Routes>
-      {!isLandingPage && <TopButton />}
-      {!isLandingPage && <Footer />}
+      {!hideSiteChrome && <TopButton />}
+      {!hideSiteChrome && <Footer />}
       {showWhatsAppFloatingButton && <WhatsAppFloatingButton />}
       <CookieConsentBar />
     </div>
