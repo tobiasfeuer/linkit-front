@@ -1,5 +1,5 @@
 import "./App.css";
-import { Route, Routes, useLocation } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import Recursos from "./components/recursos/recursos";
 import QuienesSomos from "./components/quienesSomos/quienesSomos";
 import Home from "./components/Home/Home";
@@ -256,7 +256,8 @@ useEffect(() => {
 
   const location = useLocation();
   const isLandingPage = location.pathname === "/landing";
-  const isAtsPage = location.pathname.startsWith("/ats/");
+  const isAtsPage =
+    location.pathname === "/ats" || location.pathname.startsWith("/ats/");
   const hideSiteChrome = isLandingPage || isAtsPage;
   const showWhatsAppFloatingButton =
     location.pathname === "/soyEmpresa" ||
@@ -378,7 +379,11 @@ useEffect(() => {
         <Route path="/Gracias" element={<SuccesfullForm />} />
         <Route path="/contrata-talento-it" element={<LandingPage />} />
         <Route path="/hire-it-talent" element={<LandingPage />} />
-        <Route path="/ats/company/:clientSlug" element={<ApplicationsStatusView />} />
+        <Route path="/ats" element={<ApplicationsStatusView />} />
+        <Route
+          path="/ats/company/:clientSlug"
+          element={<Navigate to="/ats" replace />}
+        />
         <Route path="/apply/candidate" element={<CandidateApplicationForm />} />
         <Route path="/apply/:recruiterSlug" element={<RecruiterApplicationForm />} />
       </Routes>
