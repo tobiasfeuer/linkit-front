@@ -1,5 +1,4 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGoogleReCaptcha } from "react-google-recaptcha-hook";
@@ -71,6 +70,104 @@ interface AtsResponse {
 
 const ATS_API_BASE = `${import.meta.env.VITE_ENDPOINT_URL}/resources/applications-status`;
 const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
+const LINKIT_BLUE_LOGO =
+  "/Linkit/Linkit-logo/linkit-logos-web_1-logo-ppal-azul.svg";
+const LINKIT_WHITE_LOGO = "/Linkit-logo/linkit-logo-2024-white.svg";
+
+function SplitText({
+  text,
+  className = "",
+  delay = 0,
+}: {
+  text: string;
+  className?: string;
+  delay?: number;
+}) {
+  return (
+    <motion.span
+      aria-label={text}
+      className={`inline-flex flex-wrap ${className}`}
+      initial="hidden"
+      animate="visible"
+      variants={{
+        hidden: {},
+        visible: {
+          transition: { delayChildren: delay, staggerChildren: 0.018 },
+        },
+      }}
+    >
+      {Array.from(text).map((character, index) => (
+        <motion.span
+          aria-hidden="true"
+          key={`${character}-${index}`}
+          className="inline-block"
+          variants={{
+            hidden: { opacity: 0, y: 16, filter: "blur(7px)" },
+            visible: {
+              opacity: 1,
+              y: 0,
+              filter: "blur(0px)",
+              transition: { duration: 0.42, ease: [0.22, 1, 0.36, 1] },
+            },
+          }}
+        >
+          {character === " " ? "\u00A0" : character}
+        </motion.span>
+      ))}
+    </motion.span>
+  );
+}
+
+function LoadingSkeletonCards() {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+      aria-label="Cargando contenido"
+      role="status"
+    >
+      {[0, 1, 2].map((item) => (
+        <motion.div
+          key={item}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: item * 0.08 }}
+          className="relative min-h-[168px] overflow-hidden rounded-2xl border border-linkIt-50 bg-white p-5 shadow-[0_10px_30px_rgba(23,57,81,0.06)]"
+        >
+          <motion.div
+            className="absolute inset-y-0 left-0 w-2/3 bg-gradient-to-r from-transparent via-white/80 to-transparent"
+            initial={{ x: "-110%" }}
+            animate={{ x: "260%" }}
+            transition={{
+              duration: 1.8,
+              repeat: Infinity,
+              ease: "easeInOut",
+              delay: item * 0.12,
+            }}
+          />
+          <img
+            src={LINKIT_BLUE_LOGO}
+            alt=""
+            aria-hidden="true"
+            className="pointer-events-none absolute -bottom-3 -right-5 w-40 opacity-[0.035] grayscale"
+          />
+          <div className="relative animate-pulse">
+            <div className="h-2.5 w-24 rounded-full bg-linkIt-50" />
+            <div className="mt-5 h-5 w-3/4 rounded-full bg-[#dfe8ee]" />
+            <div className="mt-2.5 h-3 w-2/5 rounded-full bg-linkIt-50" />
+            <div className="mt-7 flex items-center justify-between">
+              <div className="h-7 w-28 rounded-full bg-linkIt-500" />
+              <div className="h-3 w-20 rounded-full bg-linkIt-50" />
+            </div>
+          </div>
+        </motion.div>
+      ))}
+      <span className="sr-only">Preparando el portal de clientes…</span>
+    </motion.div>
+  );
+}
 
 /** Desactivado en localhost para tests locales (reCAPTCHA vuelve en deploy). */
 const IS_LOCALHOST =
@@ -83,42 +180,24 @@ interface JobCardSummary {
   key: string;
   roleCode: string;
   roleName: string;
+  company: string;
+  clientSlug: string;
+  candidateCount: number;
+}
+
+interface JobsResponse {
+  holding: string;
   count: number;
+  jobs: Array<Omit<JobCardSummary, "key" | "candidateCount"> & {
+    candidateCount: number;
+  }>;
 }
 
-/** Solo jobs con Role Code (como en Clients Follow Up). Sin code = no card. */
-function jobKeyOf(candidate: AtsCandidate): string | null {
-  const code = candidate.roleCode?.trim();
-  if (!code) return null;
-  return `code:${code}`;
-}
-
-function buildJobCards(candidates: AtsCandidate[]): JobCardSummary[] {
-  const map = new Map<string, JobCardSummary>();
-  for (const candidate of candidates) {
-    if (!CLIENT_VISIBLE_STAGE_SET.has(candidate.pipelineStage)) continue;
-
-    const key = jobKeyOf(candidate);
-    if (!key) continue;
-
-    const existing = map.get(key);
-    if (existing) {
-      existing.count += 1;
-      if (!existing.roleName && candidate.roleName) {
-        existing.roleName = candidate.roleName;
-      }
-      continue;
-    }
-    map.set(key, {
-      key,
-      roleCode: candidate.roleCode.trim(),
-      roleName: candidate.roleName?.trim() || "Rol sin nombre",
-      count: 1,
-    });
-  }
-  return Array.from(map.values()).sort((a, b) =>
-    a.roleName.localeCompare(b.roleName, "es", { sensitivity: "base" })
-  );
+interface CompanyCardSummary {
+  key: string;
+  name: string;
+  jobCount: number;
+  candidateCount: number;
 }
 
 function isAllowedHttpUrl(
@@ -187,15 +266,6 @@ function ApplicationsStatusViewBase({
 }: {
   executeRecaptcha?: (action: string) => Promise<string>;
 } = {}) {
-  const params = useParams<{
-    clientSlug?: string;
-    company?: string;
-  }>();
-  const filterValue = useMemo(() => {
-    const raw = params.clientSlug || params.company;
-    return decodeURIComponent(raw ?? "").trim();
-  }, [params.clientSlug, params.company]);
-
   const [accessInput, setAccessInput] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
@@ -203,6 +273,8 @@ function ApplicationsStatusViewBase({
   const [loginLoading, setLoginLoading] = useState(false);
 
   const [data, setData] = useState<AtsResponse | null>(null);
+  const [holding, setHolding] = useState("");
+  const [jobCards, setJobCards] = useState<JobCardSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedStages, setSelectedStages] = useState<ClientVisibleStage[]>([
@@ -225,32 +297,32 @@ function ApplicationsStatusViewBase({
   const [commentSaving, setCommentSaving] = useState(false);
   const [commentError, setCommentError] = useState<string | null>(null);
   const [commentSuccessOpen, setCommentSuccessOpen] = useState(false);
+  const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
   const [selectedJobKey, setSelectedJobKey] = useState<string | null>(null);
 
   useEffect(() => {
+    setSelectedCompany(null);
     setSelectedJobKey(null);
-  }, [filterValue, sessionEpoch]);
+  }, [sessionEpoch]);
 
   useEffect(() => {
     let cancelled = false;
 
     const load = async () => {
-      if (!filterValue) {
-        setLoading(false);
-        setAuthChecked(true);
-        setIsAuthenticated(false);
-        setError("Falta el identificador en la URL.");
-        return;
-      }
-
       setLoading(true);
       try {
-        const response = await axios.get<AtsResponse>(ATS_API_BASE, {
-          params: { clientSlug: filterValue },
+        const response = await axios.get<JobsResponse>(`${ATS_API_BASE}/jobs`, {
           withCredentials: true,
         });
         if (!cancelled) {
-          setData(response.data);
+          setHolding(response.data.holding);
+          setJobCards(
+            response.data.jobs.map((job) => ({
+              ...job,
+              key: `${job.clientSlug}:${job.roleCode}`,
+            }))
+          );
+          setData(null);
           setIsAuthenticated(true);
           setError(null);
         }
@@ -281,10 +353,50 @@ function ApplicationsStatusViewBase({
     return () => {
       cancelled = true;
     };
-  }, [filterValue, sessionEpoch]);
+  }, [sessionEpoch]);
+
+  const selectedJob = useMemo(
+    () => jobCards.find((job) => job.key === selectedJobKey) ?? null,
+    [jobCards, selectedJobKey]
+  );
 
   useEffect(() => {
-    if (!cvModal || !filterValue || !cvModal.candidateId) {
+    if (!selectedJob || !isAuthenticated) {
+      setData(null);
+      return;
+    }
+
+    let cancelled = false;
+    const loadCandidates = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await axios.get<AtsResponse>(ATS_API_BASE, {
+          params: {
+            clientSlug: selectedJob.clientSlug,
+            roleCode: selectedJob.roleCode,
+          },
+          withCredentials: true,
+        });
+        if (!cancelled) setData(response.data);
+      } catch {
+        if (!cancelled) {
+          setData(null);
+          setError("No se pudo cargar el pipeline. Intentá de nuevo.");
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    void loadCandidates();
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, selectedJob]);
+
+  useEffect(() => {
+    if (!cvModal || !selectedJob || !cvModal.candidateId) {
       setCvBlobUrl(null);
       setCvError(null);
       setCvLoading(false);
@@ -302,7 +414,7 @@ function ApplicationsStatusViewBase({
         const response = await axios.get(
           `${ATS_API_BASE}/cv/${encodeURIComponent(cvModal.candidateId)}`,
           {
-            params: { clientSlug: filterValue },
+            params: { clientSlug: selectedJob.clientSlug },
             responseType: "blob",
             withCredentials: true,
           }
@@ -340,28 +452,53 @@ function ApplicationsStatusViewBase({
       cancelled = true;
       if (objectUrl) URL.revokeObjectURL(objectUrl);
     };
-  }, [cvModal, filterValue]);
-
-  const jobCards = useMemo(
-    () => buildJobCards(data?.candidates ?? []),
-    [data?.candidates]
-  );
+  }, [cvModal, selectedJob]);
 
   const jobCardsCandidateTotal = useMemo(
-    () => jobCards.reduce((sum, job) => sum + job.count, 0),
+    () => jobCards.reduce((sum, job) => sum + job.candidateCount, 0),
     [jobCards]
   );
 
-  const selectedJob = useMemo(
-    () => jobCards.find((job) => job.key === selectedJobKey) ?? null,
-    [jobCards, selectedJobKey]
+  const companyCards = useMemo(() => {
+    const companies = new Map<string, CompanyCardSummary>();
+    for (const job of jobCards) {
+      const key = job.company.trim().toLowerCase();
+      const existing = companies.get(key);
+      if (existing) {
+        existing.jobCount += 1;
+        existing.candidateCount += job.candidateCount;
+      } else {
+        companies.set(key, {
+          key,
+          name: job.company,
+          jobCount: 1,
+          candidateCount: job.candidateCount,
+        });
+      }
+    }
+    return Array.from(companies.values()).sort((a, b) =>
+      a.name.localeCompare(b.name, "es", { sensitivity: "base" })
+    );
+  }, [jobCards]);
+
+  const companyJobCards = useMemo(
+    () =>
+      selectedCompany
+        ? jobCards.filter(
+            (job) => job.company.trim().toLowerCase() === selectedCompany
+          )
+        : [],
+    [jobCards, selectedCompany]
+  );
+
+  const companyCandidateTotal = useMemo(
+    () => companyJobCards.reduce((sum, job) => sum + job.candidateCount, 0),
+    [companyJobCards]
   );
 
   const jobScopedCandidates = useMemo(() => {
-    const all = data?.candidates ?? [];
-    if (!selectedJobKey) return all;
-    return all.filter((candidate) => jobKeyOf(candidate) === selectedJobKey);
-  }, [data?.candidates, selectedJobKey]);
+    return data?.candidates ?? [];
+  }, [data?.candidates]);
 
   const suggestedCountries = useMemo(
     () => extractCandidateCountries(jobScopedCandidates),
@@ -417,7 +554,7 @@ function ApplicationsStatusViewBase({
   };
 
   const handleSaveComment = async () => {
-    if (!commentModal?.candidateId || !filterValue || commentSaving) return;
+    if (!commentModal?.candidateId || !selectedJob || commentSaving) return;
     setCommentSaving(true);
     setCommentError(null);
     try {
@@ -428,7 +565,7 @@ function ApplicationsStatusViewBase({
       }>(
         `${ATS_API_BASE}/comment`,
         {
-          clientSlug: filterValue,
+          clientSlug: selectedJob.clientSlug,
           candidateId: commentModal.candidateId,
           comment: commentDraft,
         },
@@ -496,7 +633,7 @@ function ApplicationsStatusViewBase({
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [selectedStages, selectedCountries, stageSort, pageSize, filterValue, selectedJobKey]);
+  }, [selectedStages, selectedCountries, stageSort, pageSize, selectedJobKey]);
 
   const totalPages = Math.max(
     1,
@@ -558,7 +695,7 @@ function ApplicationsStatusViewBase({
   const handleLogin = async (event: FormEvent) => {
     event.preventDefault();
     const value = accessInput.trim();
-    if (!value || !filterValue || loginLoading) return;
+    if (!value || loginLoading) return;
 
     setLoginLoading(true);
     setError(null);
@@ -576,7 +713,6 @@ function ApplicationsStatusViewBase({
       await axios.post(
         `${ATS_API_BASE}/login`,
         {
-          clientSlug: filterValue,
           clientAccess: value,
           recaptchaToken,
         },
@@ -612,19 +748,33 @@ function ApplicationsStatusViewBase({
     setAccessInput("");
     setIsAuthenticated(false);
     setData(null);
+    setHolding("");
+    setJobCards([]);
+    setSelectedCompany(null);
+    setSelectedJobKey(null);
     setError(null);
     setSessionEpoch((epoch) => epoch + 1);
   };
 
-  const workspaceLabel = filterValue;
+  const workspaceLabel = holding || "Portal ATS";
 
   const roleSubtitle = selectedJob
     ? selectedJob.roleName
     : "Elegí una búsqueda para ver candidatos";
 
   const showLogin = authChecked && !isAuthenticated && !loading;
+  const showCompanyCards =
+    !showLogin &&
+    !loading &&
+    isAuthenticated &&
+    !selectedCompany &&
+    !selectedJobKey;
   const showJobCards =
-    !showLogin && !loading && !!data && data.count > 0 && !selectedJobKey;
+    !showLogin &&
+    !loading &&
+    isAuthenticated &&
+    !!selectedCompany &&
+    !selectedJobKey;
   const showJobDetail = !showLogin && !loading && !!data && !!selectedJobKey;
 
   const filterButtonClass =
@@ -638,7 +788,36 @@ function ApplicationsStatusViewBase({
         <div className="absolute -right-16 top-0 h-56 w-56 rounded-full bg-linkIt-300/20 blur-3xl" />
         <div className="absolute -left-10 bottom-0 h-40 w-40 rounded-full bg-linkIt-50/10 blur-2xl" />
 
-        <div className="relative mx-auto max-w-6xl px-4 py-12 md:px-8 md:py-16">
+        <motion.nav
+          initial={{ opacity: 0, y: -14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+          className="relative mx-auto max-w-6xl px-4 pt-2.5 md:px-8"
+          aria-label="Navegación del portal ATS"
+        >
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center rounded-xl border border-white/15 bg-white/[0.07] px-4 py-1 shadow-[0_8px_24px_rgba(0,0,0,0.14)] backdrop-blur-xl">
+            <span className="hidden items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/60 sm:flex">
+              <span className="h-1.5 w-1.5 rounded-full bg-linkIt-300 shadow-[0_0_10px_rgba(1,162,139,0.9)]" />
+              Portal seguro
+            </span>
+            <motion.div
+              whileHover={{ scale: 1.035 }}
+              transition={{ type: "spring", stiffness: 320, damping: 20 }}
+              className="px-4 py-1 drop-shadow-[0_6px_14px_rgba(0,0,0,0.28)]"
+            >
+              <img
+                src={LINKIT_WHITE_LOGO}
+                alt="LinkIT"
+                className="h-4 w-auto md:h-5"
+              />
+            </motion.div>
+            <span className="justify-self-end text-[10px] font-semibold uppercase tracking-[0.18em] text-white/60">
+              ATS · Client Side
+            </span>
+          </div>
+        </motion.nav>
+
+        <div className="relative mx-auto max-w-6xl px-4 py-10 md:px-8 md:py-14">
           <motion.div
             initial={{ opacity: 0, y: 18 }}
             animate={{ opacity: 1, y: 0 }}
@@ -650,7 +829,7 @@ function ApplicationsStatusViewBase({
                 LinkIT · Client Portal
               </p>
               <h1 className="max-w-3xl font-montserrat text-3xl font-bold leading-tight md:text-5xl">
-                Application Tracking System
+                <SplitText text="Portal de Clientes" delay={0.16} />
               </h1>
               <p className="mt-2 font-montserrat text-lg font-medium text-linkIt-300 md:text-xl">
                 Client Side by LinkIT
@@ -662,12 +841,15 @@ function ApplicationsStatusViewBase({
 
               <div className="mt-6 flex flex-wrap items-center gap-3">
                 <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium backdrop-blur-sm">
-                  Workspace · {workspaceLabel}
+                  Bienvenido a tu espacio · {workspaceLabel}
                 </span>
-                {!showLogin && !loading && data && (
+                {!showLogin && !loading && isAuthenticated && (
                   <span className="rounded-full border border-linkIt-300/40 bg-linkIt-300/20 px-3 py-1 text-xs font-semibold text-linkIt-50">
-                    {filteredCandidates.length} candidato
-                    {filteredCandidates.length === 1 ? "" : "s"} visibles
+                    {selectedJob
+                      ? `${filteredCandidates.length} candidato${filteredCandidates.length === 1 ? "" : "s"} visibles`
+                      : selectedCompany
+                        ? `${companyJobCards.length} búsqueda${companyJobCards.length === 1 ? "" : "s"} abierta${companyJobCards.length === 1 ? "" : "s"}`
+                        : `${companyCards.length} razón${companyCards.length === 1 ? "" : "es"} social${companyCards.length === 1 ? "" : "es"}`}
                   </span>
                 )}
               </div>
@@ -739,20 +921,11 @@ function ApplicationsStatusViewBase({
             >
               {loginLoading ? "Verificando…" : "Entrar al portal"}
             </button>
-            {RECAPTCHA_ENABLED && (
-              <p className="mt-3 text-center text-[11px] text-linkIt-700">
-                Protegido con reCAPTCHA
-              </p>
-            )}
-            {IS_LOCALHOST && (
-              <p className="mt-2 text-center text-[11px] text-amber-700">
-                reCAPTCHA desactivado en localhost (solo test)
-              </p>
-            )}
+            
           </motion.form>
         )}
 
-        {!showLogin && !loading && data && (
+        {!showLogin && !loading && isAuthenticated && (
           <motion.div
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
@@ -770,12 +943,27 @@ function ApplicationsStatusViewBase({
                     ← Volver a búsquedas
                   </button>
                 )}
+                {showJobCards && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedCompany(null)}
+                    className="mb-2 text-sm font-semibold text-linkIt-300 hover:underline"
+                  >
+                    ← Volver a razones sociales
+                  </button>
+                )}
                 <h2 className="font-montserrat text-xl font-bold text-linkIt-200 md:text-2xl">
-                  {showJobCards ? "Tus búsquedas abiertas" : roleSubtitle}
+                  {showCompanyCards
+                    ? "Tus razones sociales"
+                    : showJobCards
+                      ? companyJobCards[0]?.company || "Tus búsquedas abiertas"
+                      : roleSubtitle}
                 </h2>
                 <p className="mt-1 text-sm text-linkIt-700">
-                  {showJobCards
-                    ? `${jobCards.length} búsqueda${jobCards.length === 1 ? "" : "s"} · ${jobCardsCandidateTotal} candidato${jobCardsCandidateTotal === 1 ? "" : "s"}`
+                  {showCompanyCards
+                    ? `${companyCards.length} razón${companyCards.length === 1 ? "" : "es"} social${companyCards.length === 1 ? "" : "es"} · ${jobCards.length} búsqueda${jobCards.length === 1 ? "" : "s"} · ${jobCardsCandidateTotal} candidato${jobCardsCandidateTotal === 1 ? "" : "s"}`
+                    : showJobCards
+                      ? `${companyJobCards.length} búsqueda${companyJobCards.length === 1 ? "" : "s"} · ${companyCandidateTotal} candidato${companyCandidateTotal === 1 ? "" : "s"}`
                     : `${filteredCandidates.length} candidato${filteredCandidates.length === 1 ? "" : "s"}${
                         !allStagesSelected || !allCountriesSelected
                           ? ` · ${jobScopedCandidates.length} en este rol`
@@ -992,6 +1180,61 @@ function ApplicationsStatusViewBase({
           </motion.div>
         )}
 
+        {showCompanyCards && companyCards.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.35 }}
+            className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
+          >
+            {companyCards.map((company, index) => (
+              <motion.button
+                key={company.key}
+                type="button"
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{
+                  duration: 0.3,
+                  delay: Math.min(index * 0.05, 0.35),
+                }}
+                whileHover={{ y: -7, scale: 1.012 }}
+                whileTap={{ scale: 0.985 }}
+                onClick={() => setSelectedCompany(company.key)}
+                className="group relative overflow-hidden rounded-2xl border border-linkIt-50 bg-white p-5 text-left shadow-[0_10px_30px_rgba(23,57,81,0.06)] transition-colors hover:border-linkIt-300 hover:shadow-[0_20px_48px_rgba(23,57,81,0.15)]"
+              >
+                <div className="pointer-events-none absolute -right-12 -top-8 h-32 w-32 rounded-full bg-linkIt-300/10 blur-2xl transition duration-500 group-hover:bg-linkIt-300/20" />
+                <img
+                  src={LINKIT_BLUE_LOGO}
+                  alt=""
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -bottom-3 -right-5 w-40 rotate-[-6deg] opacity-[0.055] grayscale transition duration-500 group-hover:rotate-0 group-hover:opacity-[0.09]"
+                />
+                <p className="relative z-10 font-montserrat text-[11px] font-semibold uppercase tracking-[0.14em] text-linkIt-300">
+                  Razón social
+                </p>
+                <h3 className="relative z-10 mt-2 font-montserrat text-lg font-bold text-linkIt-200">
+                  <SplitText text={company.name} delay={index * 0.04} />
+                </h3>
+                <div className="relative z-10 mt-4 flex items-center justify-between gap-3">
+                  <div className="flex flex-wrap gap-2">
+                    <span className="rounded-full bg-linkIt-500 px-3 py-1 text-xs font-semibold text-linkIt-200">
+                      {company.jobCount} búsqueda
+                      {company.jobCount === 1 ? "" : "s"}
+                    </span>
+                    <span className="rounded-full bg-linkIt-500 px-3 py-1 text-xs font-semibold text-linkIt-200">
+                      {company.candidateCount} candidato
+                      {company.candidateCount === 1 ? "" : "s"}
+                    </span>
+                  </div>
+                  <span className="text-sm font-semibold text-linkIt-300 transition group-hover:translate-x-0.5">
+                    Ver búsquedas →
+                  </span>
+                </div>
+              </motion.button>
+            ))}
+          </motion.div>
+        )}
+
         {showJobCards && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
@@ -999,30 +1242,39 @@ function ApplicationsStatusViewBase({
             transition={{ duration: 0.35 }}
             className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
           >
-            {jobCards.map((job, index) => (
+            {companyJobCards.map((job, index) => (
               <motion.button
                 key={job.key}
                 type="button"
                 initial={{ opacity: 0, y: 12 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3, delay: Math.min(index * 0.05, 0.35) }}
+                whileHover={{ y: -7, scale: 1.012 }}
+                whileTap={{ scale: 0.985 }}
                 onClick={() => setSelectedJobKey(job.key)}
-                className="group rounded-2xl border border-linkIt-50 bg-white p-5 text-left shadow-[0_10px_30px_rgba(23,57,81,0.06)] transition hover:-translate-y-0.5 hover:border-linkIt-300 hover:shadow-[0_14px_36px_rgba(23,57,81,0.12)]"
+                className="group relative overflow-hidden rounded-2xl border border-linkIt-50 bg-white p-5 text-left shadow-[0_10px_30px_rgba(23,57,81,0.06)] transition-colors hover:border-linkIt-300 hover:shadow-[0_20px_48px_rgba(23,57,81,0.15)]"
               >
-                <p className="font-montserrat text-[11px] font-semibold uppercase tracking-[0.14em] text-linkIt-300">
-                  Búsqueda
+                <div className="pointer-events-none absolute -right-12 -top-8 h-32 w-32 rounded-full bg-linkIt-300/10 blur-2xl transition duration-500 group-hover:bg-linkIt-300/20" />
+                <img
+                  src={LINKIT_BLUE_LOGO}
+                  alt=""
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -bottom-3 -right-5 w-40 rotate-[-6deg] opacity-[0.055] grayscale transition duration-500 group-hover:rotate-0 group-hover:opacity-[0.09]"
+                />
+                <p className="relative z-10 font-montserrat text-[11px] font-semibold uppercase tracking-[0.14em] text-linkIt-300">
+                  {job.company || "Búsqueda"}
                 </p>
-                <h3 className="mt-2 font-montserrat text-lg font-bold text-linkIt-200">
-                  {job.roleName}
+                <h3 className="relative z-10 mt-2 font-montserrat text-lg font-bold text-linkIt-200">
+                  <SplitText text={job.roleName} delay={index * 0.04} />
                 </h3>
                 {job.roleCode && (
-                  <p className="mt-1 text-xs text-linkIt-700">
+                  <p className="relative z-10 mt-1 text-xs text-linkIt-700">
                     Código · {job.roleCode}
                   </p>
                 )}
-                <div className="mt-4 flex items-center justify-between gap-3">
+                <div className="relative z-10 mt-4 flex items-center justify-between gap-3">
                   <span className="rounded-full bg-linkIt-500 px-3 py-1 text-xs font-semibold text-linkIt-200">
-                    {job.count} candidato{job.count === 1 ? "" : "s"}
+                    {job.candidateCount} candidato{job.candidateCount === 1 ? "" : "s"}
                   </span>
                   <span className="text-sm font-semibold text-linkIt-300 transition group-hover:translate-x-0.5">
                     Ver pipeline →
@@ -1033,15 +1285,13 @@ function ApplicationsStatusViewBase({
           </motion.div>
         )}
 
-        {!showLogin && loading && (
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="rounded-2xl border border-linkIt-50 bg-white px-5 py-8 text-linkIt-700 shadow-sm"
-          >
-            Preparando tu pipeline de candidatos…
-          </motion.p>
+        {showCompanyCards && companyCards.length === 0 && (
+          <p className="rounded-2xl border border-linkIt-50 bg-white px-5 py-8 text-linkIt-700 shadow-sm">
+            No hay búsquedas abiertas para este holding.
+          </p>
         )}
+
+        {!showLogin && loading && <LoadingSkeletonCards />}
 
         {!showLogin && !loading && error && (
           <p className="rounded-2xl border border-red-200 bg-red-50 px-5 py-6 text-red-700">
@@ -1396,7 +1646,7 @@ function ApplicationsStatusViewBase({
               </div>
               <div className="px-5 py-5">
                 <label className="mb-2 block text-sm font-semibold text-linkIt-200">
-                  Client Comments (ATS)
+                  Escribí tu comentario sobre este candidato…
                 </label>
                 <textarea
                   value={commentDraft}
