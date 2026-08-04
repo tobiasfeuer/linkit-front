@@ -48,6 +48,11 @@ const STAGE_ORDER = PIPELINE_STAGES.reduce<Record<string, number>>(
   {}
 );
 
+/** "4. Enviado a cliente" → "Enviado a cliente" (solo UI; el valor crudo se usa para filtrar). */
+function formatStageLabel(stage: string): string {
+  return stage.replace(/^\d+\.\s*/, "").trim() || stage;
+}
+
 interface AtsCandidate {
   name: string;
   candidateId: string;
@@ -1037,7 +1042,7 @@ function ApplicationsStatusViewBase({
                               className="h-4 w-4 rounded border-linkIt-50 text-linkIt-300 focus:ring-linkIt-300"
                             />
                             <span className="text-sm text-linkIt-200">
-                              {stage}
+                              {formatStageLabel(stage)}
                             </span>
                           </label>
                         ))}
@@ -1366,7 +1371,9 @@ function ApplicationsStatusViewBase({
                         </td>
                         <td className="px-4 py-3.5">
                           <span className="inline-flex rounded-full bg-linkIt-50/60 px-2.5 py-1 text-xs font-medium text-linkIt-200">
-                            {candidate.pipelineStage || "—"}
+                            {candidate.pipelineStage
+                              ? formatStageLabel(candidate.pipelineStage)
+                              : "—"}
                           </span>
                         </td>
                         <td className="px-4 py-3.5 text-linkIt-700">
