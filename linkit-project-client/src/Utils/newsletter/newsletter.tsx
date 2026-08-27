@@ -9,20 +9,23 @@ import { WebsiteUser } from "../../components/Profiles/types";
 import Swal from "sweetalert2";
 import { setPressLogin } from "../../redux/features/registerLoginSlice";
 
+// Desactiva temporalmente el requisito de autenticación sin eliminar su lógica.
+const REQUIRE_NEWSLETTER_AUTH = false;
+
 export default function Newsletter() {
   const {t}= useTranslation()
   const dispatch = useDispatch();
   const user: WebsiteUser = useSelector((state: any) => state.Authentication.user);
 
   const handleOnClickButton = () => {
-    if( user ) {
+    if (!REQUIRE_NEWSLETTER_AUTH || user) {
       window.open("https://airtable.com/appPc8zZP29ez9V2O/shrX7MQRZlgmqP6bq", '_blank');
     }else {
       Swal.fire({
         title: "Error",
-        text: t("Debes de iniciar sesion para suscribirte a nuestra newsletter!"),
+        text: t("¡Debes iniciar sesión para suscribirte a nuestro newsletter!"),
         icon: "error",
-        confirmButtonText: t("Inisiar sesion"),
+        confirmButtonText: t("Iniciar sesión"),
         confirmButtonColor: "#01A28B",
       }).then((result) => {
         if (result.isConfirmed){

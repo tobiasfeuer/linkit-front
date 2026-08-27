@@ -22,6 +22,8 @@ import { Avatar, CustomFlowbiteTheme, Dropdown, DropdownDivider} from "flowbite-
 import Swal from "sweetalert2";
 
 const staggerMenuItems = stagger(0.03, { startDelay: 0.15 });
+// Oculta temporalmente el acceso a inicio de sesión, registro y perfiles.
+const SHOW_AUTH_UI = false;
 
 function useMenuAnimation(isOpen: boolean) {
   const [scope, animate] = useAnimate();
@@ -688,19 +690,20 @@ function NavBar() {
           <div className="relative hidden lg:block 2xl:ml-3">
             
           </div>
-          <Dropdown
-            label={
-                <Avatar
-                alt="User settings" 
-                img={userGreen} 
-                rounded
-                className="border-[1px] rounded-full border-linkIt-300 p-1 w-[25px] h-[20px] xs:w-[30px] xs:h-[30px] lg:w-[35px] lg:h-[35px]"
-                />
-              }
-            arrowIcon={false}
-            inline
-            theme={customTheme}
-          >
+          {SHOW_AUTH_UI && (
+            <Dropdown
+              label={
+                  <Avatar
+                  alt="User settings" 
+                  img={userGreen} 
+                  rounded
+                  className="border-[1px] rounded-full border-linkIt-300 p-1 w-[25px] h-[20px] xs:w-[30px] xs:h-[30px] lg:w-[35px] lg:h-[35px]"
+                  />
+                }
+              arrowIcon={false}
+              inline
+              theme={customTheme}
+            >
       {isAuthenticated && role === "user" ? (
                   <div>
                     <Dropdown.Item
@@ -796,7 +799,8 @@ function NavBar() {
                     </Dropdown.Item>
                   </div>
                 )}
-    </Dropdown>
+            </Dropdown>
+          )}
           <div className="relative flex-col w-[3rem] h-[2rem] justify-start right-[8%] pt-[2.5%] xs:pt-[1.3%] 2xl:ml-6 hidden">
           </div>
 

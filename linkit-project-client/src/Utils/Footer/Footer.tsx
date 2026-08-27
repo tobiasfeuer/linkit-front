@@ -137,7 +137,7 @@ export default function Footer() {
                   <button className="hover:underline text-[0.5rem] ssm:text-[0.7rem] md:text-[0.9rem]  text-start " onClick={navigatetoQuoteCompany}>{t('Cotiza')}</button>
                 
                 
-                  <button className="hover:underline text-[0.5rem] ssm:text-[0.7rem] md:text-[0.9rem]  text-start"  onClick={() => {
+                  <button className="hidden hover:underline text-[0.5rem] ssm:text-[0.7rem] md:text-[0.9rem] text-start"  onClick={() => {
                         pressSignUp === "visible"
                           ? dispatch(setPressSignUp("hidden"))
                           : dispatch(setPressSignUp("visible")),
@@ -147,7 +147,7 @@ export default function Footer() {
                       }}>{t('Regístrate')}</button>
                 
                 
-                  <button className="hover:underline text-[0.5rem] ssm:text-[0.7rem] md:text-[0.9rem]  text-start" onClick={() => {
+                  <button className="hidden hover:underline text-[0.5rem] ssm:text-[0.7rem] md:text-[0.9rem] text-start" onClick={() => {
                         pressLogin === "visible"
                           ? dispatch(setPressLogin("hidden"))
                           : dispatch(setPressLogin("visible")),
@@ -161,7 +161,7 @@ export default function Footer() {
               <button className="hover:underline text-[0.5rem] ssm:text-[0.7rem] md:text-[0.9rem]  text-start" onClick={navigatetoServicesTalent}>{t('Servicios')}</button>
               <button className="hover:underline text-[0.5rem] ssm:text-[0.7rem] md:text-[0.9rem]  text-start" onClick={navigatetoProcessTalent}>{t('Proceso')}</button>
               <button className="hover:underline text-[0.5rem] ssm:text-[0.7rem] md:text-[0.9rem]  text-start" onClick={navigatetoVacanciesTalent}>{t('Vacantes')}</button>
-              <button className="hover:underline text-[0.5rem] ssm:text-[0.7rem] md:text-[0.9rem]  text-start"  onClick={() => {
+              <button className="hidden hover:underline text-[0.5rem] ssm:text-[0.7rem] md:text-[0.9rem] text-start"  onClick={() => {
                         pressSignUp === "visible"
                           ? dispatch(setPressSignUp("hidden"))
                           : dispatch(setPressSignUp("visible")),
@@ -171,7 +171,7 @@ export default function Footer() {
                       }}>{t('Regístrate')}</button>
                 
                 
-                  <button className="hover:underline text-[0.5rem] ssm:text-[0.7rem] md:text-[0.9rem]  text-start" onClick={() => {
+                  <button className="hidden hover:underline text-[0.5rem] ssm:text-[0.7rem] md:text-[0.9rem] text-start" onClick={() => {
                         pressLogin === "visible"
                           ? dispatch(setPressLogin("hidden"))
                           : dispatch(setPressLogin("visible")),
