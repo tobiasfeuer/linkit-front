@@ -52,6 +52,8 @@ import i18n from "./i18";
 
 
 const SUPERADMN_ID = import.meta.env.VITE_SUPERADMN_ID;
+// Mantiene disponible la autenticación para reactivarla más adelante.
+const SHOW_AUTH_UI = false;
 
 type registerLoginState = {
   registerLogin: {
@@ -288,51 +290,55 @@ useEffect(() => {
 
       <MainNavigation />
       {!hideSiteChrome && <NavBar />}
-      <motion.div
-        variants={loginVariants}
-        initial="hidden"
-        animate={pressLogin}
-        className="fixed w-screen h-screen z-[1000] top-[.0rem]"
-      >
-        <PreLogin />
-      </motion.div>
+      {SHOW_AUTH_UI && (
+        <>
+          <motion.div
+            variants={loginVariants}
+            initial="hidden"
+            animate={pressLogin}
+            className="fixed w-screen h-screen z-[1000] top-[.0rem]"
+          >
+            <PreLogin />
+          </motion.div>
 
-      <motion.div
-        variants={loginVariants}
-        initial="hidden"
-        animate={pressLoginTalent}
-        className="fixed w-screen h-screen z-[100] top-[.0rem]"
-      >
-        <LoginTalent />
-      </motion.div>
+          <motion.div
+            variants={loginVariants}
+            initial="hidden"
+            animate={pressLoginTalent}
+            className="fixed w-screen h-screen z-[100] top-[.0rem]"
+          >
+            <LoginTalent />
+          </motion.div>
 
-      <motion.div
-        variants={loginVariants}
-        initial="hidden"
-        animate={pressLoginCompany}
-        className="fixed w-screen h-screen z-[100] top-[.0rem]"
-      >
-        <LoginCompany />
-      </motion.div>
+          <motion.div
+            variants={loginVariants}
+            initial="hidden"
+            animate={pressLoginCompany}
+            className="fixed w-screen h-screen z-[100] top-[.0rem]"
+          >
+            <LoginCompany />
+          </motion.div>
 
-      <motion.div
-        variants={registerVariants}
-        initial="hidden"
-        animate={pressSignUp}
-        className="fixed w-screen h-screen z-[100] top-[.0rem]"
-      >
-        <PreRegisterForm />
-      </motion.div>
+          <motion.div
+            variants={registerVariants}
+            initial="hidden"
+            animate={pressSignUp}
+            className="fixed w-screen h-screen z-[100] top-[.0rem]"
+          >
+            <PreRegisterForm />
+          </motion.div>
 
-      {pressRegister === "visible" && (
-        <motion.div
-          variants={registerVariants}
-          initial="hidden"
-          animate={pressRegister}
-          className="fixed w-screen h-screen z-[100] top-[.0rem]"
-        >
-          <Register />
-        </motion.div>
+          {pressRegister === "visible" && (
+            <motion.div
+              variants={registerVariants}
+              initial="hidden"
+              animate={pressRegister}
+              className="fixed w-screen h-screen z-[100] top-[.0rem]"
+            >
+              <Register />
+            </motion.div>
+          )}
+        </>
       )}
 
       <Routes>

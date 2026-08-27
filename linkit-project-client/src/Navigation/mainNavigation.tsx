@@ -3,6 +3,9 @@ import { Link, useLocation } from "react-router-dom"
 import { Menu, X, ChevronDown, User, Briefcase, BookOpen, Users } from "lucide-react"
 import { useTranslation } from "react-i18next"
 
+// Oculta temporalmente los accesos de autenticación.
+const SHOW_AUTH_UI = false
+
 export default function MainNavigation() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isScrolled, setIsScrolled] = useState(false)
@@ -153,12 +156,14 @@ export default function MainNavigation() {
 
           {/* Botones de acción */}
           <div className="hidden md:flex items-center space-x-4">
-            <Link
-              to="/dashboard"
-              className="text-sm font-medium text-gray-700 hover:text-linkIt-300 dark:text-gray-200"
-            >
-              {isSpanish ? "Iniciar sesión" : "Login"}
-            </Link>
+            {SHOW_AUTH_UI && (
+              <Link
+                to="/dashboard"
+                className="text-sm font-medium text-gray-700 hover:text-linkIt-300 dark:text-gray-200"
+              >
+                {isSpanish ? "Iniciar sesión" : "Login"}
+              </Link>
+            )}
             <Link
               to="/contrata-talento-it"
               className="px-4 py-2 rounded-md bg-linkIt-300 text-white text-sm font-medium hover:bg-linkIt-400 transition-colors"
@@ -233,12 +238,14 @@ export default function MainNavigation() {
           </div>
           <div className="pt-4 pb-3 border-t border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between px-4">
-              <Link
-                to="/dashboard"
-                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-linkIt-300/10"
-              >
-                {isSpanish ? "Iniciar sesión" : "Login"}
-              </Link>
+              {SHOW_AUTH_UI && (
+                <Link
+                  to="/dashboard"
+                  className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-200 dark:hover:bg-linkIt-300/10"
+                >
+                  {isSpanish ? "Iniciar sesión" : "Login"}
+                </Link>
+              )}
               <Link
                 to="/contrata-talento-it"
                 className="px-4 py-2 rounded-md bg-linkIt-300 text-white text-sm font-medium hover:bg-linkIt-400 transition-colors"
