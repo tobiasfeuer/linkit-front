@@ -1,11 +1,13 @@
 import i18n, { InitOptions } from 'i18next';
 import { initReactI18next } from 'react-i18next';
+import { readInitialLanguageFromWindow } from './Utils/languageFromUrl';
 // import LanguageDetector from 'i18next-browser-languagedetector'; // Comentado: auto-detección deshabilitada temporalmente
 
+const initialLanguage = readInitialLanguageFromWindow();
 
 //i18next  Configuration
 export const i18nOptions: InitOptions = {
-  lng: 'es',
+  lng: initialLanguage,
   fallbackLng: 'es',
   debug: false,
   interpolation: {
@@ -1326,7 +1328,6 @@ i18n
   // .use(LanguageDetector) // Comentado: auto-detección deshabilitada temporalmente
   .init(i18nOptions);
 
-// Establecer español como idioma por defecto
-i18n.changeLanguage('es');
+i18n.changeLanguage(initialLanguage);
 
 export default i18n;

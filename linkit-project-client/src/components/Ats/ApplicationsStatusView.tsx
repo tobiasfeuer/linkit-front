@@ -2,6 +2,15 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import { useGoogleReCaptcha } from "react-google-recaptcha-hook";
+import { useTranslation } from "react-i18next";
+import {
+  ATS_COPY,
+  formatStageLabel,
+  type AtsCommentErrorKey,
+  type AtsCvErrorKey,
+  type AtsErrorKey,
+  type AtsLang,
+} from "./atsCopy";
 
 type StageSortDirection = "asc" | "desc";
 
@@ -48,10 +57,6 @@ const STAGE_ORDER = PIPELINE_STAGES.reduce<Record<string, number>>(
   {}
 );
 
-/** "4. Enviado a cliente" → "Enviado a cliente" (solo UI; el valor crudo se usa para filtrar). */
-function formatStageLabel(stage: string): string {
-  return stage.replace(/^\d+\.\s*/, "").trim() || stage;
-}
 
 interface AtsCandidate {
   name: string;
@@ -123,14 +128,14 @@ function SplitText({
   );
 }
 
-function LoadingSkeletonCards() {
+function LoadingSkeletonCards({ lang = "es" }: { lang?: AtsLang }) {
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3"
-      aria-label="Cargando contenido"
+      aria-label={ATS_COPY[lang].loadingAria}
       role="status"
     >
       {[0, 1, 2].map((item) => (
@@ -271,6 +276,10 @@ function ApplicationsStatusViewBase({
 }: {
   executeRecaptcha?: (action: string) => Promise<string>;
 } = {}) {
+  const { i18n } = useTranslation();
+  const lang: AtsLang = i18n.language.startsWith("en") ? "en" : "es";
+  const copy = ATS_COPY[lang];
+
   const [accessInput, setAccessInput] = useState("");
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authChecked, setAuthChecked] = useState(false);
@@ -281,7 +290,7 @@ function ApplicationsStatusViewBase({
   const [holding, setHolding] = useState("");
   const [jobCards, setJobCards] = useState<JobCardSummary[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<AtsErrorKey | null>(null);
   const [selectedStages, setSelectedStages] = useState<ClientVisibleStage[]>([
     ...CLIENT_VISIBLE_STAGES,
   ]);
@@ -294,13 +303,13 @@ function ApplicationsStatusViewBase({
   const [cvModal, setCvModal] = useState<AtsCandidate | null>(null);
   const [cvBlobUrl, setCvBlobUrl] = useState<string | null>(null);
   const [cvLoading, setCvLoading] = useState(false);
-  const [cvError, setCvError] = useState<string | null>(null);
+  const [cvError, setCvError] = useState<AtsCvErrorKey | null>(null);
   const [endorsementModal, setEndorsementModal] =
     useState<AtsCandidate | null>(null);
   const [commentModal, setCommentModal] = useState<AtsCandidate | null>(null);
   const [commentDraft, setCommentDraft] = useState("");
   const [commentSaving, setCommentSaving] = useState(false);
-  const [commentError, setCommentError] = useState<string | null>(null);
+  const [commentError, setCommentError] = useState<AtsCommentErrorKey | null>(null);
   const [commentSuccessOpen, setCommentSuccessOpen] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
   const [selectedJobKey, setSelectedJobKey] = useState<string | null>(null);
@@ -337,13 +346,13 @@ function ApplicationsStatusViewBase({
           setData(null);
           if (status === 429) {
             setIsAuthenticated(false);
-            setError("Demasiados intentos. Probá de nuevo en unos minutos.");
+            setError("rateLimited");
           } else if (status === 401) {
             setIsAuthenticated(false);
             setError(null);
           } else {
             setIsAuthenticated(false);
-            setError("No se pudo cargar la vista ATS. Intentá de nuevo.");
+            setError("loadView");
           }
         }
       } finally {
@@ -387,7 +396,7 @@ function ApplicationsStatusViewBase({
       } catch {
         if (!cancelled) {
           setData(null);
-          setError("No se pudo cargar el pipeline. Intentá de nuevo.");
+          setError("loadPipeline");
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -444,7 +453,7 @@ function ApplicationsStatusViewBase({
         if (!cancelled) setCvBlobUrl(objectUrl);
       } catch {
         if (!cancelled) {
-          setCvError("No se pudo cargar el CV. Intentá de nuevo.");
+          setCvError("loadCv");
           setCvBlobUrl(null);
         }
       } finally {
@@ -594,7 +603,7 @@ function ApplicationsStatusViewBase({
       setCommentDraft("");
       setCommentSuccessOpen(true);
     } catch {
-      setCommentError("No se pudo guardar el comentario. Intentá de nuevo.");
+      setCommentError("saveComment");
     } finally {
       setCommentSaving(false);
     }
@@ -686,16 +695,16 @@ function ApplicationsStatusViewBase({
   const clearCountries = () => setSelectedCountries([]);
 
   const stageButtonLabel = allStagesSelected
-    ? "Todos"
+    ? copy.all
     : selectedStages.length === 0
-      ? "Ninguno"
-      : `${selectedStages.length} seleccionados`;
+      ? copy.none
+      : copy.selected(selectedStages.length);
 
   const countryButtonLabel = allCountriesSelected
-    ? "Todos"
+    ? copy.all
     : selectedCountries.length === 0
-      ? "Ninguno"
-      : `${selectedCountries.length} seleccionados`;
+      ? copy.none
+      : copy.selected(selectedCountries.length);
 
   const handleLogin = async (event: FormEvent) => {
     event.preventDefault();
@@ -710,7 +719,7 @@ function ApplicationsStatusViewBase({
         try {
           recaptchaToken = await executeRecaptcha("ats_login");
         } catch {
-          setError("No pudimos verificar que no sos un robot. Probá de nuevo.");
+          setError("recaptcha");
           return;
         }
       }
@@ -731,13 +740,13 @@ function ApplicationsStatusViewBase({
       const status = err?.response?.status;
       const code = err?.response?.data?.code;
       if (status === 429) {
-        setError("Demasiados intentos. Probá de nuevo en unos minutos.");
+        setError("rateLimited");
       } else if (code === "RECAPTCHA_FAILED") {
-        setError("No pudimos verificar que no sos un robot. Probá de nuevo.");
+        setError("recaptcha");
       } else if (status === 401 || code === "CLIENT_ACCESS_INVALID") {
-        setError("Usuario incorrecto. Probá de nuevo.");
+        setError("badUser");
       } else {
-        setError("No se pudo iniciar sesión. Intentá de nuevo.");
+        setError("loginFailed");
       }
     } finally {
       setLoginLoading(false);
@@ -761,11 +770,11 @@ function ApplicationsStatusViewBase({
     setSessionEpoch((epoch) => epoch + 1);
   };
 
-  const workspaceLabel = holding || "Portal ATS";
+  const workspaceLabel = holding || copy.workspaceFallback;
 
   const roleSubtitle = selectedJob
     ? selectedJob.roleName
-    : "Elegí una búsqueda para ver candidatos";
+    : copy.pickJob;
 
   const showLogin = authChecked && !isAuthenticated && !loading;
   const showCompanyCards =
@@ -798,12 +807,12 @@ function ApplicationsStatusViewBase({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
           className="relative mx-auto max-w-6xl px-4 pt-2.5 md:px-8"
-          aria-label="Navegación del portal ATS"
+          aria-label={copy.navAria}
         >
           <div className="grid grid-cols-[1fr_auto_1fr] items-center rounded-xl border border-white/15 bg-white/[0.07] px-4 py-1 shadow-[0_8px_24px_rgba(0,0,0,0.14)] backdrop-blur-xl">
             <span className="hidden items-center gap-2 text-[10px] font-semibold uppercase tracking-[0.18em] text-white/60 sm:flex">
               <span className="h-1.5 w-1.5 rounded-full bg-linkIt-300 shadow-[0_0_10px_rgba(1,162,139,0.9)]" />
-              Portal seguro
+              {copy.securePortal}
             </span>
             <motion.div
               whileHover={{ scale: 1.035 }}
@@ -831,30 +840,29 @@ function ApplicationsStatusViewBase({
           >
             <div className="min-w-0 flex-1">
               <p className="mb-3 font-montserrat text-xs font-semibold uppercase tracking-[0.22em] text-linkIt-50">
-                LinkIT · Client Portal
+                {copy.heroKicker}
               </p>
               <h1 className="max-w-3xl font-montserrat text-3xl font-bold leading-tight md:text-5xl">
-                <SplitText text="Portal de Clientes" delay={0.16} />
+                <SplitText text={copy.heroTitle} delay={0.16} />
               </h1>
               <p className="mt-2 font-montserrat text-lg font-medium text-linkIt-300 md:text-xl">
                 Client Side by LinkIT
               </p>
               <p className="mt-4 max-w-2xl text-sm leading-relaxed text-white/80 md:text-base">
-                Visualizá el avance de tus candidatos, filtrá por etapa y país, y
-                revisá CVs y endorsements en un solo lugar.
+                {copy.heroLead}
               </p>
 
               <div className="mt-6 flex flex-wrap items-center gap-3">
                 <span className="rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs font-medium backdrop-blur-sm">
-                  Bienvenido a tu espacio · {workspaceLabel}
+                  {copy.welcomeSpace(workspaceLabel)}
                 </span>
                 {!showLogin && !loading && isAuthenticated && (
                   <span className="rounded-full border border-linkIt-300/40 bg-linkIt-300/20 px-3 py-1 text-xs font-semibold text-linkIt-50">
                     {selectedJob
-                      ? `${filteredCandidates.length} candidato${filteredCandidates.length === 1 ? "" : "s"} visibles`
+                      ? copy.candidatesVisible(filteredCandidates.length)
                       : selectedCompany
-                        ? `${companyJobCards.length} búsqueda${companyJobCards.length === 1 ? "" : "s"} abierta${companyJobCards.length === 1 ? "" : "s"}`
-                        : `${companyCards.length} razón${companyCards.length === 1 ? "" : "es"} social${companyCards.length === 1 ? "" : "es"}`}
+                        ? copy.openJobs(companyJobCards.length)
+                        : copy.companiesCount(companyCards.length)}
                   </span>
                 )}
               </div>
@@ -871,13 +879,13 @@ function ApplicationsStatusViewBase({
             >
               <div className="pointer-events-none absolute -right-6 -top-6 h-20 w-20 rounded-full bg-linkIt-300/30 blur-2xl transition group-hover:bg-linkIt-300/45" />
               <p className="relative font-montserrat text-[10px] font-semibold uppercase tracking-[0.18em] text-linkIt-300">
-                LinkIT Talent
+                {copy.talentTag}
               </p>
               <p className="relative mt-2 font-montserrat text-sm font-semibold leading-snug text-white">
-                Contrata y gestiona talentos de forma global
+                {copy.talentCta}
               </p>
               <span className="relative mt-3 inline-flex items-center rounded-lg bg-linkIt-300 px-3 py-1.5 font-montserrat text-xs font-bold text-white transition group-hover:bg-[#01967f]">
-                Comienza ahora! →
+                {copy.startNow}
               </span>
             </motion.a>
           </motion.div>
@@ -894,37 +902,36 @@ function ApplicationsStatusViewBase({
             className="mx-auto max-w-md rounded-2xl border border-linkIt-50 bg-white p-7 shadow-[0_18px_50px_rgba(23,57,81,0.12)]"
           >
             <p className="mb-1 font-montserrat text-xs font-semibold uppercase tracking-[0.16em] text-linkIt-300">
-              Acceso seguro
+              {copy.loginKicker}
             </p>
             <h2 className="mb-2 font-montserrat text-2xl font-bold text-linkIt-200">
-              Bienvenido a tu portal
+              {copy.loginTitle}
             </h2>
             <p className="mb-6 text-sm leading-relaxed text-linkIt-700">
-              Ingresá tu usuario para ver el seguimiento de candidatos
-              preseleccionados por LinkIT.
+              {copy.loginLead}
             </p>
 
             <label className="mb-2 block text-sm font-semibold text-linkIt-200">
-              Usuario
+              {copy.userLabel}
             </label>
             <input
               type="password"
               value={accessInput}
               onChange={(e) => setAccessInput(e.target.value)}
               className="mb-4 w-full rounded-lg border border-linkIt-50 px-3 py-2.5 text-linkIt-200 outline-none transition focus:border-linkIt-300 focus:ring-2 focus:ring-linkIt-300/20"
-              placeholder="Tu usuario de acceso"
+              placeholder={copy.userPlaceholder}
               autoComplete="current-password"
               required
             />
             {error && (
-              <p className="mb-3 text-sm text-red-600">{error}</p>
+              <p className="mb-3 text-sm text-red-600">{copy.errors[error]}</p>
             )}
             <button
               type="submit"
               disabled={loginLoading}
               className="w-full rounded-lg bg-linkIt-300 px-4 py-3 font-montserrat text-sm font-bold text-white transition hover:bg-[#01967f] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {loginLoading ? "Verificando…" : "Entrar al portal"}
+              {loginLoading ? copy.verifying : copy.enterPortal}
             </button>
             
           </motion.form>
@@ -945,7 +952,7 @@ function ApplicationsStatusViewBase({
                     onClick={() => setSelectedJobKey(null)}
                     className="mb-2 text-sm font-semibold text-linkIt-300 hover:underline"
                   >
-                    ← Volver a búsquedas
+                    {copy.backToJobs}
                   </button>
                 )}
                 {showJobCards && (
@@ -954,24 +961,31 @@ function ApplicationsStatusViewBase({
                     onClick={() => setSelectedCompany(null)}
                     className="mb-2 text-sm font-semibold text-linkIt-300 hover:underline"
                   >
-                    ← Volver a razones sociales
+                    {copy.backToCompanies}
                   </button>
                 )}
                 <h2 className="font-montserrat text-xl font-bold text-linkIt-200 md:text-2xl">
                   {showCompanyCards
-                    ? "Tus razones sociales"
+                    ? copy.yourCompanies
                     : showJobCards
-                      ? companyJobCards[0]?.company || "Tus búsquedas abiertas"
+                      ? companyJobCards[0]?.company || copy.yourOpenJobs
                       : roleSubtitle}
                 </h2>
                 <p className="mt-1 text-sm text-linkIt-700">
                   {showCompanyCards
-                    ? `${companyCards.length} razón${companyCards.length === 1 ? "" : "es"} social${companyCards.length === 1 ? "" : "es"} · ${jobCards.length} búsqueda${jobCards.length === 1 ? "" : "s"} · ${jobCardsCandidateTotal} candidato${jobCardsCandidateTotal === 1 ? "" : "s"}`
+                    ? copy.companySummary(
+                        companyCards.length,
+                        jobCards.length,
+                        jobCardsCandidateTotal
+                      )
                     : showJobCards
-                      ? `${companyJobCards.length} búsqueda${companyJobCards.length === 1 ? "" : "s"} · ${companyCandidateTotal} candidato${companyCandidateTotal === 1 ? "" : "s"}`
-                    : `${filteredCandidates.length} candidato${filteredCandidates.length === 1 ? "" : "s"}${
+                      ? copy.jobSummary(
+                          companyJobCards.length,
+                          companyCandidateTotal
+                        )
+                    : `${copy.candidatesCount(filteredCandidates.length)}${
                         !allStagesSelected || !allCountriesSelected
-                          ? ` · ${jobScopedCandidates.length} en este rol`
+                          ? ` · ${copy.inThisRole(jobScopedCandidates.length)}`
                           : ""
                       }`}
                 </p>
@@ -981,7 +995,7 @@ function ApplicationsStatusViewBase({
                 onClick={() => void handleLogout()}
                 className="rounded-lg border border-linkIt-50 px-3 py-1.5 text-sm font-medium text-linkIt-700 transition hover:border-linkIt-300 hover:text-linkIt-200"
               >
-                Cerrar sesión
+                {copy.logout}
               </button>
             </div>
 
@@ -996,14 +1010,14 @@ function ApplicationsStatusViewBase({
                   }}
                   className={filterButtonClass}
                 >
-                  <span>Stage · {stageButtonLabel}</span>
+                  <span>{copy.stage} · {stageButtonLabel}</span>
                   <span className="ml-2 text-linkIt-700">▾</span>
                 </button>
                 {stageMenuOpen && (
                   <>
                     <button
                       type="button"
-                      aria-label="Cerrar menú de stages"
+                      aria-label={copy.closeStages}
                       className="fixed inset-0 z-10 cursor-default"
                       onClick={() => setStageMenuOpen(false)}
                     />
@@ -1018,14 +1032,14 @@ function ApplicationsStatusViewBase({
                             onClick={selectAllStages}
                             className="text-xs font-semibold text-linkIt-300 hover:underline"
                           >
-                            Todos
+                            {copy.all}
                           </button>
                           <button
                             type="button"
                             onClick={clearStages}
                             className="text-xs font-medium text-linkIt-700 hover:underline"
                           >
-                            Ninguno
+                            {copy.none}
                           </button>
                         </div>
                       </div>
@@ -1042,7 +1056,7 @@ function ApplicationsStatusViewBase({
                               className="h-4 w-4 rounded border-linkIt-50 text-linkIt-300 focus:ring-linkIt-300"
                             />
                             <span className="text-sm text-linkIt-200">
-                              {formatStageLabel(stage)}
+                              {formatStageLabel(stage, lang)}
                             </span>
                           </label>
                         ))}
@@ -1061,21 +1075,21 @@ function ApplicationsStatusViewBase({
                   }}
                   className={filterButtonClass}
                 >
-                  <span>País · {countryButtonLabel}</span>
+                  <span>{copy.country} · {countryButtonLabel}</span>
                   <span className="ml-2 text-linkIt-700">▾</span>
                 </button>
                 {countryMenuOpen && (
                   <>
                     <button
                       type="button"
-                      aria-label="Cerrar menú de países"
+                      aria-label={copy.closeCountries}
                       className="fixed inset-0 z-10 cursor-default"
                       onClick={() => setCountryMenuOpen(false)}
                     />
                     <div className="absolute left-0 z-20 mt-2 w-[320px] rounded-xl border border-linkIt-50 bg-white p-3 shadow-xl md:left-auto md:right-0">
                       <div className="mb-2 flex items-center justify-between gap-2">
                         <p className="font-montserrat text-xs font-semibold uppercase tracking-wide text-linkIt-700">
-                          Países en esta vista
+                          {copy.countriesInView}
                         </p>
                         <div className="flex gap-2">
                           <button
@@ -1083,21 +1097,21 @@ function ApplicationsStatusViewBase({
                             onClick={selectAllCountries}
                             className="text-xs font-semibold text-linkIt-300 hover:underline"
                           >
-                            Todos
+                            {copy.all}
                           </button>
                           <button
                             type="button"
                             onClick={clearCountries}
                             className="text-xs font-medium text-linkIt-700 hover:underline"
                           >
-                            Ninguno
+                            {copy.none}
                           </button>
                         </div>
                       </div>
                       <div className="max-h-64 space-y-1 overflow-y-auto">
                         {suggestedCountries.length === 0 && (
                           <p className="px-2 py-1.5 text-sm text-linkIt-700">
-                            No hay países en estos candidatos.
+                            {copy.noCountries}
                           </p>
                         )}
                         {suggestedCountries.map((country) => (
@@ -1123,7 +1137,7 @@ function ApplicationsStatusViewBase({
               </div>
 
               <label className="flex items-center gap-2 text-sm text-linkIt-700">
-                Orden
+                {copy.sort}
                 <select
                   value={stageSort}
                   onChange={(e) =>
@@ -1131,14 +1145,14 @@ function ApplicationsStatusViewBase({
                   }
                   className="rounded-lg border border-linkIt-50 bg-white px-2 py-2 text-linkIt-200 outline-none focus:border-linkIt-300"
                 >
-                  <option value="asc">Ascendente</option>
-                  <option value="desc">Descendente</option>
+                  <option value="asc">{copy.sortAsc}</option>
+                  <option value="desc">{copy.sortDesc}</option>
                 </select>
               </label>
 
               <div className="ml-auto flex flex-wrap items-center gap-2 rounded-full bg-linkIt-500/80 px-2 py-1.5">
                 <label className="flex items-center gap-2 px-1 text-sm text-linkIt-700">
-                  Ver
+                  {copy.view}
                   <select
                     value={pageSize}
                     onChange={(e) =>
@@ -1160,7 +1174,7 @@ function ApplicationsStatusViewBase({
                     onClick={() => setCurrentPage((page) => Math.max(1, page - 1))}
                     disabled={currentPage <= 1}
                     className="rounded-md px-2.5 py-1.5 text-sm font-semibold text-linkIt-200 transition enabled:hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
-                    aria-label="Página anterior"
+                    aria-label={copy.prevPage}
                   >
                     ←
                   </button>
@@ -1174,7 +1188,7 @@ function ApplicationsStatusViewBase({
                     }
                     disabled={currentPage >= totalPages}
                     className="rounded-md px-2.5 py-1.5 text-sm font-semibold text-linkIt-200 transition enabled:hover:bg-white disabled:cursor-not-allowed disabled:opacity-40"
-                    aria-label="Página siguiente"
+                    aria-label={copy.nextPage}
                   >
                     →
                   </button>
@@ -1215,7 +1229,7 @@ function ApplicationsStatusViewBase({
                   className="pointer-events-none absolute -bottom-3 -right-5 w-40 rotate-[-6deg] opacity-[0.055] grayscale transition duration-500 group-hover:rotate-0 group-hover:opacity-[0.09]"
                 />
                 <p className="relative z-10 font-montserrat text-[11px] font-semibold uppercase tracking-[0.14em] text-linkIt-300">
-                  Razón social
+                  {copy.legalEntity}
                 </p>
                 <h3 className="relative z-10 mt-2 font-montserrat text-lg font-bold text-linkIt-200">
                   <SplitText text={company.name} delay={index * 0.04} />
@@ -1223,16 +1237,14 @@ function ApplicationsStatusViewBase({
                 <div className="relative z-10 mt-4 flex items-center justify-between gap-3">
                   <div className="flex flex-wrap gap-2">
                     <span className="rounded-full bg-linkIt-500 px-3 py-1 text-xs font-semibold text-linkIt-200">
-                      {company.jobCount} búsqueda
-                      {company.jobCount === 1 ? "" : "s"}
+                      {company.jobCount} {copy.jobCount(company.jobCount)}
                     </span>
                     <span className="rounded-full bg-linkIt-500 px-3 py-1 text-xs font-semibold text-linkIt-200">
-                      {company.candidateCount} candidato
-                      {company.candidateCount === 1 ? "" : "s"}
+                      {company.candidateCount} {copy.candidateWord(company.candidateCount)}
                     </span>
                   </div>
                   <span className="text-sm font-semibold text-linkIt-300 transition group-hover:translate-x-0.5">
-                    Ver búsquedas →
+                    {copy.seeJobs}
                   </span>
                 </div>
               </motion.button>
@@ -1267,22 +1279,22 @@ function ApplicationsStatusViewBase({
                   className="pointer-events-none absolute -bottom-3 -right-5 w-40 rotate-[-6deg] opacity-[0.055] grayscale transition duration-500 group-hover:rotate-0 group-hover:opacity-[0.09]"
                 />
                 <p className="relative z-10 font-montserrat text-[11px] font-semibold uppercase tracking-[0.14em] text-linkIt-300">
-                  {job.company || "Búsqueda"}
+                  {job.company || copy.jobFallback}
                 </p>
                 <h3 className="relative z-10 mt-2 font-montserrat text-lg font-bold text-linkIt-200">
                   <SplitText text={job.roleName} delay={index * 0.04} />
                 </h3>
                 {job.roleCode && (
                   <p className="relative z-10 mt-1 text-xs text-linkIt-700">
-                    Código · {job.roleCode}
+                    {copy.code} · {job.roleCode}
                   </p>
                 )}
                 <div className="relative z-10 mt-4 flex items-center justify-between gap-3">
                   <span className="rounded-full bg-linkIt-500 px-3 py-1 text-xs font-semibold text-linkIt-200">
-                    {job.candidateCount} candidato{job.candidateCount === 1 ? "" : "s"}
+                    {job.candidateCount} {copy.candidateWord(job.candidateCount)}
                   </span>
                   <span className="text-sm font-semibold text-linkIt-300 transition group-hover:translate-x-0.5">
-                    Ver pipeline →
+                    {copy.seePipeline}
                   </span>
                 </div>
               </motion.button>
@@ -1292,21 +1304,21 @@ function ApplicationsStatusViewBase({
 
         {showCompanyCards && companyCards.length === 0 && (
           <p className="rounded-2xl border border-linkIt-50 bg-white px-5 py-8 text-linkIt-700 shadow-sm">
-            No hay búsquedas abiertas para este holding.
+            {copy.noJobs}
           </p>
         )}
 
-        {!showLogin && loading && <LoadingSkeletonCards />}
+        {!showLogin && loading && <LoadingSkeletonCards lang={lang} />}
 
         {!showLogin && !loading && error && (
           <p className="rounded-2xl border border-red-200 bg-red-50 px-5 py-6 text-red-700">
-            {typeof error === "string" ? error : "Error al cargar datos."}
+            {error ? copy.errors[error] : copy.errors.generic}
           </p>
         )}
 
         {!showLogin && !loading && !error && data && data.count === 0 && (
           <p className="rounded-2xl border border-linkIt-50 bg-white px-5 py-8 text-linkIt-700 shadow-sm">
-            Todavía no hay candidatos para este workspace.
+            {copy.noCandidates}
           </p>
         )}
 
@@ -1318,7 +1330,7 @@ function ApplicationsStatusViewBase({
           showJobDetail &&
           filteredCandidates.length === 0 && (
             <p className="rounded-2xl border border-linkIt-50 bg-white px-5 py-8 text-linkIt-700 shadow-sm">
-              No hay candidatos con los filtros seleccionados.
+              {copy.noFilterMatch}
             </p>
           )}
 
@@ -1338,15 +1350,15 @@ function ApplicationsStatusViewBase({
                 <table className="min-w-full divide-y divide-linkIt-50 text-center text-sm">
                   <thead className="bg-[#f3f7fa]">
                     <tr className="font-montserrat text-[11px] uppercase tracking-[0.12em] text-linkIt-700">
-                      <th className="px-4 py-3.5 font-semibold">ID</th>
-                      <th className="px-4 py-3.5 font-semibold">Candidato</th>
-                      <th className="px-4 py-3.5 font-semibold">Rol</th>
-                      <th className="px-4 py-3.5 font-semibold">Stage</th>
-                      <th className="px-4 py-3.5 font-semibold">País</th>
-                      <th className="px-4 py-3.5 font-semibold">LinkedIn</th>
-                      <th className="px-4 py-3.5 font-semibold">CV</th>
-                      <th className="px-4 py-3.5 font-semibold">Endorsement</th>
-                      <th className="px-4 py-3.5 font-semibold">Comentario</th>
+                      <th className="px-4 py-3.5 font-semibold">{copy.colId}</th>
+                      <th className="px-4 py-3.5 font-semibold">{copy.colCandidate}</th>
+                      <th className="px-4 py-3.5 font-semibold">{copy.colRole}</th>
+                      <th className="px-4 py-3.5 font-semibold">{copy.colStage}</th>
+                      <th className="px-4 py-3.5 font-semibold">{copy.colCountry}</th>
+                      <th className="px-4 py-3.5 font-semibold">{copy.colLinkedin}</th>
+                      <th className="px-4 py-3.5 font-semibold">{copy.colCv}</th>
+                      <th className="px-4 py-3.5 font-semibold">{copy.colEndorsement}</th>
+                      <th className="px-4 py-3.5 font-semibold">{copy.colComment}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-linkIt-50/80">
@@ -1372,7 +1384,7 @@ function ApplicationsStatusViewBase({
                         <td className="px-4 py-3.5">
                           <span className="inline-flex rounded-full bg-linkIt-50/60 px-2.5 py-1 text-xs font-medium text-linkIt-200">
                             {candidate.pipelineStage
-                              ? formatStageLabel(candidate.pipelineStage)
+                              ? formatStageLabel(candidate.pipelineStage, lang)
                               : "—"}
                           </span>
                         </td>
@@ -1387,7 +1399,7 @@ function ApplicationsStatusViewBase({
                               rel="noreferrer noopener"
                               className="font-semibold text-linkIt-300 hover:underline"
                             >
-                              Perfil
+                              {copy.profile}
                             </a>
                           ) : (
                             <span className="text-linkIt-700/50">—</span>
@@ -1400,7 +1412,7 @@ function ApplicationsStatusViewBase({
                               onClick={() => setCvModal(candidate)}
                               className="font-semibold text-linkIt-300 hover:underline"
                             >
-                              Ver PDF
+                              {copy.viewPdf}
                             </button>
                           ) : (
                             <span className="text-linkIt-700/50">—</span>
@@ -1413,7 +1425,7 @@ function ApplicationsStatusViewBase({
                               onClick={() => setEndorsementModal(candidate)}
                               className="font-semibold text-linkIt-300 hover:underline"
                             >
-                              Ver
+                              {copy.viewAction}
                             </button>
                           ) : (
                             <span className="text-linkIt-700/50">—</span>
@@ -1426,7 +1438,7 @@ function ApplicationsStatusViewBase({
                               onClick={() => openCommentModal(candidate)}
                               className="font-semibold text-linkIt-300 hover:underline"
                             >
-                              {candidate.clientComment?.trim() ? "Ver / Editar" : "Agregar"}
+                              {candidate.clientComment?.trim() ? copy.viewEdit : copy.add}
                             </button>
                           ) : (
                             <span className="text-linkIt-700/50">—</span>
@@ -1440,14 +1452,7 @@ function ApplicationsStatusViewBase({
               </div>
               <div className="flex flex-wrap items-center justify-between gap-3 border-t border-linkIt-50 bg-[#f8fafb] px-4 py-3 text-sm text-linkIt-700">
                 <p>
-                  Mostrando{" "}
-                  <span className="font-semibold text-linkIt-200">
-                    {pageStart}-{pageEnd}
-                  </span>{" "}
-                  de{" "}
-                  <span className="font-semibold text-linkIt-200">
-                    {filteredCandidates.length}
-                  </span>
+                  {copy.showing(pageStart, pageEnd, filteredCandidates.length)}
                 </p>
                 <div className="flex items-center gap-2">
                   <button
@@ -1456,7 +1461,7 @@ function ApplicationsStatusViewBase({
                     disabled={currentPage <= 1}
                     className="rounded-lg border border-linkIt-50 bg-white px-3 py-1.5 font-semibold text-linkIt-200 transition enabled:hover:border-linkIt-300 disabled:cursor-not-allowed disabled:opacity-40"
                   >
-                    Anterior
+                    {copy.previous}
                   </button>
                   <button
                     type="button"
@@ -1466,7 +1471,7 @@ function ApplicationsStatusViewBase({
                     disabled={currentPage >= totalPages}
                     className="rounded-lg bg-linkIt-300 px-3 py-1.5 font-semibold text-white transition enabled:hover:bg-[#01967f] disabled:cursor-not-allowed disabled:opacity-40"
                   >
-                    Siguiente
+                    {copy.next}
                   </button>
                 </div>
               </div>
@@ -1482,10 +1487,10 @@ function ApplicationsStatusViewBase({
           <div className="flex flex-col items-start justify-between gap-4 rounded-[15px] bg-[#122f43] px-5 py-5 text-white sm:flex-row sm:items-center md:px-7">
             <div>
               <p className="font-montserrat text-xs font-semibold uppercase tracking-[0.16em] text-linkIt-300">
-                LinkIT Talent
+                {copy.talentTag}
               </p>
               <p className="mt-1 max-w-2xl font-montserrat text-base font-semibold leading-snug md:text-lg">
-                Contrata y gestiona talentos de forma global con LinkIT
+                {copy.footerTalent}
               </p>
             </div>
             <a
@@ -1494,13 +1499,13 @@ function ApplicationsStatusViewBase({
               rel="noreferrer"
               className="inline-flex shrink-0 items-center rounded-lg bg-linkIt-300 px-4 py-2.5 font-montserrat text-sm font-bold text-white transition hover:bg-[#01967f]"
             >
-              Comienza ahora! →
+              {copy.startNow}
             </a>
           </div>
         </motion.div>
 
         <p className="mt-6 text-center text-xs text-linkIt-700">
-          Powered by LinkIT · Talento con seguimiento transparente
+          {copy.powered}
         </p>
       </div>
 
@@ -1523,10 +1528,10 @@ function ApplicationsStatusViewBase({
               <div className="flex items-center justify-between border-b border-linkIt-50 bg-gradient-to-r from-[#173951] to-[#1c4a6b] px-5 py-4 text-white">
                 <div>
                   <h2 className="font-montserrat text-lg font-bold">
-                    CV · {cvModal.name || "Candidato"}
+                    CV · {cvModal.name || copy.candidate}
                   </h2>
                   <p className="text-sm text-white/70">
-                    {cvModal.cvFilename || "Documento PDF"}
+                    {cvModal.cvFilename || copy.pdfDocument}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
@@ -1537,7 +1542,7 @@ function ApplicationsStatusViewBase({
                       rel="noreferrer noopener"
                       className="text-sm font-semibold text-linkIt-300 hover:underline"
                     >
-                      Abrir en pestaña
+                      {copy.openTab}
                     </a>
                   )}
                   <button
@@ -1545,18 +1550,18 @@ function ApplicationsStatusViewBase({
                     onClick={() => setCvModal(null)}
                     className="rounded-lg bg-white/10 px-3 py-1.5 text-sm hover:bg-white/20"
                   >
-                    Cerrar
+                    {copy.close}
                   </button>
                 </div>
               </div>
               {cvLoading && (
                 <div className="flex flex-1 items-center justify-center bg-linkIt-500 text-sm text-linkIt-700">
-                  Cargando CV…
+                  {copy.loadingCv}
                 </div>
               )}
               {!cvLoading && cvError && (
                 <div className="flex flex-1 items-center justify-center bg-linkIt-500 px-6 text-center text-sm text-red-600">
-                  {cvError}
+                  {copy.cvErrors[cvError]}
                 </div>
               )}
               {!cvLoading && !cvError && cvBlobUrl && (
@@ -1596,20 +1601,19 @@ function ApplicationsStatusViewBase({
             >
               <div className="border-b border-linkIt-50 bg-gradient-to-r from-[#173951] to-[#1c4a6b] px-5 py-4 text-white">
                 <h2 className="font-montserrat text-lg font-bold">
-                  Comentario guardado
+                  {copy.commentSaved}
                 </h2>
               </div>
               <div className="px-5 py-6 text-center">
                 <p className="text-sm leading-relaxed text-linkIt-700">
-                  El comentario se agregó correctamente y ya quedó disponible
-                  para el equipo de LinkIT.
+                  {copy.commentSavedBody}
                 </p>
                 <button
                   type="button"
                   onClick={() => setCommentSuccessOpen(false)}
                   className="mt-5 rounded-lg bg-linkIt-300 px-5 py-2.5 text-sm font-bold text-white transition hover:bg-[#01967f]"
                 >
-                  Entendido
+                  {copy.understood}
                 </button>
               </div>
             </motion.div>
@@ -1636,10 +1640,10 @@ function ApplicationsStatusViewBase({
               <div className="flex items-center justify-between border-b border-linkIt-50 bg-gradient-to-r from-[#173951] to-[#1c4a6b] px-5 py-4 text-white">
                 <div>
                   <h2 className="font-montserrat text-lg font-bold">
-                    Comentario · {commentModal.name || "Candidato"}
+                    {copy.colComment} · {commentModal.name || copy.candidate}
                   </h2>
                   <p className="text-sm text-white/70">
-                    Visible para el equipo LinkIT en Airtable
+                    {copy.commentVisible}
                   </p>
                 </div>
                 <button
@@ -1648,25 +1652,25 @@ function ApplicationsStatusViewBase({
                   onClick={() => setCommentModal(null)}
                   className="rounded-lg bg-white/10 px-3 py-1.5 text-sm hover:bg-white/20 disabled:opacity-50"
                 >
-                  Cerrar
+                  {copy.close}
                 </button>
               </div>
               <div className="px-5 py-5">
                 <label className="mb-2 block text-sm font-semibold text-linkIt-200">
-                  Escribí tu comentario sobre este candidato…
+                  {copy.commentLabel}
                 </label>
                 <textarea
                   value={commentDraft}
                   onChange={(e) => setCommentDraft(e.target.value)}
                   rows={8}
                   maxLength={5000}
-                  placeholder="Escribí tu comentario sobre este candidato…"
+                  placeholder={copy.commentPlaceholder}
                   className="w-full rounded-xl border border-linkIt-50 px-3 py-3 text-sm text-linkIt-200 outline-none transition focus:border-linkIt-300 focus:ring-2 focus:ring-linkIt-300/20"
                 />
                 <div className="mt-2 flex items-center justify-between gap-3 text-xs text-linkIt-700">
                   <span>{commentDraft.length}/5000</span>
                   {commentError && (
-                    <span className="text-red-600">{commentError}</span>
+                    <span className="text-red-600">{copy.commentErrors[commentError]}</span>
                   )}
                 </div>
                 <div className="mt-4 flex flex-wrap justify-end gap-2">
@@ -1676,7 +1680,7 @@ function ApplicationsStatusViewBase({
                     onClick={() => setCommentModal(null)}
                     className="rounded-lg border border-linkIt-50 px-4 py-2 text-sm font-semibold text-linkIt-700 transition hover:border-linkIt-300 disabled:opacity-50"
                   >
-                    Cancelar
+                    {copy.cancel}
                   </button>
                   <button
                     type="button"
@@ -1684,7 +1688,7 @@ function ApplicationsStatusViewBase({
                     onClick={() => void handleSaveComment()}
                     className="rounded-lg bg-linkIt-300 px-4 py-2 text-sm font-bold text-white transition hover:bg-[#01967f] disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    {commentSaving ? "Guardando…" : "Guardar comentario"}
+                    {commentSaving ? copy.saving : copy.saveComment}
                   </button>
                 </div>
               </div>
@@ -1711,14 +1715,14 @@ function ApplicationsStatusViewBase({
             >
               <div className="flex items-center justify-between border-b border-linkIt-50 bg-gradient-to-r from-[#173951] to-[#1c4a6b] px-5 py-4 text-white">
                 <h2 className="font-montserrat text-lg font-bold">
-                  Endorsement · {endorsementModal.name || "Candidato"}
+                  Endorsement · {endorsementModal.name || copy.candidate}
                 </h2>
                 <button
                   type="button"
                   onClick={() => setEndorsementModal(null)}
                   className="rounded-lg bg-white/10 px-3 py-1.5 text-sm hover:bg-white/20"
                 >
-                  Cerrar
+                  {copy.close}
                 </button>
               </div>
               <div className="max-h-[70vh] overflow-y-auto px-5 py-5">
