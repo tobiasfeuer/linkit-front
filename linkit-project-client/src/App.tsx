@@ -23,7 +23,7 @@ import {
 } from "./redux/features/ResourcesSlice.ts";
 import { motion, Variants } from "framer-motion";
 import axios, { AxiosError } from "axios";
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect } from "react";
 import AdminPanel from "./components/Paneles/AdminProfile/Panel/AdminPanel.tsx";
 import LoginCompany from "./components/Login/Login-company/LoginCompany.tsx";
 import JobDescription from "./components/Talentos/ModulosTalentos/ModuloTalentosG/JobCard/jobDescription/JobDescription.tsx";
@@ -49,6 +49,7 @@ import ApplicationsStatusView from "./components/Ats/ApplicationsStatusView.tsx"
 import { Helmet } from "react-helmet-async";
 import MainNavigation from "./Navigation/mainNavigation.tsx";
 import i18n from "./i18";
+import { resolveUrlLanguage } from "./Utils/languageFromUrl";
 
 
 const SUPERADMN_ID = import.meta.env.VITE_SUPERADMN_ID;
@@ -109,7 +110,17 @@ const loginVariants: Variants = {
 
 function App() {
   const dispatch = useDispatch();
+  const location = useLocation();
 
+useLayoutEffect(() => {
+  const urlLang = resolveUrlLanguage(location.pathname, location.search);
+  if (!urlLang) return;
+  if (!i18n.language.startsWith(urlLang)) {
+    void i18n.changeLanguage(urlLang);
+  }
+  sessionStorage.setItem("lang", urlLang);
+  sessionStorage.setItem("i18nextLng", urlLang);
+}, [location.pathname, location.search]);
 
 useEffect(() => {
   // Sincronizar sessionStorage con el idioma detectado por i18n
@@ -256,7 +267,6 @@ useEffect(() => {
     fetchData();
   }, [dispatch]);
 
-  const location = useLocation();
   const isLandingPage = location.pathname === "/landing";
   const isAtsPage =
     location.pathname === "/ats" || location.pathname.startsWith("/ats/");
