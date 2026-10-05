@@ -39,8 +39,8 @@ export default function FormVacancie({
   const navigate = useNavigate();
   const { t } = useTranslation();
   const dispatch = useDispatch();
-  const [companyNames, setCompanyNames] = useState<string[]>([]);
-  const [technologiesNames, setTechnologiesNames] = useState<string[]>([]);
+  const companyNames: string[] = [];
+  const technologiesNames: string[] = [];
   const editor = useRef(null);
   const token = useSelector((state: any) => state.Authentication.token);
   const countries = useSelector((state: any): string[] =>
