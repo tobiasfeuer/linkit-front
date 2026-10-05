@@ -1,6 +1,4 @@
-import axios from "axios";
 import { useEffect, useState } from "react";
-import Swal from "sweetalert2";
 import LoadingIMG from "../../../../../../assets/Loading/bouncing-circles.svg";
 import {
   conversionPercentage,
@@ -13,25 +11,8 @@ export default function StatisticsFollowUps() {
   const [loading, isLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        isLoading(true);
-        const allFollowUps = await axios.get(
-          `${import.meta.env.VITE_ENDPOINT_URL}/resources/companyjds`
-        );
-        setFollowUps(allFollowUps.data);
-      } catch (error) {
-        Swal.fire({
-          title: "Error",
-          icon: "error",
-          text: "Error fetching followUps data, check server status and/or Airtable",
-          confirmButtonColor: "#01A28B"
-        });
-      } finally {
-        isLoading(false);
-      }
-    };
-    fetchData();
+    setFollowUps([]);
+    isLoading(false);
   }, []);
 
   return (

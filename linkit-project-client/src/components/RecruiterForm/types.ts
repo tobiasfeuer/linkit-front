@@ -1,5 +1,7 @@
 export interface FormFieldConfig {
   fieldName: string;
+  /** ID estable de la columna en Airtable (`fld...`). El nombre puede cambiar. */
+  airtableFieldId?: string;
   airtableField: string;
   type: 'text' | 'email' | 'url' | 'select' | 'multi-select' | 'textarea' | 'number' | 'file';
   label: string;

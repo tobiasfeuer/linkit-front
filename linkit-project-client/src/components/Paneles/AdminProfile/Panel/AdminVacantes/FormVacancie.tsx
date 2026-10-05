@@ -15,11 +15,6 @@ import JoditEditor from "jodit-react";
 import "./FormVacancie.css";
 import Swal from "sweetalert2";
 
-interface AirtableEntry {
-  Client: string;
-  "Talent Pool Stack": (string | undefined)[];
-}
-
 type OnCloseFunction = () => void;
 
 interface FormVacancieProps {
@@ -96,76 +91,6 @@ export default function FormVacancie({
   const AlljobData = useSelector(
     (state: stateProps) => state.jobCard.allJobOffers
   );
-
-  const technologiesRightNames = (arr: string[]) => {
-    const technologiesNoChange = [
-      "IOS",
-      "UX/UI",
-      "HTML",
-      "CSS",
-      "SQL",
-      "BI",
-      "PM",
-      "CI/CD",
-      "CITRIX",
-      "PCI",
-      "GCP",
-      "AEM",
-      "CRM",
-      "AWS",
-      "PHP"
-    ];
-    return arr.map((t: string) => {
-      if (t === t.toUpperCase()) {
-        const correctNames = t.split(" ").map((n) => {
-          if (technologiesNoChange.includes(n)) return n;
-          else {
-            let firstLetterFinded = false;
-            const correctName = n.split("").map((l) => {
-              if (!/^[a-zA-Z]+$/.test(l)) return l;
-              else {
-                if (!firstLetterFinded) {
-                  firstLetterFinded = true;
-                  return l.toUpperCase();
-                } else return l.toLowerCase();
-              }
-            });
-            const correctNameString = correctName.toString()
-            return correctNameString.replace(/,/g, "")
-          }
-        });
-        const combinedString:string = correctNames.reduce((accumulator:string, currentValue:string) => {
-          return accumulator + " " + currentValue;
-      }, "");
-        return combinedString.trim()
-      }
-     else return t
-    });
-  };
-
-  useEffect(() => {
-    const fetchAirtableData = async () => {
-      const { data } = await axios.get<AirtableEntry[]>(
-        `${import.meta.env.VITE_ENDPOINT_URL}/resources/companyjds`
-      );
-      const allCompanies: string[] = [];
-      const companies = data.map((entry: any) => entry.Client);
-      const technologies: string[] = [
-        ...new Set(
-          data
-            .map((entry: any) => entry["Talent Pool Stack"])
-            .flat()
-            .filter((t: undefined|string) => typeof t === "string")
-        ),
-      ];
-      setTechnologiesNames(technologiesRightNames(technologies));
-      companies.forEach((comp: string) => {
-        if (!allCompanies.includes(comp)) allCompanies.push(comp);
-      });
-      setCompanyNames(allCompanies);
-    };
-    fetchAirtableData();
-  }, []);
 
   const addToList = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
