@@ -1,13 +1,6 @@
-import axios from "axios";
 import { useEffect, useState } from "react";
-import { useSelector } from "react-redux";
-import { RootState } from "../../../../redux/types";
-//import { SUPERADMN_ID } from "../../../../env";
 import CompanyPosts from "./CompanyPosts";
-import { ICompany } from "../../types";
 import CompanyClosedPosts from "./CompanyClosedPosts";
-
-const SUPERADMN_ID = import.meta.env.VITE_SUPERADMN_ID
 
 export interface ICompanyPost {
   _id: string;
@@ -52,43 +45,17 @@ interface componentprops {
 }
 
 function MyPosts({ loader }: componentprops) {
-  const [companyPosts, setCompanyPosts] = useState<ICompanyPost[]>();
-  const [closedPosts, setClosedPosts] = useState<ICompanyPost[]>();
+  const [companyPosts, setCompanyPosts] = useState<ICompanyPost[]>([]);
+  const [closedPosts, setClosedPosts] = useState<ICompanyPost[]>([]);
   const [activeSection, setActiveVisible] = useState(true);
   const [closedSection, setClosedVisible] = useState(false);
 
-  const companyName = useSelector(
-    (state: RootState) => (state.Authentication.user as ICompany).companyName
-  );
-
   useEffect(() => {
-    const fetchPosts = async () => {
-      const invalidStatus = ["Won and Replaced", "Never Worked", "Won", "Lost"];
-      const response = await axios.get(
-        `${import.meta.env.VITE_ENDPOINT_URL}/resources/companyjds?company=${companyName}`,
-        {
-          headers: {
-            Authorization: `Bearer ${SUPERADMN_ID}`,
-            "Accept-Language": sessionStorage.getItem("lang"),
-          },
-        }
-      );
-      const activePosts = response.data.filter(
-        (post: ICompanyPost) => !invalidStatus.includes(post.Status)
-      );
-      const closed = response.data.filter((post: ICompanyPost) =>
-        invalidStatus.includes(post.Status)
-      );
-      setCompanyPosts(activePosts);
-      setClosedPosts(closed);
-      loader(false);
-    };
-    fetchPosts();
+    setCompanyPosts([]);
+    setClosedPosts([]);
+    loader(false);
     return () => loader(true);
   }, []);
-
-  if (!companyPosts) return null;
-  if (!closedPosts) return null;
 
   return (
     <div className="flex flex-col left-1/2 top-1/2 mx-3 md:mx-6 p-5 bg-linkIt-500 rounded-[20px] gap-5">

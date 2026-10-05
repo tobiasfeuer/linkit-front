@@ -25,6 +25,7 @@ import {
   isRecruiterFieldCheck,
   isRoleCodeFieldCheck,
   isSupersededLegacyCountryField,
+  attachFieldsById,
   orderRecruiterFormFields,
   resolveJdCodeForPayload,
   shouldRenderFieldFullWidth,
@@ -801,6 +802,7 @@ function CandidateApplicationFormBase({
         delete payload[key];
       }
     });
+    attachFieldsById(payload, formConfig);
     return { payload };
 
   };
@@ -888,6 +890,9 @@ function CandidateApplicationFormBase({
 
       if (cvAttachments.length) {
         payload.cv = cvAttachments;
+        if (payload.cvFieldId && payload.fieldsById) {
+          payload.fieldsById[payload.cvFieldId] = cvAttachments;
+        }
       }
 
       const recruiterSlugForSubmit =

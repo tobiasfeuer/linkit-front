@@ -100,6 +100,151 @@ export function isCountryMappedToPayloadCountry(field: FormFieldConfig): boolean
   return isPaisesNoBorrarField(field) || isLegacyCountryField(field);
 }
 
+function hasAirtableValue(value: unknown): boolean {
+  if (value === undefined || value === null) return false;
+  if (typeof value === "string") return value.trim() !== "";
+  if (Array.isArray(value)) return value.length > 0;
+  return true;
+}
+
+function isExpertiseField(field: FormFieldConfig): boolean {
+  const name = field.fieldName.toLowerCase();
+  const airtable = field.airtableField.toLowerCase();
+  return (
+    name.includes("expertise") ||
+    name.includes("techstack") ||
+    airtable.includes("area of expertise") ||
+    airtable.includes("especializ")
+  );
+}
+
+function isLinkedInField(field: FormFieldConfig): boolean {
+  const name = field.fieldName.toLowerCase();
+  const airtable = field.airtableField.toLowerCase();
+  return name.includes("linkedin") || airtable.includes("linkedin");
+}
+
+function isReasonColumn(field: FormFieldConfig): boolean {
+  const name = field.fieldName.toLowerCase();
+  const airtable = field.airtableField.toLowerCase();
+  return (
+    name.includes("whychange") ||
+    name === "reason" ||
+    airtable.includes("why change") ||
+    airtable.includes("por qué") ||
+    airtable.includes("por que")
+  );
+}
+
+function isCvColumn(field: FormFieldConfig): boolean {
+  const name = field.fieldName.toLowerCase();
+  const airtable = field.airtableField.toLowerCase();
+  return (
+    name === "cv" ||
+    airtable === "cv" ||
+    name.includes("curriculum") ||
+    airtable.includes("curriculum")
+  );
+}
+
+/**
+ * Arma `fieldsById` con el ID de columna de Airtable.
+ * El payload semántico (code, email, etc.) se mantiene para la validación.
+ * Si falta algún ID, no se adjunta y el backend sigue escribiendo por nombre.
+ */
+export function attachFieldsById(
+  payload: Record<string, any>,
+  formConfig: FormFieldConfig[]
+): void {
+  const fieldsById: Record<string, unknown> = {};
+  let recruiterFieldId: string | undefined;
+  let cvFieldId: string | undefined;
+  let missingId = false;
+
+  const take = (field: FormFieldConfig, value: unknown) => {
+    if (!hasAirtableValue(value)) return;
+    if (!field.airtableFieldId) {
+      missingId = true;
+      return;
+    }
+    fieldsById[field.airtableFieldId] = value;
+  };
+
+  for (const field of formConfig) {
+    if (isRecruiterFieldCheck(field)) {
+      if (field.airtableFieldId) recruiterFieldId = field.airtableFieldId;
+      else missingId = true;
+      continue;
+    }
+    if (isCvColumn(field)) {
+      if (field.airtableFieldId) cvFieldId = field.airtableFieldId;
+      else missingId = true;
+      continue;
+    }
+    if (isRoleCodeFieldCheck(field)) {
+      take(field, payload.code);
+      continue;
+    }
+    if (isCandidateStackPmFieldCheck(field)) {
+      take(field, payload.stack);
+      continue;
+    }
+    if (isExpertiseField(field)) {
+      take(field, payload.techStack);
+      continue;
+    }
+    if (isCandidateEmailFieldCheck(field)) {
+      take(field, payload.email);
+      continue;
+    }
+    if (isAvailabilityFieldCheck(field)) {
+      take(field, payload.availability);
+      continue;
+    }
+    if (isReasonColumn(field)) {
+      take(field, payload.reason);
+      continue;
+    }
+    if (isSalaryFieldCheck(field)) {
+      take(field, payload.salary);
+      continue;
+    }
+    if (isEnglishLevelFieldCheck(field)) {
+      take(field, payload.english);
+      continue;
+    }
+    if (isCountrySelectorField(field, formConfig)) {
+      take(field, payload.country);
+      continue;
+    }
+    if (isLinkedInField(field)) {
+      take(field, payload.linkedin);
+      continue;
+    }
+    if (isFirstNameFieldCheck(field)) {
+      take(field, payload.firstName);
+      continue;
+    }
+    if (isLastNameFieldCheck(field)) {
+      take(field, payload.lastName);
+      continue;
+    }
+    if (isPhoneFieldCheck(field)) {
+      take(field, payload[field.airtableField] ?? payload[field.fieldName]);
+      continue;
+    }
+
+    const extra = payload[field.airtableField];
+    if (hasAirtableValue(extra)) take(field, extra);
+  }
+
+  if (missingId) return;
+
+  if (Object.keys(fieldsById).length > 0) payload.fieldsById = fieldsById;
+  if (recruiterFieldId) payload.recruiterFieldId = recruiterFieldId;
+  if (cvFieldId) payload.cvFieldId = cvFieldId;
+}
+
 export function isRecruiterFieldCheck(field: FormFieldConfig): boolean {
   return (
     field.fieldName.toLowerCase() === "recruiter" ||

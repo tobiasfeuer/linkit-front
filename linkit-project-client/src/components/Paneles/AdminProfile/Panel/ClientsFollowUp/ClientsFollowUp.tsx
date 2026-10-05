@@ -6,7 +6,6 @@ import {
   setJobData,
   sortJobData,
 } from "../../../../../redux/features/ClientsFollowUpSlice";
-import axios from "axios";
 
 type stateProps = {
   jobData: {
@@ -16,8 +15,6 @@ type stateProps = {
 };
 
 export default function ClientsFollowUp() {
-  const token = useSelector((state: any) => state.Authentication.token);
-
   const [viewCol, setViewCol] = useState({
     "1st Client interview": true,
     "1st Offer": true,
@@ -78,24 +75,8 @@ export default function ClientsFollowUp() {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    const loadData = async (): Promise<void> => {
-      try {
-        const response = await axios(
-          `${import.meta.env.VITE_ENDPOINT_URL}/resources/companyjds`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-              "Accept-Language": sessionStorage.getItem("lang"),
-            },
-          }
-        );
-        dispatch(setJobData(response.data));
-        dispatch(sortJobData("recent"));
-      } catch (error) {
-        console.error("Error al cargar las información", error);
-      }
-    };
-    loadData();
+    dispatch(setJobData([]));
+    dispatch(sortJobData("recent"));
   }, []);
 
   const itemsPerPage = 15;

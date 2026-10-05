@@ -16,6 +16,7 @@ import {
   isRoleCodeFieldCheck,
   isSupersededLegacyCountryField,
   isCountryMappedToPayloadCountry,
+  attachFieldsById,
   orderRecruiterFormFields,
   resolveJdCodeForPayload,
   shouldRenderFieldFullWidth,
@@ -687,6 +688,7 @@ function RecruiterApplicationForm() {
       }
     });
 
+    attachFieldsById(payload, formConfig);
     return { payload };
   };
 
@@ -756,6 +758,9 @@ function RecruiterApplicationForm() {
 
     if (cvAttachments.length) {
       payload.cv = cvAttachments;
+      if (payload.cvFieldId && payload.fieldsById) {
+        payload.fieldsById[payload.cvFieldId] = cvAttachments;
+      }
     }
 
       const recruiterSlugForSubmit =
