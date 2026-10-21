@@ -5,6 +5,7 @@ const ENDPOINT_URL = import.meta.env.VITE_ENDPOINT_URL;
 
 export interface FormFieldConfig {
   fieldName: string;
+  airtableFieldId?: string;
   airtableField: string;
   type: 'text' | 'email' | 'url' | 'select' | 'multi-select' | 'textarea' | 'number' | 'file';
   label: string;
@@ -57,6 +58,26 @@ export const getFormConfig = async (view: string = 'RecruiterFormWebView', lang:
     console.error('Error fetching form config:', error);
     throw new Error(error.response?.data?.message || 'Error al obtener configuración del formulario');
   }
+};
+
+export interface FormCountryOption {
+  id: string;
+  labelEs: string;
+  labelEn?: string;
+  optionGroup?: number;
+}
+
+export const getFormCountries = async (lang: string = 'es'): Promise<FormCountryOption[]> => {
+  const response = await axios.get<{ countries: FormCountryOption[] }>(
+    `${ENDPOINT_URL}/resources/form-config/countries`,
+    {
+      headers: {
+        Authorization: `Bearer ${SUPERADMN_ID}`,
+        'Accept-Language': lang
+      }
+    }
+  );
+  return response.data.countries || [];
 };
 
 /**

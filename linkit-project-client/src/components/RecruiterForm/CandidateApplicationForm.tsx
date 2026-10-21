@@ -9,6 +9,7 @@ import CloudinaryUploadWidget from "../Services/cloudinaryWidget";
 import Loading from "../Loading/Loading";
 import {
   getFormConfig,
+  getFormCountries,
   getRecruiterBySlug,
   submitRecruiterApplication,
 } from "../Services/recruiterForm.service";
@@ -144,6 +145,9 @@ function CandidateApplicationFormBase({
   const [country, setCountry] = useState<{ value: string; label: string } | null>(
     null
   );
+  const [formCountries, setFormCountries] = useState<
+    Array<{ id: string; labelEs: string; labelEn?: string }>
+  >([]);
   const [selectedRecruiter, setSelectedRecruiter] = useState<{
     value: string;
     label: string;
@@ -191,7 +195,11 @@ function CandidateApplicationFormBase({
 
         setRecruiterData(recruiter);
 
-        const config = await getFormConfig("RecruiterFormWebView", lang);
+        const [config, countriesFromForms] = await Promise.all([
+          getFormConfig("RecruiterFormWebView", lang),
+          getFormCountries(lang).catch(() => []),
+        ]);
+        setFormCountries(countriesFromForms);
         const sortedConfig = config.sort((a, b) => {
           if (a.order !== undefined && b.order !== undefined) {
             return a.order - b.order;
@@ -313,6 +321,14 @@ function CandidateApplicationFormBase({
 
     fetchInitialData();
   }, [roleCodeParam, recruiterSlugParam, lang, navigate]);
+
+  const countrySelectOptions = useMemo(() => {
+    const useEn = lang.startsWith("en");
+    return formCountries.map((item) => ({
+      value: item.labelEs,
+      label: useEn ? item.labelEn || item.labelEs : item.labelEs,
+    }));
+  }, [formCountries, lang]);
 
   const handleInputChange = (fieldName: string, value: any) => {
     setFormData((prev) => ({
@@ -1050,6 +1066,11 @@ function CandidateApplicationFormBase({
             country={country}
             setUser={() => ({})}
             isSearchable={true}
+            options={
+              countrySelectOptions.length > 0
+                ? countrySelectOptions
+                : undefined
+            }
           />
           {error && <p className="form-error">{error}</p>}
         </>
