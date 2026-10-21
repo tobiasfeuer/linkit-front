@@ -1,7 +1,34 @@
 import type { FormFieldConfig, FormData } from "./types";
 
+/** IDs de LinkIT - Candidate application. Ver docs/airtable-vinculos.md */
+export const CANDIDATE_APPLICATION_FIELD_IDS = {
+  country: "fld5dqktK19ho5VQA",
+  role: "fldw1mc6FsTjLrEO1",
+  email: "fldMYrlWByJPQgNow",
+  salary: "fldbpz0nCquy0W9FS",
+  english: "fldsqMImkyHpSWZrc",
+  reason: "fldQ21CuCC5vixzN2",
+  availability: "fld0dKZ8rLBswj3hp",
+  stack: "fld7obOBE4VQ87Ca9",
+  expertise: "fldqZFu2cR4zXWw8e",
+  firstName: "fldFegqJSUm2YejG4",
+  lastName: "fldzQQL5a0zGUka3U",
+  linkedin: "fldmxxc1cADzC5x1X",
+  recruiter: "fldoyDmkXY2zejT8N",
+  cv: "fldJvMcASHYZc2jFm",
+  phone: "fld9vhtnX0AEwtEYy",
+} as const;
+
+function fieldIdIs(
+  field: FormFieldConfig,
+  id: string
+): boolean {
+  return Boolean(field.airtableFieldId && field.airtableFieldId === id);
+}
+
 /** Coincide con columnas típicas de código JD / rol en Airtable (metadata + camelCase). */
 export function isRoleCodeFieldCheck(field: FormFieldConfig): boolean {
+  if (fieldIdIs(field, CANDIDATE_APPLICATION_FIELD_IDS.role)) return true;
   const name = field.fieldName.toLowerCase();
   const airtable = field.airtableField.toLowerCase();
   if (
@@ -51,6 +78,7 @@ export function resolveJdCodeForPayload(
 
 /** Campo link en Airtable → tabla Forms Values (opciones de país). */
 export function isPaisesNoBorrarField(field: FormFieldConfig): boolean {
+  if (fieldIdIs(field, CANDIDATE_APPLICATION_FIELD_IDS.country)) return true;
   const a = field.airtableField.toLowerCase().trim();
   return a === "paises (no borrar)" || a === "países (no borrar)";
 }
@@ -108,6 +136,7 @@ function hasAirtableValue(value: unknown): boolean {
 }
 
 function isExpertiseField(field: FormFieldConfig): boolean {
+  if (fieldIdIs(field, CANDIDATE_APPLICATION_FIELD_IDS.expertise)) return true;
   const name = field.fieldName.toLowerCase();
   const airtable = field.airtableField.toLowerCase();
   return (
@@ -119,12 +148,14 @@ function isExpertiseField(field: FormFieldConfig): boolean {
 }
 
 function isLinkedInField(field: FormFieldConfig): boolean {
+  if (fieldIdIs(field, CANDIDATE_APPLICATION_FIELD_IDS.linkedin)) return true;
   const name = field.fieldName.toLowerCase();
   const airtable = field.airtableField.toLowerCase();
   return name.includes("linkedin") || airtable.includes("linkedin");
 }
 
 function isReasonColumn(field: FormFieldConfig): boolean {
+  if (fieldIdIs(field, CANDIDATE_APPLICATION_FIELD_IDS.reason)) return true;
   const name = field.fieldName.toLowerCase();
   const airtable = field.airtableField.toLowerCase();
   return (
@@ -137,6 +168,7 @@ function isReasonColumn(field: FormFieldConfig): boolean {
 }
 
 function isCvColumn(field: FormFieldConfig): boolean {
+  if (fieldIdIs(field, CANDIDATE_APPLICATION_FIELD_IDS.cv)) return true;
   const name = field.fieldName.toLowerCase();
   const airtable = field.airtableField.toLowerCase();
   return (
@@ -159,26 +191,20 @@ export function attachFieldsById(
   const fieldsById: Record<string, unknown> = {};
   let recruiterFieldId: string | undefined;
   let cvFieldId: string | undefined;
-  let missingId = false;
 
   const take = (field: FormFieldConfig, value: unknown) => {
     if (!hasAirtableValue(value)) return;
-    if (!field.airtableFieldId) {
-      missingId = true;
-      return;
-    }
+    if (!field.airtableFieldId) return;
     fieldsById[field.airtableFieldId] = value;
   };
 
   for (const field of formConfig) {
     if (isRecruiterFieldCheck(field)) {
       if (field.airtableFieldId) recruiterFieldId = field.airtableFieldId;
-      else missingId = true;
       continue;
     }
     if (isCvColumn(field)) {
       if (field.airtableFieldId) cvFieldId = field.airtableFieldId;
-      else missingId = true;
       continue;
     }
     if (isRoleCodeFieldCheck(field)) {
@@ -238,14 +264,13 @@ export function attachFieldsById(
     if (hasAirtableValue(extra)) take(field, extra);
   }
 
-  if (missingId) return;
-
   if (Object.keys(fieldsById).length > 0) payload.fieldsById = fieldsById;
   if (recruiterFieldId) payload.recruiterFieldId = recruiterFieldId;
   if (cvFieldId) payload.cvFieldId = cvFieldId;
 }
 
 export function isRecruiterFieldCheck(field: FormFieldConfig): boolean {
+  if (fieldIdIs(field, CANDIDATE_APPLICATION_FIELD_IDS.recruiter)) return true;
   return (
     field.fieldName.toLowerCase() === "recruiter" ||
     field.airtableField.toLowerCase() === "recruiter"
@@ -253,6 +278,7 @@ export function isRecruiterFieldCheck(field: FormFieldConfig): boolean {
 }
 
 export function isPhoneFieldCheck(field: FormFieldConfig): boolean {
+  if (fieldIdIs(field, CANDIDATE_APPLICATION_FIELD_IDS.phone)) return true;
   const lowerFieldName = field.fieldName.toLowerCase();
   const lowerAirtableField = field.airtableField?.toLowerCase() || "";
   return (
@@ -266,6 +292,7 @@ export function isPhoneFieldCheck(field: FormFieldConfig): boolean {
 }
 
 export function isLastNameFieldCheck(field: FormFieldConfig): boolean {
+  if (fieldIdIs(field, CANDIDATE_APPLICATION_FIELD_IDS.lastName)) return true;
   const lowerFieldName = field.fieldName.toLowerCase();
   const lowerAirtableField = field.airtableField?.toLowerCase() || "";
   return (
@@ -279,6 +306,7 @@ export function isLastNameFieldCheck(field: FormFieldConfig): boolean {
 }
 
 export function isFirstNameFieldCheck(field: FormFieldConfig): boolean {
+  if (fieldIdIs(field, CANDIDATE_APPLICATION_FIELD_IDS.firstName)) return true;
   if (isLastNameFieldCheck(field)) return false;
 
   const lowerFieldName = field.fieldName.toLowerCase();
@@ -306,6 +334,7 @@ export function isFirstNameFieldCheck(field: FormFieldConfig): boolean {
 }
 
 export function isCvFieldCheck(field: FormFieldConfig): boolean {
+  if (fieldIdIs(field, CANDIDATE_APPLICATION_FIELD_IDS.cv)) return true;
   const lowerFieldName = field.fieldName.toLowerCase();
   const lowerAirtableField = field.airtableField?.toLowerCase() || "";
   return (
@@ -318,6 +347,7 @@ export function isCvFieldCheck(field: FormFieldConfig): boolean {
 }
 
 export function isCandidateStackPmFieldCheck(field: FormFieldConfig): boolean {
+  if (fieldIdIs(field, CANDIDATE_APPLICATION_FIELD_IDS.stack)) return true;
   const lowerFieldName = field.fieldName.toLowerCase();
   const lowerAirtableField = field.airtableField?.toLowerCase() || "";
   return (
@@ -328,6 +358,7 @@ export function isCandidateStackPmFieldCheck(field: FormFieldConfig): boolean {
 }
 
 export function isAvailabilityFieldCheck(field: FormFieldConfig): boolean {
+  if (fieldIdIs(field, CANDIDATE_APPLICATION_FIELD_IDS.availability)) return true;
   const lowerFieldName = field.fieldName.toLowerCase();
   const lowerAirtableField = field.airtableField?.toLowerCase() || "";
   return (
@@ -341,6 +372,7 @@ export function isAvailabilityFieldCheck(field: FormFieldConfig): boolean {
 }
 
 export function isCandidateEmailFieldCheck(field: FormFieldConfig): boolean {
+  if (fieldIdIs(field, CANDIDATE_APPLICATION_FIELD_IDS.email)) return true;
   const lowerFieldName = field.fieldName.toLowerCase();
   const lowerAirtableField = field.airtableField?.toLowerCase() || "";
   return (
@@ -352,6 +384,7 @@ export function isCandidateEmailFieldCheck(field: FormFieldConfig): boolean {
 }
 
 export function isSalaryFieldCheck(field: FormFieldConfig): boolean {
+  if (fieldIdIs(field, CANDIDATE_APPLICATION_FIELD_IDS.salary)) return true;
   const lowerFieldName = field.fieldName.toLowerCase();
   const lowerAirtableField = field.airtableField?.toLowerCase() || "";
   return (
@@ -378,6 +411,7 @@ export function shouldRenderFieldFullWidth(field: FormFieldConfig): boolean {
 }
 
 export function isEnglishLevelFieldCheck(field: FormFieldConfig): boolean {
+  if (fieldIdIs(field, CANDIDATE_APPLICATION_FIELD_IDS.english)) return true;
   const lowerFieldName = field.fieldName.toLowerCase();
   const lowerAirtableField = field.airtableField?.toLowerCase() || "";
   return (

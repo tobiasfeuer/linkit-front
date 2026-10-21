@@ -91,6 +91,7 @@ export function SelectCountryFormEs({
   country,
   setUser,
   isSearchable = true,
+  options,
 }: any) {
   const { t, i18n } = useTranslation();
   const countryList = useSelector(
@@ -129,15 +130,17 @@ export function SelectCountryFormEs({
     return countryName;
   };
 
-  const countryOptionsEs: OptionType[] = useMemo(
-    () =>
-      countryList.map((country: { id: number; name: string }) => ({
-        label: getCountryLabel(country.name),
-        // value se mantiene en español/legacy para que Airtable reciba lo esperado.
-        value: country.name,
-      })),
-    [countryList, currentLang]
-  );
+  const countryOptionsEs: OptionType[] = useMemo(() => {
+    if (Array.isArray(options) && options.length > 0) {
+      return [...options].sort((a, b) =>
+        String(a.label).localeCompare(String(b.label), currentLang)
+      );
+    }
+    return countryList.map((country: { id: number; name: string }) => ({
+      label: getCountryLabel(country.name),
+      value: country.name,
+    }));
+  }, [countryList, currentLang, options]);
 
   const handleChange = (selectedOption: OptionType | null) => {
     const countryValue = selectedOption || null;

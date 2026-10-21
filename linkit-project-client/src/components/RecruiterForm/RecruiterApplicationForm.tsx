@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import Select from "react-select";
 import CloudinaryUploadWidget from "../Services/cloudinaryWidget";
 import Loading from "../Loading/Loading";
-import { getFormConfig, getRecruiterBySlug, submitRecruiterApplication } from "../Services/recruiterForm.service";
+import { getFormConfig, getFormCountries, getRecruiterBySlug, submitRecruiterApplication } from "../Services/recruiterForm.service";
 import { FormFieldConfig, RecruiterData, FormData, FormErrors } from "./types";
 import {
   getPrimaryCountryField,
@@ -85,6 +85,9 @@ function RecruiterApplicationForm() {
   const [filePublicId, setFilePublicId] = useState<string>("");
   const [fileName, setFileName] = useState<string>("");
   const [country, setCountry] = useState<{ value: string; label: string } | null>(null);
+  const [formCountries, setFormCountries] = useState<
+    Array<{ id: string; labelEs: string; labelEn?: string }>
+  >([]);
 
   // Obtener tecnologías y stack técnico del store (si están disponibles)
   const [technologies, setTechnologies] = useState<Array<{ value: string; label: string }>>([]);
@@ -146,7 +149,11 @@ function RecruiterApplicationForm() {
         setRecruiterData(recruiter);
 
         // Obtener configuración del formulario
-        const config = await getFormConfig("RecruiterFormWebView", lang);
+        const [config, countriesFromForms] = await Promise.all([
+          getFormConfig("RecruiterFormWebView", lang),
+          getFormCountries(lang).catch(() => []),
+        ]);
+        setFormCountries(countriesFromForms);
         
         // Console.log para ver los labels que vienen del backend
         console.log("=== LABELS DEL BACKEND (Airtable) ===");
@@ -259,6 +266,14 @@ function RecruiterApplicationForm() {
 
     fetchInitialData();
   }, [recruiterSlug, roleCodeParam, lang, navigate]);
+
+  const countrySelectOptions = useMemo(() => {
+    const useEn = lang.startsWith("en");
+    return formCountries.map((item) => ({
+      value: item.labelEs,
+      label: useEn ? item.labelEn || item.labelEs : item.labelEs,
+    }));
+  }, [formCountries, lang]);
 
   const handleInputChange = (fieldName: string, value: any) => {
     setFormData((prev) => ({
@@ -901,6 +916,11 @@ function RecruiterApplicationForm() {
             }}
             country={country}
             setUser={() => ({})}
+            options={
+              countrySelectOptions.length > 0
+                ? countrySelectOptions
+                : undefined
+            }
           />
           {error && <p className="form-error">{error}</p>}
         </>
