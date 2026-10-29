@@ -20,13 +20,24 @@ import {
   FormErrors,
 } from "./types";
 import {
+  CANDIDATE_APPLICATION_FIELD_IDS,
+  attachFieldsById,
+  findFieldById,
+  getCandidateFieldLabel,
+  getFormValueByFieldId,
   getPrimaryCountryField,
   isCountryMappedToPayloadCountry,
   isCountrySelectorField,
+  isCvFieldCheck,
+  isFirstNameFieldCheck,
+  isKnownCandidateApplicationField,
+  isLastNameFieldCheck,
+  isLinkedInFieldCheck,
+  isPhoneFieldCheck,
   isRecruiterFieldCheck,
   isRoleCodeFieldCheck,
+  isSalaryFieldCheck,
   isSupersededLegacyCountryField,
-  attachFieldsById,
   orderRecruiterFormFields,
   resolveJdCodeForPayload,
   shouldRenderFieldFullWidth,
@@ -265,9 +276,7 @@ function CandidateApplicationFormBase({
         initialData.recruiterSlug = recruiterSlugFromQuery;
 
         const recruiterField = config.find(
-          (field) =>
-            field.fieldName.toLowerCase() === "recruiter" ||
-            field.airtableField.toLowerCase() === "recruiter"
+          isRecruiterFieldCheck
         );
         if (recruiterField && recruiter) {
           const fullName = recruiter.lastName
@@ -345,9 +354,14 @@ function CandidateApplicationFormBase({
     }
   };
 
-  const translateLabel = (label: string): string => {
-    if (!label) return "";
+  const translateLabel = (label: string, field?: FormFieldConfig): string => {
+    if (!label && !field) return "";
     const currentLang = lang.startsWith("es") ? "es" : "en";
+    if (field) {
+      const stable = getCandidateFieldLabel(field, currentLang);
+      if (stable) return stable;
+    }
+    if (!label) return "";
     if (airtableTranslations[label]) {
       return airtableTranslations[label][currentLang as "es" | "en"];
     }
@@ -363,26 +377,15 @@ function CandidateApplicationFormBase({
   const validateField = (field: FormFieldConfig, value: any): string => {
     const lowerFieldName = field.fieldName.toLowerCase();
     const lowerAirtableField = field.airtableField.toLowerCase();
-    const isPhoneField =
-      lowerFieldName.includes("phone") ||
-      lowerFieldName.includes("telefono") ||
-      lowerFieldName.includes("tel") ||
-      lowerAirtableField.includes("phone") ||
-      lowerAirtableField.includes("telefono") ||
-      lowerAirtableField.includes("tel");
-    const isCvField =
-      lowerFieldName === "cv" ||
-      lowerAirtableField === "cv" ||
-      lowerFieldName.includes("curriculum") ||
-      lowerAirtableField.includes("curriculum") ||
-      field.type === "file";
+    const isPhoneField = isPhoneFieldCheck(field);
+    const isCvField = isCvFieldCheck(field);
 
     if (
       field.required &&
       !isCvField &&
       (!value || (Array.isArray(value) && value.length === 0))
     ) {
-      return `${translateLabel(field.label)} ${t("es requerido")}`;
+      return `${translateLabel(field.label, field)} ${t("es requerido")}`;
     }
 
     if (
@@ -395,17 +398,8 @@ function CandidateApplicationFormBase({
 
     if (!value) return "";
 
-    const isNameField =
-      lowerFieldName.includes("nombre") ||
-      lowerFieldName.includes("firstname") ||
-      (lowerFieldName.includes("name") &&
-        !lowerFieldName.includes("company") &&
-        !lowerFieldName.includes("user"));
-    const isLastNameField =
-      lowerFieldName.includes("apellido") ||
-      lowerFieldName.includes("lastname") ||
-      lowerAirtableField.includes("apellido") ||
-      lowerAirtableField.includes("lastname");
+    const isNameField = isFirstNameFieldCheck(field);
+    const isLastNameField = isLastNameFieldCheck(field);
 
     if ((isNameField || isLastNameField) && typeof value === "string") {
       const trimmedValue = value.trim();
@@ -421,9 +415,7 @@ function CandidateApplicationFormBase({
       }
     }
 
-    const isLinkedInField =
-      lowerFieldName.includes("linkedin") ||
-      lowerAirtableField.includes("linkedin");
+    const isLinkedInField = isLinkedInFieldCheck(field);
 
     if (isLinkedInField && typeof value === "string") {
       if (/\s/.test(value)) {
@@ -448,20 +440,20 @@ function CandidateApplicationFormBase({
     if (field.validation) {
       if (field.type === "text" || field.type === "textarea") {
         if (field.validation.min && value.length < field.validation.min) {
-          return `${translateLabel(field.label)} ${t("debe tener al menos")} ${field.validation.min} ${t("caracteres")}`;
+          return `${translateLabel(field.label, field)} ${t("debe tener al menos")} ${field.validation.min} ${t("caracteres")}`;
         }
         if (field.validation.max && value.length > field.validation.max) {
-          return `${translateLabel(field.label)} ${t("debe tener máximo")} ${field.validation.max} ${t("caracteres")}`;
+          return `${translateLabel(field.label, field)} ${t("debe tener máximo")} ${field.validation.max} ${t("caracteres")}`;
         }
       }
 
       if (field.type === "number") {
         const numValue = Number(value);
         if (field.validation.min && numValue < field.validation.min) {
-          return `${translateLabel(field.label)} ${t("debe ser al menos")} ${field.validation.min}`;
+          return `${translateLabel(field.label, field)} ${t("debe ser al menos")} ${field.validation.min}`;
         }
         if (field.validation.max && numValue > field.validation.max) {
-          return `${translateLabel(field.label)} ${t("debe ser máximo")} ${field.validation.max}`;
+          return `${translateLabel(field.label, field)} ${t("debe ser máximo")} ${field.validation.max}`;
         }
       }
     }
@@ -473,12 +465,12 @@ function CandidateApplicationFormBase({
       const result = validateAvailabilityText(value);
       if (!result.valid) {
         if (result.errorKey === "min") {
-          return `${translateLabel(field.label)} ${t("debe tener al menos")} 5 ${t("caracteres")}`;
+          return `${translateLabel(field.label, field)} ${t("debe tener al menos")} 5 ${t("caracteres")}`;
         }
         if (result.errorKey === "max") {
-          return `${translateLabel(field.label)} ${t("debe tener máximo")} 200 ${t("caracteres")}`;
+          return `${translateLabel(field.label, field)} ${t("debe tener máximo")} 200 ${t("caracteres")}`;
         }
-        return `${translateLabel(field.label)} ${t("contiene caracteres no permitidos")}`;
+        return `${translateLabel(field.label, field)} ${t("contiene caracteres no permitidos")}`;
       }
     }
 
@@ -489,31 +481,27 @@ function CandidateApplicationFormBase({
       const result = validateReasonText(value);
       if (!result.valid) {
         if (result.errorKey === "min") {
-          return `${translateLabel(field.label)} ${t("debe tener al menos")} 10 ${t("caracteres")}`;
+          return `${translateLabel(field.label, field)} ${t("debe tener al menos")} 10 ${t("caracteres")}`;
         }
         if (result.errorKey === "max") {
-          return `${translateLabel(field.label)} ${t("debe tener máximo")} 500 ${t("caracteres")}`;
+          return `${translateLabel(field.label, field)} ${t("debe tener máximo")} 500 ${t("caracteres")}`;
         }
-        return `${translateLabel(field.label)} ${t("contiene caracteres no permitidos")}`;
+        return `${translateLabel(field.label, field)} ${t("contiene caracteres no permitidos")}`;
       }
     }
 
-    const isSalaryField =
-      lowerFieldName.includes("salary") ||
-      lowerFieldName.includes("salario") ||
-      lowerAirtableField.includes("salary") ||
-      lowerAirtableField.includes("salario");
+    const isSalaryField = isSalaryFieldCheck(field);
 
     if (isSalaryField && field.type === "number" && value) {
       const numValue = Number(value);
       if (isNaN(numValue)) {
-        return `${translateLabel(field.label)} ${t("debe ser un número válido")}`;
+        return `${translateLabel(field.label, field)} ${t("debe ser un número válido")}`;
       }
       if (numValue < 500) {
-        return `${translateLabel(field.label)} ${t("debe ser al menos 500 USD")}`;
+        return `${translateLabel(field.label, field)} ${t("debe ser al menos 500 USD")}`;
       }
       if (numValue > 15000) {
-        return `${translateLabel(field.label)} ${t("no puede ser mayor a 15.000 USD")}`;
+        return `${translateLabel(field.label, field)} ${t("no puede ser mayor a 15.000 USD")}`;
       }
     }
 
@@ -541,12 +529,7 @@ function CandidateApplicationFormBase({
       const value = formData[field.fieldName];
       let error = validateField(field, value);
 
-      const isCvField =
-        field.fieldName.toLowerCase() === "cv" ||
-        field.airtableField?.toLowerCase() === "cv" ||
-        field.fieldName.toLowerCase().includes("curriculum") ||
-        field.airtableField?.toLowerCase()?.includes("curriculum") ||
-        field.type === "file";
+      const isCvField = isCvFieldCheck(field);
       if (isCvField) {
         const hasCvFile = Boolean(filePublicId?.trim());
         const hasCvInFormData = Array.isArray(value) && value.length > 0;
@@ -555,14 +538,14 @@ function CandidateApplicationFormBase({
           typeof value === "string" &&
           String(value).trim() !== "";
         if (!hasCvFile && !hasCvInFormData && !hasCvString) {
-          error = `${translateLabel(field.label)} ${t("es requerido")}`;
+          error = `${translateLabel(field.label, field)} ${t("es requerido")}`;
           isValid = false;
         }
       }
 
       const isRecruiterField = isRecruiterFieldCheck(field);
       if (isRecruiterField && field.required && !selectedRecruiter) {
-        error = `${translateLabel(field.label)} ${t("es requerido")}`;
+        error = `${translateLabel(field.label, field)} ${t("es requerido")}`;
         isValid = false;
       }
 
@@ -640,20 +623,43 @@ function CandidateApplicationFormBase({
     return [];
   };
 
+  const valueById = (id: string, ...fallbacks: unknown[]) => {
+    const fromId = getFormValueByFieldId(formData, formConfig, id);
+    if (fromId !== undefined && fromId !== null && String(fromId).trim() !== "") {
+      return fromId;
+    }
+    for (const fallback of fallbacks) {
+      if (fallback !== undefined && fallback !== null && String(fallback).trim() !== "") {
+        return fallback;
+      }
+    }
+    return fromId ?? fallbacks[0];
+  };
+
   const buildSubmissionPayload = (): {
     payload: Record<string, any>;
     error?: string;
   } => {
-    const stack = ensureStringArray(formData.candidateStackPmTools);
+    const stack = ensureStringArray(
+      valueById(
+        CANDIDATE_APPLICATION_FIELD_IDS.stack,
+        formData.candidateStackPmTools
+      )
+    );
     const techStack = ensureStringArray(
-      formData.whatWouldBeYourAreaOfExpertise
+      valueById(
+        CANDIDATE_APPLICATION_FIELD_IDS.expertise,
+        formData.whatWouldBeYourAreaOfExpertise
+      )
     );
 
-    const salaryRaw =
-      formData.salaryExpectationusd ??
-      formData.salaryExpectationUsd ??
-      formData.salaryExpectationUSD ??
-      formData.salaryExpectationUsD;
+    const salaryRaw = valueById(
+      CANDIDATE_APPLICATION_FIELD_IDS.salary,
+      formData.salaryExpectationusd,
+      formData.salaryExpectationUsd,
+      formData.salaryExpectationUSD,
+      formData.salaryExpectationUsD
+    );
 
     let salary: number | undefined;
     if (
@@ -683,15 +689,9 @@ function CandidateApplicationFormBase({
       salary = parsed;
     }
 
-    const phoneField = formConfig.find(
-      (field) =>
-        field.fieldName.toLowerCase().includes("phone") ||
-        field.fieldName.toLowerCase().includes("telefono") ||
-        field.fieldName.toLowerCase().includes("tel") ||
-        field.airtableField.toLowerCase().includes("phone") ||
-        field.airtableField.toLowerCase().includes("telefono") ||
-        field.airtableField.toLowerCase().includes("tel")
-    );
+    const phoneField =
+      findFieldById(formConfig, CANDIDATE_APPLICATION_FIELD_IDS.phone) ||
+      formConfig.find(isPhoneFieldCheck);
 
     const phoneFieldName = phoneField?.fieldName;
     const phoneAirtableField =
@@ -739,17 +739,56 @@ function CandidateApplicationFormBase({
       code: sanitizeString(jdCode),
       stack,
       techStack,
-      email: sanitizeString(formData.candidateEmail ?? formData.email),
-      availability: sanitizeString(formData.whenToStartAvailability),
-      reason: sanitizeString(formData.whyChange),
+      email: sanitizeString(
+        valueById(
+          CANDIDATE_APPLICATION_FIELD_IDS.email,
+          formData.candidateEmail,
+          formData.email
+        )
+      ),
+      availability: sanitizeString(
+        valueById(
+          CANDIDATE_APPLICATION_FIELD_IDS.availability,
+          formData.whenToStartAvailability
+        )
+      ),
+      reason: sanitizeString(
+        valueById(CANDIDATE_APPLICATION_FIELD_IDS.reason, formData.whyChange)
+      ),
       salary,
-      english: sanitizeString(formData.englishLevel),
+      english: sanitizeString(
+        valueById(
+          CANDIDATE_APPLICATION_FIELD_IDS.english,
+          formData.englishLevel
+        )
+      ),
       country: sanitizeString(countryValue),
-      linkedin: sanitizeString(formData.linkedIn ?? formData.linkedin),
-      firstName: sanitizeString(formData.nombre ?? formData.firstName),
-      lastName: sanitizeString(formData.apellido ?? formData.lastName),
+      linkedin: sanitizeString(
+        valueById(
+          CANDIDATE_APPLICATION_FIELD_IDS.linkedin,
+          formData.linkedIn,
+          formData.linkedin
+        )
+      ),
+      firstName: sanitizeString(
+        valueById(
+          CANDIDATE_APPLICATION_FIELD_IDS.firstName,
+          formData.nombre,
+          formData.firstName
+        )
+      ),
+      lastName: sanitizeString(
+        valueById(
+          CANDIDATE_APPLICATION_FIELD_IDS.lastName,
+          formData.apellido,
+          formData.lastName
+        )
+      ),
       recruiterSlug: sanitizeString(recruiterSlugForPayload),
-      recruiter: sanitizeString(recruiterNameForPayload),
+      recruiter: sanitizeString(
+        recruiterNameForPayload ||
+          valueById(CANDIDATE_APPLICATION_FIELD_IDS.recruiter, formData.recruiter)
+      ),
     };
 
     if (
@@ -766,30 +805,9 @@ function CandidateApplicationFormBase({
 
     formConfig.forEach((field) => {
       const isMappedField =
-        field.fieldName === "rolAlQueAplica" ||
-        field.fieldName === "candidateStackPmTools" ||
-        field.fieldName === "whatWouldBeYourAreaOfExpertise" ||
-        field.fieldName === "salaryExpectationusd" ||
-        field.fieldName === "salaryExpectationUsd" ||
-        field.fieldName === "salaryExpectationUSD" ||
-        field.fieldName === "salaryExpectationUsD" ||
-        field.fieldName === "candidateEmail" ||
-        field.fieldName === "email" ||
-        field.fieldName === "whenToStartAvailability" ||
-        field.fieldName === "whyChange" ||
-        field.fieldName === "englishLevel" ||
-        field.fieldName === "country" ||
+        isKnownCandidateApplicationField(field) ||
         isCountryMappedToPayloadCountry(field) ||
-        field.fieldName === "linkedIn" ||
-        field.fieldName === "linkedin" ||
-        field.fieldName === "nombre" ||
-        field.fieldName === "firstName" ||
-        field.fieldName === "apellido" ||
-        field.fieldName === "lastName" ||
         field.fieldName === "recruiterSlug" ||
-        field.fieldName === "recruiter" ||
-        field.fieldName === "cV" ||
-        field.fieldName === "cv" ||
         field.fieldName.toLowerCase() === "recruiterslug" ||
         phoneFieldName === field.fieldName;
 
@@ -973,16 +991,8 @@ function CandidateApplicationFormBase({
     const isCountryField = isCountrySelectorField(field, formConfig);
     const isRecruiterField = isRecruiterFieldCheck(field);
     const isRoleCodeField = isRoleCodeFieldCheck(field);
-    const isCvField =
-      lowerFieldName === "cv" ||
-      lowerAirtableField === "cv" ||
-      lowerFieldName.includes("curriculum") ||
-      lowerAirtableField.includes("curriculum");
-    const isSalaryField =
-      lowerFieldName.includes("salary") ||
-      lowerFieldName.includes("salario") ||
-      lowerAirtableField.includes("salary") ||
-      lowerAirtableField.includes("salario");
+    const isCvField = isCvFieldCheck(field);
+    const isSalaryField = isSalaryFieldCheck(field);
 
     const value = formData[field.fieldName];
     const error = errors[field.fieldName];
@@ -1037,7 +1047,7 @@ function CandidateApplicationFormBase({
     const renderLabel = () => (
       <>
         <label htmlFor={field.fieldName} className="form-label">
-          {translateLabel(field.label)}
+          {translateLabel(field.label, field)}
           {(field.required || isCvField) && (
             <span className="text-red-400">*</span>
           )}
@@ -1455,13 +1465,7 @@ function CandidateApplicationFormBase({
       );
     }
 
-    const isPhoneField =
-      lowerFieldName.includes("phone") ||
-      lowerFieldName.includes("telefono") ||
-      lowerFieldName.includes("tel") ||
-      lowerAirtableField.includes("phone") ||
-      lowerAirtableField.includes("telefono") ||
-      lowerAirtableField.includes("tel");
+    const isPhoneField = isPhoneFieldCheck(field);
 
     if (isPhoneField) {
       return renderWrapper(
@@ -1493,9 +1497,7 @@ function CandidateApplicationFormBase({
       );
     }
 
-    const isLinkedInField =
-      lowerFieldName.includes("linkedin") ||
-      lowerAirtableField.includes("linkedin");
+    const isLinkedInField = isLinkedInFieldCheck(field);
 
     return renderWrapper(
       field.fieldName,

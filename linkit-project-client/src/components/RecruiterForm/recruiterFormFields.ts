@@ -19,11 +19,95 @@ export const CANDIDATE_APPLICATION_FIELD_IDS = {
   phone: "fld9vhtnX0AEwtEYy",
 } as const;
 
+/** Claves de formData estables: no cambian si se renombra la columna en Airtable. */
+export const STABLE_FIELD_NAME_BY_ID: Record<string, string> = {
+  [CANDIDATE_APPLICATION_FIELD_IDS.country]: "paisesNoBorrar",
+  [CANDIDATE_APPLICATION_FIELD_IDS.role]: "rolAlQueAplica",
+  [CANDIDATE_APPLICATION_FIELD_IDS.email]: "candidateEmail",
+  [CANDIDATE_APPLICATION_FIELD_IDS.salary]: "salaryExpectationusd",
+  [CANDIDATE_APPLICATION_FIELD_IDS.english]: "englishLevel",
+  [CANDIDATE_APPLICATION_FIELD_IDS.reason]: "whyChange",
+  [CANDIDATE_APPLICATION_FIELD_IDS.availability]: "whenToStartAvailability",
+  [CANDIDATE_APPLICATION_FIELD_IDS.stack]: "candidateStackPmTools",
+  [CANDIDATE_APPLICATION_FIELD_IDS.expertise]: "whatWouldBeYourAreaOfExpertise",
+  [CANDIDATE_APPLICATION_FIELD_IDS.firstName]: "nombre",
+  [CANDIDATE_APPLICATION_FIELD_IDS.lastName]: "apellido",
+  [CANDIDATE_APPLICATION_FIELD_IDS.linkedin]: "linkedin",
+  [CANDIDATE_APPLICATION_FIELD_IDS.recruiter]: "recruiter",
+  [CANDIDATE_APPLICATION_FIELD_IDS.cv]: "cv",
+  [CANDIDATE_APPLICATION_FIELD_IDS.phone]: "phone",
+};
+
+export const CANDIDATE_FIELD_LABELS: Record<string, { es: string; en: string }> = {
+  [CANDIDATE_APPLICATION_FIELD_IDS.country]: { es: "País", en: "Country" },
+  [CANDIDATE_APPLICATION_FIELD_IDS.role]: { es: "Rol al que aplica", en: "Role to apply" },
+  [CANDIDATE_APPLICATION_FIELD_IDS.email]: { es: "Email del candidato", en: "Candidate Email" },
+  [CANDIDATE_APPLICATION_FIELD_IDS.salary]: {
+    es: "Expectativa salarial (USD)",
+    en: "Salary expectation (USD)",
+  },
+  [CANDIDATE_APPLICATION_FIELD_IDS.english]: { es: "Nivel de inglés", en: "English Level" },
+  [CANDIDATE_APPLICATION_FIELD_IDS.reason]: { es: "Por qué cambiar", en: "Why Change" },
+  [CANDIDATE_APPLICATION_FIELD_IDS.availability]: {
+    es: "Disponibilidad para empezar",
+    en: "When to start availability",
+  },
+  [CANDIDATE_APPLICATION_FIELD_IDS.stack]: {
+    es: "Stack del candidato + herramientas PM",
+    en: "Candidate Stack + PM tools",
+  },
+  [CANDIDATE_APPLICATION_FIELD_IDS.expertise]: {
+    es: "¿Cuál sería tu área de especialización?",
+    en: "What would be your area of expertise?",
+  },
+  [CANDIDATE_APPLICATION_FIELD_IDS.firstName]: { es: "Nombre", en: "First Name" },
+  [CANDIDATE_APPLICATION_FIELD_IDS.lastName]: { es: "Apellido", en: "Last Name" },
+  [CANDIDATE_APPLICATION_FIELD_IDS.linkedin]: { es: "LinkedIn", en: "LinkedIn" },
+  [CANDIDATE_APPLICATION_FIELD_IDS.recruiter]: { es: "Reclutador", en: "Recruiter" },
+  [CANDIDATE_APPLICATION_FIELD_IDS.cv]: { es: "CV", en: "CV" },
+  [CANDIDATE_APPLICATION_FIELD_IDS.phone]: { es: "Teléfono", en: "Phone" },
+};
+
+const KNOWN_CANDIDATE_FIELD_IDS = new Set<string>(
+  Object.values(CANDIDATE_APPLICATION_FIELD_IDS)
+);
+
 function fieldIdIs(
   field: FormFieldConfig,
   id: string
 ): boolean {
   return Boolean(field.airtableFieldId && field.airtableFieldId === id);
+}
+
+export function findFieldById(
+  config: FormFieldConfig[],
+  id: string
+): FormFieldConfig | undefined {
+  return config.find((field) => field.airtableFieldId === id);
+}
+
+export function getFormValueByFieldId(
+  formData: FormData,
+  config: FormFieldConfig[],
+  id: string
+): unknown {
+  const field = findFieldById(config, id);
+  if (!field) return undefined;
+  return formData[field.fieldName];
+}
+
+export function isKnownCandidateApplicationField(field: FormFieldConfig): boolean {
+  return Boolean(
+    field.airtableFieldId && KNOWN_CANDIDATE_FIELD_IDS.has(field.airtableFieldId)
+  );
+}
+
+export function getCandidateFieldLabel(
+  field: FormFieldConfig,
+  lang: "es" | "en"
+): string | undefined {
+  if (!field.airtableFieldId) return undefined;
+  return CANDIDATE_FIELD_LABELS[field.airtableFieldId]?.[lang];
 }
 
 /** Coincide con columnas típicas de código JD / rol en Airtable (metadata + camelCase). */
@@ -147,7 +231,7 @@ function isExpertiseField(field: FormFieldConfig): boolean {
   );
 }
 
-function isLinkedInField(field: FormFieldConfig): boolean {
+export function isLinkedInFieldCheck(field: FormFieldConfig): boolean {
   if (fieldIdIs(field, CANDIDATE_APPLICATION_FIELD_IDS.linkedin)) return true;
   const name = field.fieldName.toLowerCase();
   const airtable = field.airtableField.toLowerCase();
@@ -243,7 +327,7 @@ export function attachFieldsById(
       take(field, payload.country);
       continue;
     }
-    if (isLinkedInField(field)) {
+    if (isLinkedInFieldCheck(field)) {
       take(field, payload.linkedin);
       continue;
     }
