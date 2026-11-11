@@ -17,6 +17,7 @@ export const CANDIDATE_APPLICATION_FIELD_IDS = {
   recruiter: "fldoyDmkXY2zejT8N",
   cv: "fldJvMcASHYZc2jFm",
   phone: "fld9vhtnX0AEwtEYy",
+  stackTech: "fldf9ARXiY3oU7Qjf",
 } as const;
 
 /** Claves de formData estables: no cambian si se renombra la columna en Airtable. */
@@ -36,6 +37,7 @@ export const STABLE_FIELD_NAME_BY_ID: Record<string, string> = {
   [CANDIDATE_APPLICATION_FIELD_IDS.recruiter]: "recruiter",
   [CANDIDATE_APPLICATION_FIELD_IDS.cv]: "cv",
   [CANDIDATE_APPLICATION_FIELD_IDS.phone]: "phone",
+  [CANDIDATE_APPLICATION_FIELD_IDS.stackTech]: "stackTech",
 };
 
 export const CANDIDATE_FIELD_LABELS: Record<string, { es: string; en: string }> = {
@@ -66,6 +68,7 @@ export const CANDIDATE_FIELD_LABELS: Record<string, { es: string; en: string }> 
   [CANDIDATE_APPLICATION_FIELD_IDS.recruiter]: { es: "Reclutador", en: "Recruiter" },
   [CANDIDATE_APPLICATION_FIELD_IDS.cv]: { es: "CV", en: "CV" },
   [CANDIDATE_APPLICATION_FIELD_IDS.phone]: { es: "Teléfono", en: "Phone" },
+  [CANDIDATE_APPLICATION_FIELD_IDS.stackTech]: { es: "Stack Técnico", en: "Stack Tech" },
 };
 
 const KNOWN_CANDIDATE_FIELD_IDS = new Set<string>(
@@ -299,6 +302,9 @@ export function attachFieldsById(
       take(field, payload.stack);
       continue;
     }
+    if (isStackTechMirrorField(field)) {
+      continue;
+    }
     if (isExpertiseField(field)) {
       take(field, payload.techStack);
       continue;
@@ -346,6 +352,10 @@ export function attachFieldsById(
 
     const extra = payload[field.airtableField];
     if (hasAirtableValue(extra)) take(field, extra);
+  }
+
+  if (hasAirtableValue(payload.techStack)) {
+    fieldsById[CANDIDATE_APPLICATION_FIELD_IDS.stackTech] = payload.techStack;
   }
 
   if (Object.keys(fieldsById).length > 0) payload.fieldsById = fieldsById;
@@ -427,6 +437,25 @@ export function isCvFieldCheck(field: FormFieldConfig): boolean {
     lowerFieldName.includes("curriculum") ||
     lowerAirtableField.includes("curriculum") ||
     field.type === "file"
+  );
+}
+
+/**
+ * Columna nueva "Stack Técnico". No se muestra: espeja `payload.techStack`,
+ * el mismo dato que el talent pool manda como stack técnico.
+ * Prueba en paralelo; después queda una sola fuente de verdad.
+ */
+export function isStackTechMirrorField(field: FormFieldConfig): boolean {
+  if (fieldIdIs(field, CANDIDATE_APPLICATION_FIELD_IDS.stackTech)) return true;
+  const name = field.fieldName.toLowerCase().replace(/\s+/g, "");
+  const airtable = (field.airtableField || "").toLowerCase().trim();
+  return (
+    name === "stacktech" ||
+    name === "stacktecnico" ||
+    name === "stacktécnico" ||
+    airtable === "stack tech" ||
+    airtable === "stack técnico" ||
+    airtable === "stack tecnico"
   );
 }
 
@@ -589,6 +618,7 @@ function finalizeRestFieldOrder(
 export function orderRecruiterFormFields(
   config: FormFieldConfig[]
 ): FormFieldConfig[] {
+  config = config.filter((field) => !isStackTechMirrorField(field));
   if (!config.length) return config;
 
   const recruiterField = config.find(isRecruiterFieldCheck);

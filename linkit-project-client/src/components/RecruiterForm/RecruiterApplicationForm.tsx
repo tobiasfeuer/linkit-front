@@ -27,6 +27,7 @@ import {
   isRecruiterFieldCheck,
   isRoleCodeFieldCheck,
   isSalaryFieldCheck,
+  isStackTechMirrorField,
   isSupersededLegacyCountryField,
   orderRecruiterFormFields,
   resolveJdCodeForPayload,
@@ -460,6 +461,7 @@ function RecruiterApplicationForm() {
 
     formConfig.forEach((field) => {
       if (isSupersededLegacyCountryField(field, formConfig)) return;
+      if (isStackTechMirrorField(field)) return;
       const value = formData[field.fieldName];
       let error = validateField(field, value);
 
@@ -855,6 +857,7 @@ function RecruiterApplicationForm() {
   const renderField = (field: FormFieldConfig) => {
     // ocultar campos internos
     if (field.fieldName === "recruiterSlug") return null;
+    if (isStackTechMirrorField(field)) return null;
     // En flujo "base de datos" (linkit + 880) ocultar "Rol al que aplica" (va por defecto)
     if (isBaseDatosFlow && isRoleCodeFieldCheck(field)) return null;
     if (isSupersededLegacyCountryField(field, formConfig)) return null;
