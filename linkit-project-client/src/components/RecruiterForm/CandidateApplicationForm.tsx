@@ -37,6 +37,7 @@ import {
   isRecruiterFieldCheck,
   isRoleCodeFieldCheck,
   isSalaryFieldCheck,
+  isStackTechMirrorField,
   isSupersededLegacyCountryField,
   orderRecruiterFormFields,
   resolveJdCodeForPayload,
@@ -526,6 +527,7 @@ function CandidateApplicationFormBase({
 
     formConfig.forEach((field) => {
       if (isSupersededLegacyCountryField(field, formConfig)) return;
+      if (isStackTechMirrorField(field)) return;
       const value = formData[field.fieldName];
       let error = validateField(field, value);
 
@@ -984,6 +986,7 @@ function CandidateApplicationFormBase({
 
   const renderField = (field: FormFieldConfig) => {
     if (field.fieldName === "recruiterSlug") return null;
+    if (isStackTechMirrorField(field)) return null;
     if (isSupersededLegacyCountryField(field, formConfig)) return null;
 
     const lowerFieldName = field.fieldName.toLowerCase();
