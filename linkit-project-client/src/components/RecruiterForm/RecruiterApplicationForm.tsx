@@ -278,7 +278,8 @@ function RecruiterApplicationForm() {
   const countrySelectOptions = useMemo(() => {
     const useEn = lang.startsWith("en");
     return formCountries.map((item) => ({
-      value: item.labelEs,
+      // Preferir record id de Forms Values para el link de Airtable (evita México vs Mexico).
+      value: item.id || item.labelEs,
       label: useEn ? item.labelEn || item.labelEs : item.labelEs,
     }));
   }, [formCountries, lang]);
