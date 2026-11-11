@@ -6,7 +6,6 @@ import ApplicationSlice from "./features/ApplicationSlice";
 import storage from "redux-persist/lib/storage";
 import { combineReducers } from "@reduxjs/toolkit";
 import { persistReducer } from "redux-persist";
-import thunk from "redux-thunk";
 import AuthSlice from "./features/AuthSlice";
 import ReviewsSlice from "./features/ReviewsSlice";
 import ClientsFollowUpSlice from "./features/ClientsFollowUpSlice";
@@ -36,10 +35,11 @@ const rootReducer = combineReducers({
 
 const store = configureStore({
   reducer: rootReducer,
+  // RTK ya incluye redux-thunk en getDefaultMiddleware(); no hace falta importarlo aparte.
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: false,
-    }).concat(thunk),
+    }),
 });
 
 export default store;
