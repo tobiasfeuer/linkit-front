@@ -1,13 +1,18 @@
 import { FormEvent, useState, useEffect, useMemo, ReactNode } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import axios from "axios";
 import Swal from "sweetalert2";
 import { motion } from "framer-motion";
 import Select from "react-select";
 import CloudinaryUploadWidget from "../Services/cloudinaryWidget";
 import Loading from "../Loading/Loading";
-import { getFormConfig, getFormCountries, getRecruiterBySlug, submitRecruiterApplication } from "../Services/recruiterForm.service";
+import axios from "axios";
+import {
+  getFormConfig,
+  getFormCountries,
+  getRecruiterBySlug,
+  submitRecruiterApplication,
+} from "../Services/recruiterForm.service";
 import { FormFieldConfig, RecruiterData, FormData, FormErrors } from "./types";
 import {
   CANDIDATE_APPLICATION_FIELD_IDS,
@@ -16,6 +21,8 @@ import {
   getCandidateFieldLabel,
   getFormValueByFieldId,
   getPrimaryCountryField,
+  isAreaOfExpertiseFieldCheck,
+  isCandidateStackPmFieldCheck,
   isCountryMappedToPayloadCountry,
   isCountrySelectorField,
   isCvFieldCheck,
@@ -27,8 +34,7 @@ import {
   isRecruiterFieldCheck,
   isRoleCodeFieldCheck,
   isSalaryFieldCheck,
-  isStackTechMirrorField,
-  isSupersededLegacyCountryField,
+  isSupersededFormsValuesLegacyField,
   orderRecruiterFormFields,
   resolveJdCodeForPayload,
   shouldRenderFieldFullWidth,
@@ -100,10 +106,12 @@ function RecruiterApplicationForm() {
   const [formCountries, setFormCountries] = useState<
     Array<{ id: string; labelEs: string; labelEn?: string }>
   >([]);
-
-  // Obtener tecnologías y stack técnico del store (si están disponibles)
-  const [technologies, setTechnologies] = useState<Array<{ value: string; label: string }>>([]);
-  const [techStack, setTechStack] = useState<Array<{ value: string; label: string }>>([]);
+  const [technologies, setTechnologies] = useState<
+    Array<{ value: string; label: string }>
+  >([]);
+  const [techStack, setTechStack] = useState<
+    Array<{ value: string; label: string }>
+  >([]);
 
   const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const roleCodeParam = useMemo(() => {
@@ -160,41 +168,21 @@ function RecruiterApplicationForm() {
 
         setRecruiterData(recruiter);
 
-        // Obtener configuración del formulario
         const [config, countriesFromForms] = await Promise.all([
           getFormConfig("RecruiterFormWebView", lang),
           getFormCountries(lang).catch(() => []),
         ]);
         setFormCountries(countriesFromForms);
-        
-        // Console.log para ver los labels que vienen del backend
-        console.log("=== LABELS DEL BACKEND (Airtable) ===");
-        config.forEach((field, index) => {
-          console.log(`Campo ${index + 1}:`, {
-            fieldName: field.fieldName,
-            airtableField: field.airtableField,
-            label: field.label,
-            placeholder: field.placeholder,
-            instructions: field.instructions,
-            type: field.type,
-            options: field.options ? (Array.isArray(field.options) ? field.options.slice(0, 3) : "No es array") : "Sin opciones"
-          });
-        });
-        console.log("=== FIN DE LABELS ===");
-        
-        // Ordenar por el campo 'order' que viene del backend
+
         const sortedConfig = config.sort((a, b) => {
-          // Asegurar que el orden sea correcto
           if (a.order !== undefined && b.order !== undefined) {
             return a.order - b.order;
           }
-          // Si no tiene order, mantener el orden del backend
           return 0;
         });
         const reversedConfig = sortedConfig.reverse();
         setFormConfig(reversedConfig);
 
-        // Obtener tecnologías y stack técnico
         try {
           const [techResponse, stackResponse] = await Promise.all([
             axios.get(`${import.meta.env.VITE_ENDPOINT_URL}/resources/stackList`, {
@@ -210,15 +198,20 @@ function RecruiterApplicationForm() {
               },
             }),
           ]);
-
           setTechnologies(
-            techResponse.data.map((tech: any) => ({ value: tech.name, label: tech.name }))
+            techResponse.data.map((tech: any) => ({
+              value: tech.name,
+              label: tech.name,
+            }))
           );
           setTechStack(
-            stackResponse.data.map((tech: any) => ({ value: tech.name, label: tech.name }))
+            stackResponse.data.map((tech: any) => ({
+              value: tech.name,
+              label: tech.name,
+            }))
           );
-        } catch (error) {
-          console.error("Error fetching technologies:", error);
+        } catch {
+          /* ignorar */
         }
 
         // Inicializar formData con valores vacíos
@@ -278,7 +271,6 @@ function RecruiterApplicationForm() {
   const countrySelectOptions = useMemo(() => {
     const useEn = lang.startsWith("en");
     return formCountries.map((item) => ({
-      // Preferir record id de Forms Values para el link de Airtable (evita México vs Mexico).
       value: item.id || item.labelEs,
       label: useEn ? item.labelEn || item.labelEs : item.labelEs,
     }));
@@ -461,8 +453,7 @@ function RecruiterApplicationForm() {
     let isValid = true;
 
     formConfig.forEach((field) => {
-      if (isSupersededLegacyCountryField(field, formConfig)) return;
-      if (isStackTechMirrorField(field)) return;
+      if (isSupersededFormsValuesLegacyField(field, formConfig)) return;
       const value = formData[field.fieldName];
       let error = validateField(field, value);
 
@@ -858,13 +849,10 @@ function RecruiterApplicationForm() {
   const renderField = (field: FormFieldConfig) => {
     // ocultar campos internos
     if (field.fieldName === "recruiterSlug") return null;
-    if (isStackTechMirrorField(field)) return null;
+    if (isSupersededFormsValuesLegacyField(field, formConfig)) return null;
     // En flujo "base de datos" (linkit + 880) ocultar "Rol al que aplica" (va por defecto)
     if (isBaseDatosFlow && isRoleCodeFieldCheck(field)) return null;
-    if (isSupersededLegacyCountryField(field, formConfig)) return null;
 
-    const lowerFieldName = field.fieldName.toLowerCase();
-    const lowerAirtableField = field.airtableField.toLowerCase();
     const isCountryField = isCountrySelectorField(field, formConfig);
     const isRecruiterField = isRecruiterFieldCheck(field);
     const isRoleCodeField = isRoleCodeFieldCheck(field);
@@ -1100,11 +1088,12 @@ function RecruiterApplicationForm() {
     }
 
     if (field.type === "multi-select") {
-      const options =
-        lowerFieldName.includes("stack") || lowerAirtableField.includes("stack")
-          ? lowerFieldName.includes("tech") || lowerAirtableField.includes("tech")
+      const options = isCandidateStackPmFieldCheck(field)
+        ? technologies
+        : isAreaOfExpertiseFieldCheck(field)
+          ? techStack.length > 0
             ? techStack
-            : technologies
+            : normalizeOptionsArray(field.options)
           : normalizeOptionsArray(field.options);
 
       const currentValues = Array.isArray(value)

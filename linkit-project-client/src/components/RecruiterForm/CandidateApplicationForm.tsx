@@ -1,12 +1,12 @@
 import { FormEvent, useState, useEffect, useMemo, ReactNode } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import axios from "axios";
 import Swal from "sweetalert2";
 import { motion } from "framer-motion";
 import Select from "react-select";
 import CloudinaryUploadWidget from "../Services/cloudinaryWidget";
 import Loading from "../Loading/Loading";
+import axios from "axios";
 import {
   getFormConfig,
   getFormCountries,
@@ -26,6 +26,8 @@ import {
   getCandidateFieldLabel,
   getFormValueByFieldId,
   getPrimaryCountryField,
+  isAreaOfExpertiseFieldCheck,
+  isCandidateStackPmFieldCheck,
   isCountryMappedToPayloadCountry,
   isCountrySelectorField,
   isCvFieldCheck,
@@ -37,8 +39,7 @@ import {
   isRecruiterFieldCheck,
   isRoleCodeFieldCheck,
   isSalaryFieldCheck,
-  isStackTechMirrorField,
-  isSupersededLegacyCountryField,
+  isSupersededFormsValuesLegacyField,
   orderRecruiterFormFields,
   resolveJdCodeForPayload,
   shouldRenderFieldFullWidth,
@@ -165,7 +166,6 @@ function CandidateApplicationFormBase({
     label: string;
     slug: string;
   } | null>(null);
-
   const [technologies, setTechnologies] = useState<
     Array<{ value: string; label: string }>
   >([]);
@@ -242,7 +242,6 @@ function CandidateApplicationFormBase({
               }
             ),
           ]);
-
           setTechnologies(
             techResponse.data.map((tech: any) => ({
               value: tech.name,
@@ -335,7 +334,6 @@ function CandidateApplicationFormBase({
   const countrySelectOptions = useMemo(() => {
     const useEn = lang.startsWith("en");
     return formCountries.map((item) => ({
-      // Preferir record id de Forms Values para el link de Airtable (evita México vs Mexico).
       value: item.id || item.labelEs,
       label: useEn ? item.labelEn || item.labelEs : item.labelEs,
     }));
@@ -527,8 +525,7 @@ function CandidateApplicationFormBase({
     let isValid = true;
 
     formConfig.forEach((field) => {
-      if (isSupersededLegacyCountryField(field, formConfig)) return;
-      if (isStackTechMirrorField(field)) return;
+      if (isSupersededFormsValuesLegacyField(field, formConfig)) return;
       const value = formData[field.fieldName];
       let error = validateField(field, value);
 
@@ -987,8 +984,7 @@ function CandidateApplicationFormBase({
 
   const renderField = (field: FormFieldConfig) => {
     if (field.fieldName === "recruiterSlug") return null;
-    if (isStackTechMirrorField(field)) return null;
-    if (isSupersededLegacyCountryField(field, formConfig)) return null;
+    if (isSupersededFormsValuesLegacyField(field, formConfig)) return null;
 
     const lowerFieldName = field.fieldName.toLowerCase();
     const lowerAirtableField = field.airtableField.toLowerCase();
@@ -1388,11 +1384,12 @@ function CandidateApplicationFormBase({
     }
 
     if (field.type === "multi-select") {
-      const options =
-        lowerFieldName.includes("stack") || lowerAirtableField.includes("stack")
-          ? lowerFieldName.includes("tech") || lowerAirtableField.includes("tech")
+      const options = isCandidateStackPmFieldCheck(field)
+        ? technologies
+        : isAreaOfExpertiseFieldCheck(field)
+          ? techStack.length > 0
             ? techStack
-            : technologies
+            : normalizeOptionsArray(field.options)
           : normalizeOptionsArray(field.options);
 
       const disableSearchForThisMultiSelect =

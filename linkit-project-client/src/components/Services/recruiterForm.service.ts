@@ -60,16 +60,23 @@ export const getFormConfig = async (view: string = 'RecruiterFormWebView', lang:
   }
 };
 
-export interface FormCountryOption {
+export interface FormValueOption {
   id: string;
   labelEs: string;
   labelEn?: string;
   optionGroup?: number;
 }
 
-export const getFormCountries = async (lang: string = 'es'): Promise<FormCountryOption[]> => {
-  const response = await axios.get<{ countries: FormCountryOption[] }>(
-    `${ENDPOINT_URL}/resources/form-config/countries`,
+/** @deprecated Prefer FormValueOption */
+export type FormCountryOption = FormValueOption;
+
+async function getFormValuesKind (
+  path: string,
+  key: string,
+  lang: string = 'es'
+): Promise<FormValueOption[]> {
+  const response = await axios.get<Record<string, FormValueOption[]>>(
+    `${ENDPOINT_URL}/resources/form-config/${path}`,
     {
       headers: {
         Authorization: `Bearer ${SUPERADMN_ID}`,
@@ -77,7 +84,37 @@ export const getFormCountries = async (lang: string = 'es'): Promise<FormCountry
       }
     }
   );
-  return response.data.countries || [];
+  return response.data[key] || [];
+}
+
+export const getFormCountries = async (lang: string = 'es'): Promise<FormValueOption[]> => {
+  return getFormValuesKind('countries', 'countries', lang);
+};
+
+export const getFormStack = async (lang: string = 'es'): Promise<FormValueOption[]> => {
+  return getFormValuesKind('stack', 'stack', lang);
+};
+
+export const getFormExpertise = async (lang: string = 'es'): Promise<FormValueOption[]> => {
+  return getFormValuesKind('expertise', 'expertise', lang);
+};
+
+export const getFormEnglish = async (lang: string = 'es'): Promise<FormValueOption[]> => {
+  return getFormValuesKind('english', 'english', lang);
+};
+
+export const syncFormValues = async (lang: string = 'es') => {
+  const response = await axios.post(
+    `${ENDPOINT_URL}/resources/form-config/sync`,
+    {},
+    {
+      headers: {
+        Authorization: `Bearer ${SUPERADMN_ID}`,
+        'Accept-Language': lang
+      }
+    }
+  );
+  return response.data;
 };
 
 /**
