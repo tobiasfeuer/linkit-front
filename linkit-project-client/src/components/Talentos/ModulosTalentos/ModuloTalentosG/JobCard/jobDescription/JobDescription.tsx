@@ -70,6 +70,10 @@ function JobDescription() {
         );
         // Si response.data es un array, tomar el primer elemento, si no, usar response.data directamente
         const jobDataToSet = Array.isArray(response.data) ? response.data[0] : response.data;
+        if (jobDataToSet?.archived === true) {
+          navigate("/soyTalento#vacantes", { replace: true });
+          return;
+        }
         setJobData(jobDataToSet);
       } catch (error: any) {
         Swal.fire({ title: "Error", text: error.response.data, icon: "error" });
@@ -80,7 +84,7 @@ function JobDescription() {
     };
     fetchJob();
     window.scrollTo(0, 0);
-  }, [i18n.language, id]);
+  }, [i18n.language, id, navigate]);
 
   const jobTitleSlug =
     slug ||
@@ -289,7 +293,7 @@ function JobDescription() {
 
 
    // Si no hay datos cargados, mostrar skeleton
-   if (!jobData || Object.keys(jobData).length === 0 || !translatedJobData.title) {
+   if (!jobData || Object.keys(jobData).length === 0 || !translatedJobData.title || jobData.archived) {
      return <JobDescriptionSkeleton lang={language} />;
    }
 
