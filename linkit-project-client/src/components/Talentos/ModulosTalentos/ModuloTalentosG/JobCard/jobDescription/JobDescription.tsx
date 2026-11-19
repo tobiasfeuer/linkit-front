@@ -54,6 +54,7 @@ function JobDescription() {
     !hasValidEnglishVersion(jobData);
   const [translatedJobData, setTranslatedJobData] = useState<any>({});
   const [showFloatingButton, setShowFloatingButton] = useState(false);
+  const [unavailable, setUnavailable] = useState(false);
 
   useEffect(() => {
     const fetchJob = async () => {
@@ -71,9 +72,10 @@ function JobDescription() {
         // Si response.data es un array, tomar el primer elemento, si no, usar response.data directamente
         const jobDataToSet = Array.isArray(response.data) ? response.data[0] : response.data;
         if (jobDataToSet?.archived === true) {
-          navigate("/soyTalento#vacantes", { replace: true });
+          setUnavailable(true);
           return;
         }
+        setUnavailable(false);
         setJobData(jobDataToSet);
       } catch (error: any) {
         Swal.fire({ title: "Error", text: error.response.data, icon: "error" });
@@ -84,7 +86,15 @@ function JobDescription() {
     };
     fetchJob();
     window.scrollTo(0, 0);
-  }, [i18n.language, id, navigate]);
+  }, [i18n.language, id]);
+
+  useEffect(() => {
+    if (!unavailable) return;
+    const timer = window.setTimeout(() => {
+      navigate("/soyTalento#vacantes", { replace: true });
+    }, 3500);
+    return () => window.clearTimeout(timer);
+  }, [unavailable, navigate]);
 
   const jobTitleSlug =
     slug ||
@@ -291,6 +301,35 @@ function JobDescription() {
     return <span className="whitespace-pre-line">{text}</span>;
   };
 
+
+   if (unavailable) {
+     return (
+       <div className="font-montserrat text-linkIt-400 dark:bg-linkIt-200 dark:text-white min-h-screen flex flex-col items-center justify-center px-6 pt-[17vh] pb-16 text-center">
+         <Helmet>
+           <title>
+             {isSpanish ? "Vacante no disponible | LinkIT" : "Role unavailable | LinkIT"}
+           </title>
+         </Helmet>
+         <Briefcase className="w-12 h-12 text-linkIt-300 mb-6" />
+         <h1 className="text-3xl md:text-4xl font-bold mb-4">
+           {isSpanish ? "¡Lo siento!" : "Sorry!"}
+         </h1>
+         <p className="max-w-xl text-lg md:text-xl leading-relaxed">
+           {isSpanish
+             ? "Esta vacante no se encuentra disponible. Te vamos a redirigir a las disponibles."
+             : "This role is no longer available. We'll take you to the open positions."}
+         </p>
+         <button
+           type="button"
+           onClick={() => navigate("/soyTalento#vacantes", { replace: true })}
+           className="mt-8 inline-flex items-center gap-2 bg-gradient-to-r from-linkIt-300 to-[#01B29B] text-white rounded-lg px-6 py-3 font-bold shadow-lg hover:shadow-xl transition-all duration-300"
+         >
+           {isSpanish ? "Ver vacantes disponibles" : "See open roles"}
+           <ArrowRight className="w-5 h-5" />
+         </button>
+       </div>
+     );
+   }
 
    // Si no hay datos cargados, mostrar skeleton
    if (!jobData || Object.keys(jobData).length === 0 || !translatedJobData.title || jobData.archived) {
