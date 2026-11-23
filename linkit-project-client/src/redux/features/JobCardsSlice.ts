@@ -29,7 +29,7 @@ const JobCardSlice = createSlice({
     initialState,
     reducers: {
         applyFilters: (state, action) => {
-            state.jobOffers = action.payload.filter((jobOffer: JobOffer) => jobOffer.archived === false)
+            state.jobOffers = action.payload.filter((jobOffer: JobOffer) => jobOffer.archived !== true)
         },
         setJobOffers: (state, action) => {
             state.jobOffers = action.payload;

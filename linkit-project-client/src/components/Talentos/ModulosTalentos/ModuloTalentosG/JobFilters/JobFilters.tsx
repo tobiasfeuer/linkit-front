@@ -6,14 +6,11 @@ import {
 import { JobCardProps } from "../JobCard/JobCard";
 import "./JobFilter.css";
 import { useTranslation } from "react-i18next";
-import axios from "axios";
 import { useDispatch, useSelector } from "react-redux";
 import { applyFilters } from "../../../../../redux/features/JobCardsSlice";
 import { CustomFlowbiteTheme, Dropdown } from "flowbite-react";
 import whiteArrow from "/Vectores/downArrowFilters.svg";
 import blackArrow from "/Vectores/blackArrowFilters.svg";
-
-const SUPERADMN_ID = import.meta.env.VITE_SUPERADMN_ID;
 
 const customTheme: CustomFlowbiteTheme["dropdown"] = {
   arrowIcon: "ml-2 h-4 w-4",
@@ -85,40 +82,45 @@ const JobFilters = () => {
 
   const [country, setCountry] = useState<OptionType>({ value: "", label: "" });
 
-  const handleFilters = async () => {
-    const url = `${import.meta.env.VITE_ENDPOINT_URL}/jds/find?${
-      stackValue.length >= 1
-        ? `stack=${stackValue.map((tech) => `${tech}`)}`
-        : ""
-    }${
-      language === "en"
-        ? `${type !== "Type" ? `&type=${typeValue.toLocaleLowerCase()}` : ``}`
-        : `${type !== "Tipo" ? `&type=${typeValue.toLocaleLowerCase()}` : ``}`
-    }${
-      language === "en"
-        ? `${
-            modality !== "Modality"
-              ? `&modality=${modalityValue.toLocaleLowerCase()}`
-              : ``
-          }`
-        : `${
-            modality !== "Modalidad"
-              ? `&modality=${modalityValue.toLocaleLowerCase()}`
-              : ``
-          }`
-    }${country.value !== "" ? `&location=${country.value}` : ""}`;
+  const handleFilters = () => {
+    let filtered = [...allJobOffers];
 
-    try {
-      const response = await axios.get(url, {
-        headers: {
-          Authorization: `Bearer ${SUPERADMN_ID}`,
-          "Accept-Language": sessionStorage.getItem("lang"),
-        },
-      });
-      dispatch(applyFilters(response.data));
-    } catch (error) {
-      throw new Error((error as any).message);
+    if (stackValue.length >= 1) {
+      filtered = filtered.filter((job) =>
+        stackValue.every((tech) =>
+          (job.stack ?? []).some(
+            (stackItem) => stackItem.toLowerCase() === tech.toLowerCase()
+          )
+        )
+      );
     }
+
+    const hasTypeFilter =
+      Boolean(typeValue) &&
+      (language === "en" ? type !== "Type" : type !== "Tipo");
+    if (hasTypeFilter) {
+      filtered = filtered.filter(
+        (job) => job.type?.toLowerCase() === typeValue.toLowerCase()
+      );
+    }
+
+    const hasModalityFilter =
+      Boolean(modalityValue) &&
+      (language === "en" ? modality !== "Modality" : modality !== "Modalidad");
+    if (hasModalityFilter) {
+      filtered = filtered.filter(
+        (job) => job.modality?.toLowerCase() === modalityValue.toLowerCase()
+      );
+    }
+
+    if (country.value) {
+      filtered = filtered.filter(
+        (job) =>
+          job.location === country.value || job.en?.location === country.value
+      );
+    }
+
+    dispatch(applyFilters(filtered));
   };
 
   const handleStack = (stack: string) => {
@@ -279,10 +281,11 @@ const JobFilters = () => {
   }, []);
 
   useEffect(() => {
-    if (isMobile) {
-      handleFilters();
-    }
-  }, [stackValue, typeValue, modalityValue, country, isMobile]);
+    if (!isMobile) return;
+    // Evita sobrescribir el listado vacío antes del primer fetch
+    if (allJobOffers.length === 0) return;
+    handleFilters();
+  }, [stackValue, typeValue, modalityValue, country, isMobile, allJobOffers]);
 
   return (
     <div className="w-full">
@@ -456,17 +459,7 @@ const JobFilters = () => {
         </button>
         <button
           className="bg-linkIt-300 text-white rounded-full py-[.4rem] px-[.4rem] border-[2px] border-linkIt-300  transition-all duration-300 ease-in-out font-montserrat font-[500] hover:scale-105"
-          onClick={() => {
-            dispatch(applyFilters(allJobOffers)),
-              setStack("Stack"),
-              setType(language === "en" ? "Type" : "Tipo"),
-              setModality(language === "en" ? "Modality" : "Modalidad"),
-              setCountry(
-                language === "en"
-                  ? { value: "", label: "Location" }
-                  : { value: "", label: "Ubicación" }
-              );
-          }}
+          onClick={handleResetFilters}
         >
           <img
             src="/Vectores/reset.svg"

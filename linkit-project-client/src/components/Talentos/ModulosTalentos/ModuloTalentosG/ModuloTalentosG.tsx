@@ -3,16 +3,63 @@ import JobCardsMobile from "./JobCard/JobCardsMobile";
 import JobFilters from "./JobFilters/JobFilters";
 import { useTranslation } from "react-i18next";
 import { Helmet } from "react-helmet-async";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { getJobOffers } from "../../../Services/jobOffers.service";
+import { setJobOffers } from "../../../../redux/features/JobCardsSlice";
 
 // Slug y role code para "Súmate a nuestra base de datos" (campaña / base de datos)
 const BASE_DATOS_RECRUITER_SLUG = "LinkitHR";
 const BASE_DATOS_ROLE_CODE = "880";
+const DESKTOP_MEDIA_QUERY = "(min-width: 1024px)";
 
 export default function ModuloTalentosG() {
   const { t, i18n } = useTranslation();
+  const dispatch = useDispatch();
   const jobOffers = useSelector((state: any) => state.jobCard.jobOffers);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isDesktop, setIsDesktop] = useState(() =>
+    typeof window !== "undefined"
+      ? window.matchMedia(DESKTOP_MEDIA_QUERY).matches
+      : true
+  );
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia(DESKTOP_MEDIA_QUERY);
+    const handleChange = (event: MediaQueryListEvent) => {
+      setIsDesktop(event.matches);
+    };
+
+    setIsDesktop(mediaQuery.matches);
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadJobOffers = async () => {
+      try {
+        setIsLoading(true);
+        const fetchedJobOffers = await getJobOffers();
+        if (!cancelled) {
+          dispatch(setJobOffers(fetchedJobOffers));
+        }
+      } catch (error) {
+        console.error("Error al cargar las vacantes:", error);
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    loadJobOffers();
+    return () => {
+      cancelled = true;
+    };
+  }, [dispatch]);
 
   // Generar el esquema JSON-LD para las ofertas de trabajo
   const generateJobPostingSchema = () => {
@@ -21,7 +68,7 @@ export default function ModuloTalentosG() {
       "@context": "https://schema.org",
       "@type": "JobPosting",
       title: job.title,
-      description: job.description,
+      description: job.description || job.title,
       datePosted: job.createdDate,
       employmentType: job.type,
       hiringOrganization: {
@@ -88,12 +135,15 @@ export default function ModuloTalentosG() {
       <div>
         <JobFilters />
       </div>
-      <div className="hidden lg:block w-full h-max">
-        <JobCards />
-      </div>
-      <div className="lg:hidden">
-        <JobCardsMobile />
-      </div>
+      {isDesktop ? (
+        <div className="w-full h-max">
+          <JobCards isLoading={isLoading} />
+        </div>
+      ) : (
+        <div>
+          <JobCardsMobile isLoading={isLoading} />
+        </div>
+      )}
       <p className="text-center font-montserrat text-size font-semibold text-white xs:text-[17px] xs:p-[3vh] sm:p-0">
         {t(
           "Si ninguna de estas vacantes es para tí, no te preocupes, ¡vendrán muchas más!"

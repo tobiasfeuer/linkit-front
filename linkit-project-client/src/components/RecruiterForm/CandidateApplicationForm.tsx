@@ -6,10 +6,12 @@ import { motion } from "framer-motion";
 import Select from "react-select";
 import CloudinaryUploadWidget from "../Services/cloudinaryWidget";
 import Loading from "../Loading/Loading";
-import axios from "axios";
 import {
   getFormConfig,
   getFormCountries,
+  getFormStack,
+  getFormExpertise,
+  getFormEnglish,
   getRecruiterBySlug,
   submitRecruiterApplication,
 } from "../Services/recruiterForm.service";
@@ -31,6 +33,7 @@ import {
   isCountryMappedToPayloadCountry,
   isCountrySelectorField,
   isCvFieldCheck,
+  isEnglishLevelFieldCheck,
   isFirstNameFieldCheck,
   isKnownCandidateApplicationField,
   isLastNameFieldCheck,
@@ -56,7 +59,6 @@ import { useGoogleReCaptcha } from "react-google-recaptcha-hook";
 import "react-phone-number-input/style.css";
 import "./RecruiterApplicationForm.css";
 
-const SUPERADMN_ID = import.meta.env.VITE_SUPERADMN_ID;
 const RECAPTCHA_SITE_KEY = import.meta.env.VITE_RECAPTCHA_SITE_KEY;
 
 /** `slug` debe coincidir exactamente con la columna «URL Slug» en Airtable (mayúsculas/tilde). */
@@ -161,17 +163,20 @@ function CandidateApplicationFormBase({
   const [formCountries, setFormCountries] = useState<
     Array<{ id: string; labelEs: string; labelEn?: string }>
   >([]);
+  const [formStack, setFormStack] = useState<
+    Array<{ id: string; labelEs: string; labelEn?: string }>
+  >([]);
+  const [formExpertise, setFormExpertise] = useState<
+    Array<{ id: string; labelEs: string; labelEn?: string }>
+  >([]);
+  const [formEnglish, setFormEnglish] = useState<
+    Array<{ id: string; labelEs: string; labelEn?: string }>
+  >([]);
   const [selectedRecruiter, setSelectedRecruiter] = useState<{
     value: string;
     label: string;
     slug: string;
   } | null>(null);
-  const [technologies, setTechnologies] = useState<
-    Array<{ value: string; label: string }>
-  >([]);
-  const [techStack, setTechStack] = useState<
-    Array<{ value: string; label: string }>
-  >([]);
 
   useEffect(() => {
     const fetchInitialData = async () => {
@@ -207,11 +212,18 @@ function CandidateApplicationFormBase({
 
         setRecruiterData(recruiter);
 
-        const [config, countriesFromForms] = await Promise.all([
-          getFormConfig("RecruiterFormWebView", lang),
-          getFormCountries(lang).catch(() => []),
-        ]);
+        const [config, countriesFromForms, stackFromForms, expertiseFromForms, englishFromForms] =
+          await Promise.all([
+            getFormConfig("RecruiterFormWebView", lang),
+            getFormCountries(lang).catch(() => []),
+            getFormStack(lang).catch(() => []),
+            getFormExpertise(lang).catch(() => []),
+            getFormEnglish(lang).catch(() => []),
+          ]);
         setFormCountries(countriesFromForms);
+        setFormStack(stackFromForms);
+        setFormExpertise(expertiseFromForms);
+        setFormEnglish(englishFromForms);
         const sortedConfig = config.sort((a, b) => {
           if (a.order !== undefined && b.order !== undefined) {
             return a.order - b.order;
@@ -220,43 +232,6 @@ function CandidateApplicationFormBase({
         });
         const reversedConfig = sortedConfig.reverse();
         setFormConfig(reversedConfig);
-
-        try {
-          const [techResponse, stackResponse] = await Promise.all([
-            axios.get(
-              `${import.meta.env.VITE_ENDPOINT_URL}/resources/stackList`,
-              {
-                headers: {
-                  Authorization: `Bearer ${SUPERADMN_ID}`,
-                  "Accept-Language": lang,
-                },
-              }
-            ),
-            axios.get(
-              `${import.meta.env.VITE_ENDPOINT_URL}/resources/techStack`,
-              {
-                headers: {
-                  Authorization: `Bearer ${SUPERADMN_ID}`,
-                  "Accept-Language": lang,
-                },
-              }
-            ),
-          ]);
-          setTechnologies(
-            techResponse.data.map((tech: any) => ({
-              value: tech.name,
-              label: tech.name,
-            }))
-          );
-          setTechStack(
-            stackResponse.data.map((tech: any) => ({
-              value: tech.name,
-              label: tech.name,
-            }))
-          );
-        } catch {
-          /* ignorar */
-        }
 
         const initialData: FormData = {};
         const roleCodeFields: FormFieldConfig[] = [];
@@ -331,13 +306,32 @@ function CandidateApplicationFormBase({
     fetchInitialData();
   }, [roleCodeParam, recruiterSlugParam, lang, navigate]);
 
-  const countrySelectOptions = useMemo(() => {
+  const toFormsSelectOptions = (
+    items: Array<{ id: string; labelEs: string; labelEn?: string }>
+  ) => {
     const useEn = lang.startsWith("en");
-    return formCountries.map((item) => ({
+    return items.map((item) => ({
       value: item.id || item.labelEs,
       label: useEn ? item.labelEn || item.labelEs : item.labelEs,
     }));
-  }, [formCountries, lang]);
+  };
+
+  const countrySelectOptions = useMemo(
+    () => toFormsSelectOptions(formCountries),
+    [formCountries, lang]
+  );
+  const stackSelectOptions = useMemo(
+    () => toFormsSelectOptions(formStack),
+    [formStack, lang]
+  );
+  const expertiseSelectOptions = useMemo(
+    () => toFormsSelectOptions(formExpertise),
+    [formExpertise, lang]
+  );
+  const englishSelectOptions = useMemo(
+    () => toFormsSelectOptions(formEnglish),
+    [formEnglish, lang]
+  );
 
   const handleInputChange = (fieldName: string, value: any) => {
     setFormData((prev) => ({
@@ -1352,7 +1346,10 @@ function CandidateApplicationFormBase({
     }
 
     if (field.type === "select") {
-      const baseOptions = normalizeOptionsArray(field.options);
+      const isEnglish = isEnglishLevelFieldCheck(field);
+      const baseOptions = isEnglish
+        ? englishSelectOptions
+        : normalizeOptionsArray(field.options);
       const currentLang = lang.startsWith("es") ? "es" : "en";
       return renderWrapper(
         field.fieldName,
@@ -1374,7 +1371,7 @@ function CandidateApplicationFormBase({
             </option>
             {baseOptions.map((option) => (
               <option key={option.value} value={option.value}>
-                {translateLabel(option.label)}
+                {isEnglish ? option.label : translateLabel(option.label)}
               </option>
             ))}
           </select>
@@ -1385,11 +1382,9 @@ function CandidateApplicationFormBase({
 
     if (field.type === "multi-select") {
       const options = isCandidateStackPmFieldCheck(field)
-        ? technologies
+        ? stackSelectOptions
         : isAreaOfExpertiseFieldCheck(field)
-          ? techStack.length > 0
-            ? techStack
-            : normalizeOptionsArray(field.options)
+          ? expertiseSelectOptions
           : normalizeOptionsArray(field.options);
 
       const disableSearchForThisMultiSelect =
