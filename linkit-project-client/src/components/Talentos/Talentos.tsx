@@ -24,9 +24,10 @@ function Talentos() {
 
 
   const navigateIntoTalent = (hash: string) => {
-    setTimeout(() => {
-      window.location.href = hash;
-    });
+    const id = hash.replace("#", "");
+    window.setTimeout(() => {
+      document.getElementById(id)?.scrollIntoView({ behavior: "smooth" });
+    }, 0);
   };
 
   const refC = useRef<HTMLDivElement>(null);
@@ -42,8 +43,10 @@ function Talentos() {
   const isGVisible = useIntersectionObserver(refG);
 
   useEffect(() => {
-    if (location.pathname === "/SoyTalento" && location.hash)
+    if (location.pathname.toLowerCase() === "/soytalento" && location.hash) {
       navigateIntoTalent(location.hash);
+      return;
+    }
 
     window.scrollTo(0, 0);
   }, [location.pathname, location.hash]);
