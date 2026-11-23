@@ -9,7 +9,7 @@ import { useInView } from "react-intersection-observer"
 export type JobCardProps = {
   _id: string
   title: string
-  description: string
+  description?: string
   modality: string
   type: string
   location: string
@@ -38,7 +38,7 @@ export const JobCard: FunctionComponent<JobCardProps> = ({
   stack = [],
   index,
   current,
-  description,
+  description = "",
   company = "LinkIT",
   createdDate,
   en,
@@ -122,7 +122,7 @@ export const JobCard: FunctionComponent<JobCardProps> = ({
     <div ref={ref} itemScope itemType="https://schema.org/JobPosting">
       {/* Metadatos Schema.org (ocultos) */}
       <meta itemProp="title" content={title} />
-      <meta itemProp="description" content={description} />
+      <meta itemProp="description" content={description || title} />
       <meta itemProp="datePosted" content={formattedDate} />
       <meta itemProp="validThrough" content={expirationDate} />
       <meta itemProp="employmentType" content={type} />

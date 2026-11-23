@@ -2,23 +2,22 @@ import type { FormFieldConfig, FormData } from "./types";
 
 /**
  * IDs de LinkIT - Candidate application.
- * Hotfix prod: canónicos = columnas productivas.
- * Las *FormsValues quedan ocultas hasta el cutover.
+ * Testing local: canónicos = columnas Form Values (links).
  */
 export const CANDIDATE_APPLICATION_FIELD_IDS = {
-  country: "fld5dqktK19ho5VQA",
-  countryFormsValues: "fldwmYZ8yaWrCQhpj",
+  country: "fldwmYZ8yaWrCQhpj",
+  countryLegacy: "fld5dqktK19ho5VQA",
   role: "fldw1mc6FsTjLrEO1",
   email: "fldMYrlWByJPQgNow",
   salary: "fldbpz0nCquy0W9FS",
-  english: "fldsqMImkyHpSWZrc",
-  englishFormsValues: "fldtNVSjUDoIF61NN",
+  english: "fldtNVSjUDoIF61NN",
+  englishLegacy: "fldsqMImkyHpSWZrc",
   reason: "fldQ21CuCC5vixzN2",
   availability: "fld0dKZ8rLBswj3hp",
-  stack: "fld7obOBE4VQ87Ca9",
-  stackFormsValues: "fldf9ARXiY3oU7Qjf",
-  expertise: "fldqZFu2cR4zXWw8e",
-  expertiseFormsValues: "fldnx7qVJwDR4y2i1",
+  stack: "fldf9ARXiY3oU7Qjf",
+  stackLegacy: "fld7obOBE4VQ87Ca9",
+  expertise: "fldnx7qVJwDR4y2i1",
+  expertiseLegacy: "fldqZFu2cR4zXWw8e",
   firstName: "fldFegqJSUm2YejG4",
   lastName: "fldzQQL5a0zGUka3U",
   linkedin: "fldmxxc1cADzC5x1X",
@@ -27,17 +26,17 @@ export const CANDIDATE_APPLICATION_FIELD_IDS = {
   phone: "fld9vhtnX0AEwtEYy",
 } as const;
 
-/** Columnas experimentales Form Values: no mostrar / no exigir en el form. */
-export const HIDDEN_FORMS_VALUES_FIELD_IDS = new Set<string>([
-  CANDIDATE_APPLICATION_FIELD_IDS.countryFormsValues,
-  CANDIDATE_APPLICATION_FIELD_IDS.englishFormsValues,
-  CANDIDATE_APPLICATION_FIELD_IDS.stackFormsValues,
-  CANDIDATE_APPLICATION_FIELD_IDS.expertiseFormsValues,
+/** Columnas productivas viejas: no mostrar mientras testeamos Form Values. */
+export const HIDDEN_LEGACY_FIELD_IDS = new Set<string>([
+  CANDIDATE_APPLICATION_FIELD_IDS.countryLegacy,
+  CANDIDATE_APPLICATION_FIELD_IDS.englishLegacy,
+  CANDIDATE_APPLICATION_FIELD_IDS.stackLegacy,
+  CANDIDATE_APPLICATION_FIELD_IDS.expertiseLegacy,
 ]);
 
 /**
- * Allowlist fija del Recruiter Form (productivo).
- * Solo estos IDs se renderizan — nada de la vista de Airtable por fuera.
+ * Allowlist fija del Recruiter Form (testing Form Values).
+ * Solo estos IDs se renderizan.
  */
 export const RECRUITER_FORM_ALLOWED_FIELD_IDS: string[] = [
   CANDIDATE_APPLICATION_FIELD_IDS.recruiter,
@@ -64,19 +63,19 @@ export const RECRUITER_FORM_ALLOWED_FIELD_ID_SET = new Set(
 /** Claves de formData estables: no cambian si se renombra la columna en Airtable. */
 export const STABLE_FIELD_NAME_BY_ID: Record<string, string> = {
   [CANDIDATE_APPLICATION_FIELD_IDS.country]: "paisesNoBorrar",
-  [CANDIDATE_APPLICATION_FIELD_IDS.countryFormsValues]: "paisesFormValues",
+  [CANDIDATE_APPLICATION_FIELD_IDS.countryLegacy]: "paisesNoBorrarLegacy",
   [CANDIDATE_APPLICATION_FIELD_IDS.role]: "rolAlQueAplica",
   [CANDIDATE_APPLICATION_FIELD_IDS.email]: "candidateEmail",
   [CANDIDATE_APPLICATION_FIELD_IDS.salary]: "salaryExpectationusd",
   [CANDIDATE_APPLICATION_FIELD_IDS.english]: "englishLevel",
-  [CANDIDATE_APPLICATION_FIELD_IDS.englishFormsValues]: "englishLevelFormValues",
+  [CANDIDATE_APPLICATION_FIELD_IDS.englishLegacy]: "englishLevelLegacy",
   [CANDIDATE_APPLICATION_FIELD_IDS.reason]: "whyChange",
   [CANDIDATE_APPLICATION_FIELD_IDS.availability]: "whenToStartAvailability",
   [CANDIDATE_APPLICATION_FIELD_IDS.stack]: "candidateStackPmTools",
-  [CANDIDATE_APPLICATION_FIELD_IDS.stackFormsValues]: "candidateStackFormValues",
+  [CANDIDATE_APPLICATION_FIELD_IDS.stackLegacy]: "candidateStackPmToolsLegacy",
   [CANDIDATE_APPLICATION_FIELD_IDS.expertise]: "whatWouldBeYourAreaOfExpertise",
-  [CANDIDATE_APPLICATION_FIELD_IDS.expertiseFormsValues]:
-    "whatWouldBeYourAreaOfExpertiseFormValues",
+  [CANDIDATE_APPLICATION_FIELD_IDS.expertiseLegacy]:
+    "whatWouldBeYourAreaOfExpertiseLegacy",
   [CANDIDATE_APPLICATION_FIELD_IDS.firstName]: "nombre",
   [CANDIDATE_APPLICATION_FIELD_IDS.lastName]: "apellido",
   [CANDIDATE_APPLICATION_FIELD_IDS.linkedin]: "linkedin",
@@ -207,15 +206,24 @@ export function resolveJdCodeForPayload(
   return legacy || undefined;
 }
 
-/** Campo link productivo → Forms Values (Países No borrar). */
+/** Campo link Form Values country. */
 export function isPaisesNoBorrarField(field: FormFieldConfig): boolean {
   if (fieldIdIs(field, CANDIDATE_APPLICATION_FIELD_IDS.country)) return true;
   const a = field.airtableField.toLowerCase().trim();
-  return a === "paises (no borrar)" || a === "países (no borrar)";
+  return (
+    a === "paises (no borrar)" ||
+    a === "países (no borrar)" ||
+    a.includes("país (form values)") ||
+    a.includes("paises (form values)") ||
+    a.includes("países (form values)")
+  );
 }
 
-/** Columna legacy de texto/select "Country". */
+/** Columna legacy de texto/select "Country" o país productivo viejo. */
 export function isLegacyCountryField(field: FormFieldConfig): boolean {
+  if (fieldIdIs(field, CANDIDATE_APPLICATION_FIELD_IDS.countryLegacy)) {
+    return true;
+  }
   const a = field.airtableField.toLowerCase().trim();
   const n = field.fieldName.toLowerCase().trim();
   return a === "country" || n === "country";
@@ -229,7 +237,7 @@ export function getPrimaryCountryField(
   return config.find(isLegacyCountryField);
 }
 
-/** Ocultar Country legacy cuando ya existe Países (No borrar). */
+/** Ocultar Country legacy cuando ya existe el link Form Values. */
 export function isSupersededLegacyCountryField(
   field: FormFieldConfig,
   config: FormFieldConfig[]
@@ -238,17 +246,16 @@ export function isSupersededLegacyCountryField(
   return config.some(isPaisesNoBorrarField);
 }
 
-/** Solo entra al form si está en la allowlist (o aún no tiene ID = no se muestra). */
+/** Solo entra al form si está en la allowlist. */
 export function isAllowedRecruiterFormField(field: FormFieldConfig): boolean {
   if (!field.airtableFieldId) return false;
-  if (HIDDEN_FORMS_VALUES_FIELD_IDS.has(field.airtableFieldId)) return false;
+  if (HIDDEN_LEGACY_FIELD_IDS.has(field.airtableFieldId)) return false;
   return RECRUITER_FORM_ALLOWED_FIELD_ID_SET.has(field.airtableFieldId);
 }
 
 export function isHiddenFormsValuesField(field: FormFieldConfig): boolean {
   return Boolean(
-    field.airtableFieldId &&
-      HIDDEN_FORMS_VALUES_FIELD_IDS.has(field.airtableFieldId)
+    field.airtableFieldId && HIDDEN_LEGACY_FIELD_IDS.has(field.airtableFieldId)
   );
 }
 
@@ -272,7 +279,7 @@ export function isCountrySelectorField(
 }
 
 /**
- * Valor que va en `payload.country` (backend → link Países (No borrar));
+ * Valor que va en `payload.country` (backend → link país Form Values);
  * no duplicar en el spread de airtableField.
  */
 export function isCountryMappedToPayloadCountry(field: FormFieldConfig): boolean {
@@ -333,7 +340,6 @@ function isCvColumn(field: FormFieldConfig): boolean {
 /**
  * Arma `fieldsById` con el ID de columna de Airtable.
  * El payload semántico (code, email, etc.) se mantiene para la validación.
- * Si falta algún ID, no se adjunta y el backend sigue escribiendo por nombre.
  */
 export function attachFieldsById(
   payload: Record<string, any>,
@@ -504,7 +510,8 @@ export function isCandidateStackPmFieldCheck(field: FormFieldConfig): boolean {
   const lowerAirtableField = field.airtableField?.toLowerCase() || "";
   return (
     lowerFieldName.includes("candidatestackpmtools") ||
-    lowerAirtableField.includes("candidate stack + pm tools") ||
+    lowerFieldName.includes("candidatestack") ||
+    lowerAirtableField.includes("candidate stack") ||
     lowerAirtableField.includes("stack del candidato")
   );
 }

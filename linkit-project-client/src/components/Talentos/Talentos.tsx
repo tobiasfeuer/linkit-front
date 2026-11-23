@@ -5,7 +5,7 @@ import ModuloTalentosE from "./ModulosTalentos/ModuloTalentosE/ModuloTalentosE";
 import ModuloTalentosF from "./ModulosTalentos/ModuloTalentosF/ModuloTalentosF";
 import ModuloTalentosC from "./ModulosTalentos/ModuloTalentosC/ModuloTalentosC";
 import ModuloTalentosG from "./ModulosTalentos/ModuloTalentosG/ModuloTalentosG";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { useLocation } from "react-router-dom";
 import "./Talentos.css";
 import Newsletter from "../../Utils/newsletter/newsletter";
@@ -13,14 +13,14 @@ import { useIntersectionObserver } from "../../Utils/ModuleObserver/Intersection
 import { Helmet } from "react-helmet-async";
 import { useTranslation } from "react-i18next";
 import CallToAction from "../../Utils/Buttons/CTA/callToAction";
-import { getJobOffers } from "../Services/jobOffers.service";
+import { useSelector } from "react-redux";
 
 function Talentos() {
   const location = useLocation();
   const { i18n } = useTranslation();
   const currentLanguage = i18n.language;
   const isSpanish = currentLanguage.startsWith("es");
-  const [jobListings, setJobListings] = useState<any[]>([]);
+  const jobListings = useSelector((state: any) => state.jobCard.jobOffers as any[]);
 
 
   const navigateIntoTalent = (hash: string) => {
@@ -40,25 +40,6 @@ function Talentos() {
   const isEVisible = useIntersectionObserver(refE);
   const isFVisible = useIntersectionObserver(refF);
   const isGVisible = useIntersectionObserver(refG);
-
-  // Obtener las ofertas de trabajo para el schema
-  useEffect(() => {
-    const fetchJobListings = async () => {
-      try {
-        // Usar el mismo servicio que usa JobCardList
-        const fetchedJobOffers = await getJobOffers();
-        // Filtrar solo las ofertas activas
-        const activeJobOffers = fetchedJobOffers
-          .reverse()
-          .filter((jobOffer) => jobOffer.archived === false);
-        setJobListings(activeJobOffers);
-      } catch (error) {
-        console.error("Error fetching job listings:", error);
-      }
-    };
-
-    fetchJobListings();
-  }, []);
 
   useEffect(() => {
     if (location.pathname === "/SoyTalento" && location.hash)
@@ -96,7 +77,7 @@ function Talentos() {
       "@context": "https://schema.org",
       "@type": "JobPosting",
       title: job.title,
-      description: job.description || job.shortDescription,
+      description: job.description || job.title || job.shortDescription,
       datePosted: job.createdAt || new Date().toISOString(),
       validThrough:
         job.expirationDate ||

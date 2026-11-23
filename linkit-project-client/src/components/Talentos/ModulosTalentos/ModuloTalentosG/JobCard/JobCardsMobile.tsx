@@ -1,52 +1,31 @@
 // JobCardList.tsx
 import { FunctionComponent, useEffect, useState } from "react";
 import JobCard, { JobCardProps } from "./JobCard";
-import { getJobOffers } from "../../../../Services/jobOffers.service";
-import { useDispatch, useSelector } from "react-redux";
-import { setJobOffers } from "../../../../../redux/features/JobCardsSlice";
+import { useSelector } from "react-redux";
 import { motion } from "framer-motion";
 import whiteArrow from "/Vectores/white-arrow.png";
 import { useTranslation } from "react-i18next";
 import { JobCardSkeletonMobile } from "./JobCardSkeleton";
 
-const JobCardsMobile: FunctionComponent = () => {
+type JobCardsMobileProps = {
+  isLoading?: boolean;
+};
+
+const JobCardsMobile: FunctionComponent<JobCardsMobileProps> = ({
+  isLoading = false,
+}) => {
   const { t } = useTranslation();
-  const dispatch = useDispatch();
   const [current, setCurrent] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
 
   const jobOffers = useSelector(
     (state: any) => state.jobCard.jobOffers as JobCardProps[]
   );
   const jobsPerPage = 3;
-  const maxPages = Math.ceil(jobOffers.length / jobsPerPage);
+  const maxPages = Math.ceil(jobOffers.length / jobsPerPage) || 1;
   const handlePrev = () =>
     setCurrent(current === 0 ? maxPages - 1 : current - 1);
   const handleNext = () =>
     setCurrent(current === maxPages - 1 ? 0 : current + 1);
-
-  useEffect(() => {
-    const fetchedJobOffers = async () => {
-      try {
-        setIsLoading(true);
-        // Fetch my job offers from backend api
-        const fetchedJobOffers = await getJobOffers();
-        // Set the job offers in the state
-
-        const activeJobOffers = fetchedJobOffers
-          .reverse()
-          .filter((jobOffer) => jobOffer.archived === false);
-
-        dispatch(setJobOffers(activeJobOffers));
-      } catch (error) {
-        console.error("Error al cargar las vacantes:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchedJobOffers();
-  }, []);
 
   // Resetear a la primera página cuando cambian las vacantes (por ejemplo, al aplicar filtros)
   useEffect(() => {
